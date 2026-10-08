@@ -1,0 +1,89 @@
+// ═══════════════════════════════════════════
+//  SHIKKHALOY — Database Schema v0.1
+//  Phase 1: Branch, User, AcademicSession
+// ═══════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── 🏬 ব্রাঞ্চ (মাল্টি-ব্রাঞ্চ সাপোর্টের ভিত্তি) ───
+model Branch {
+  id        String   @id @default(cuid())
+  name      String
+  code      String   @unique
+  address   String?
+  phone     String?
+  email     String?
+  logoUrl   String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users    User[]
+  sessions AcademicSession[]
+}
+
+// ─── 👤 ইউজার (স্টুডেন্ট/টিচার/অ্যাডমিন — সবাই এখানেই) ───
+// নীতি: অ্যাকাউন্ট কখনো DELETE হবে না, শুধু status বদলাবে
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  password     String
+  fullName     String
+  phone        String?
+  avatarUrl    String?
+  role         Role       @default(STUDENT)
+  status       UserStatus @default(ACTIVE)
+  isFirstLogin Boolean    @default(true)
+  branchId     String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
+
+  branch Branch @relation(fields: [branchId], references: [id])
+
+  @@index([branchId])
+  @@index([role])
+  @@index([status])
+}
+
+// ─── 📅 একাডেমিক সেশন (যেমন: ২০২৫-২৬) ───
+model AcademicSession {
+  id        String   @id @default(cuid())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(false)
+  branchId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  branch Branch @relation(fields: [branchId], references: [id])
+
+  @@unique([name, branchId])
+}
+
+// ─── 🔖 Enums ───
+enum Role {
+  PLATFORM_SUPER_ADMIN
+  BRANCH_ADMIN
+  TEACHER
+  STUDENT
+  PARENT
+  ACCOUNTANT
+  STAFF
+  ALUMNI
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+  ALUMNI
+}

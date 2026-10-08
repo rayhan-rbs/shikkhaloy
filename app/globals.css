@@ -128,3 +128,21 @@
     @apply font-sans;
   }
 }
+
+/* ═══════════ Shikkhaloy কাস্টম স্টাইল ═══════════ */
+
+/* ফন্ট স্ট্যাক — ইংরেজি: Inter, বাংলা: Hind Siliguri */
+html {
+  font-family: var(--font-inter), var(--font-hind), ui-sans-serif, system-ui,
+    -apple-system, "Segoe UI", sans-serif;
+}
+
+/* বাটন/লিংকে পয়েন্টার কার্সর (Tailwind v4-এর ডিফল্ট পরিবর্তনের ফিক্স) */
+button:not(:disabled),
+[role="button"]:not(:disabled),
+a,
+label[for],
+summary,
+select {
+  cursor: pointer;
+}

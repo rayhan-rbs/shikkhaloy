@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { ROUTE_ROLES, type Role } from "@/lib/roles";
 
-const PUBLIC_PAGES = ["/login"];
+const PUBLIC_PAGES = ["/login", "/forgot-password", "/reset-password"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

@@ -33,6 +33,7 @@ export default function RootLayout({
   return (
     <html
       lang="bn"
+      suppressHydrationWarning
       className={`${inter.variable} ${hindSiliguri.variable} ${geistMono.variable}`}
     >
       <body className="antialiased">{children}</body>

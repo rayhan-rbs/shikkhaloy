@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Link from "next/link";
+
 
 export default function LoginPage() {
   const router = useRouter();
@@ -117,6 +119,12 @@ export default function LoginPage() {
                 >
                   {loading ? "লগইন হচ্ছে..." : "লগইন করুন →"}
                 </Button>
+                <div className="mt-4 text-center">
+                  <Link href="/forgot-password" className="text-sm text-slate-400 hover:text-indigo-300 transition-colors">
+                    পাসওয়ার্ড ভুলে গেছেন?
+                  </Link>
+              </div>
+
               </form>
             </CardContent>
           </Card>

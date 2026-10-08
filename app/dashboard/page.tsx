@@ -23,6 +23,8 @@ export default async function DashboardPage() {
     include: { branch: true },
   });
   if (!user || user.status !== "ACTIVE") redirect("/login");
+  if (user.isFirstLogin) redirect("/change-password");
+
 
   return (
     <main className="min-h-screen bg-slate-50">

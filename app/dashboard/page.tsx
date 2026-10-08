@@ -1,5 +1,5 @@
 // 📁 app/dashboard/page.tsx
-// ড্যাশবোর্ড — shadcn/ui + SaaS ডিজাইন
+// ড্যাশবোর্ড — i18n সহ (কুকি অনুযায়ী ভাষা)
 
 export const instant = false;
 
@@ -7,6 +7,9 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
+import { getDict, t } from "@/lib/i18n";
+import { getLang } from "@/lib/i18n-server";
+import LanguageSwitcher from "@/components/language-switcher";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -25,6 +28,8 @@ export default async function DashboardPage() {
   if (!user || user.status !== "ACTIVE") redirect("/login");
   if (user.isFirstLogin) redirect("/change-password");
 
+  const lang = await getLang();
+  const dict = getDict(lang);
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -42,6 +47,7 @@ export default async function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <LanguageSwitcher current={lang} />
             <div className="hidden text-right sm:block">
               <p className="text-sm font-medium text-slate-800">{user.fullName}</p>
               <p className="text-xs text-slate-400">{user.email}</p>
@@ -56,7 +62,7 @@ export default async function DashboardPage() {
                 size="sm"
                 className="border-slate-200 text-slate-600 hover:bg-slate-50"
               >
-                লগআউট
+                {t(dict, "common.logout")}
               </Button>
             </form>
           </div>
@@ -64,21 +70,23 @@ export default async function DashboardPage() {
       </header>
 
       <div className="mx-auto max-w-6xl px-4 py-8">
-        {/* স্বাগতম হিরো */}
+        {/* হিরো */}
         <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 p-8 shadow-xl shadow-indigo-500/20">
           <div className="pointer-events-none absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
           <div className="pointer-events-none absolute -bottom-24 -left-10 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
           <div className="relative">
             <p className="text-sm font-medium text-indigo-200">
-              {user.isFirstLogin ? "🎉 প্রথম লগইন — স্বাগতম!" : "ফিরে আসায় ধন্যবাদ"}
+              {user.isFirstLogin
+                ? t(dict, "dashboard.firstLogin")
+                : t(dict, "dashboard.welcomeBack")}
             </p>
             <h1 className="mt-1 text-2xl font-bold text-white sm:text-3xl">
-              স্বাগতম, {user.fullName} 👋
+              {t(dict, "dashboard.greeting")}, {user.fullName} 👋
             </h1>
             <p className="mt-2 max-w-lg text-sm text-indigo-100">
               {user.isFirstLogin
-                ? "আপনি Shikkhaloy-র প্রথম ইউজার — সিস্টেম এখন আপনার হাতে। শীঘ্রই এখানে পাসওয়ার্ড বদলানোর সিস্টেম যোগ হবে।"
-                : "আজকের কার্যক্রম এখানে দেখতে পাবেন।"}
+                ? t(dict, "dashboard.heroSubtitleFirst")
+                : t(dict, "dashboard.heroSubtitle")}
             </p>
           </div>
         </div>
@@ -87,22 +95,18 @@ export default async function DashboardPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="border-slate-200/80 shadow-sm transition-shadow hover:shadow-md">
             <CardHeader className="pb-2">
-              <p className="text-xs font-medium text-slate-500">রোল</p>
-              <CardTitle className="text-sm font-semibold text-indigo-600">
-                {user.role}
-              </CardTitle>
+              <p className="text-xs font-medium text-slate-500">{t(dict, "dashboard.role")}</p>
+              <CardTitle className="text-sm font-semibold text-indigo-600">{user.role}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-slate-400">অ্যাকাউন্ট টাইপ</p>
+              <p className="text-xs text-slate-400">{t(dict, "dashboard.roleNote")}</p>
             </CardContent>
           </Card>
 
           <Card className="border-slate-200/80 shadow-sm transition-shadow hover:shadow-md">
             <CardHeader className="pb-2">
-              <p className="text-xs font-medium text-slate-500">ব্রাঞ্চ</p>
-              <CardTitle className="text-sm font-semibold text-emerald-600">
-                {user.branch.name}
-              </CardTitle>
+              <p className="text-xs font-medium text-slate-500">{t(dict, "dashboard.branch")}</p>
+              <CardTitle className="text-sm font-semibold text-emerald-600">{user.branch.name}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-slate-400">{user.branch.address}</p>
@@ -111,42 +115,38 @@ export default async function DashboardPage() {
 
           <Card className="border-slate-200/80 shadow-sm transition-shadow hover:shadow-md">
             <CardHeader className="pb-2">
-              <p className="text-xs font-medium text-slate-500">অ্যাকাউন্ট স্ট্যাটাস</p>
+              <p className="text-xs font-medium text-slate-500">{t(dict, "dashboard.status")}</p>
               <CardTitle className="text-sm font-semibold text-emerald-600">
-                ✅ {user.status}
+                ✅ {t(dict, "common.active")}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-slate-400">সক্রিয়</p>
+              <p className="text-xs text-slate-400">{user.email}</p>
             </CardContent>
           </Card>
 
           <Card className="border-slate-200/80 shadow-sm transition-shadow hover:shadow-md">
             <CardHeader className="pb-2">
-              <p className="text-xs font-medium text-slate-500">মডিউল</p>
+              <p className="text-xs font-medium text-slate-500">{t(dict, "dashboard.modules")}</p>
               <CardTitle className="text-sm font-semibold text-slate-700">
-                শীঘ্রই আসছে 🚧
+                {t(dict, "dashboard.comingSoon")}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-slate-400">স্টুডেন্ট, ক্লাস, ফি...</p>
+              <p className="text-xs text-slate-400">{t(dict, "dashboard.modulesNote")}</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* রোডম্যাপ নোট */}
+        {/* রোডম্যাপ */}
         <Card className="mt-8 border-dashed border-slate-300 bg-slate-50/50">
           <CardContent className="flex flex-col items-start gap-2 p-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold text-slate-700">
-                🗺️ পরের মাইলস্টোন: RBAC + ফুল ড্যাশবোর্ড লেআউট
-              </p>
-              <p className="text-xs text-slate-500">
-                সাইডবার, ডার্ক মোড, রোল-ভিত্তিক নিয়ন্ত্রণ — সব আসছে
-              </p>
+              <p className="text-sm font-semibold text-slate-700">{t(dict, "dashboard.nextMilestone")}</p>
+              <p className="text-xs text-slate-500">{t(dict, "dashboard.nextMilestoneNote")}</p>
             </div>
             <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-medium text-indigo-700">
-              ফেজ ১ চলছে
+              {t(dict, "dashboard.phaseBadge")}
             </span>
           </CardContent>
         </Card>

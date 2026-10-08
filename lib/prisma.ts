@@ -1,23 +1,15 @@
-// 📁 src/lib/prisma.ts
+// 📁 lib/prisma.ts
 // ডেটাবেস কানেকশন — পুরো অ্যাপে এই একটাই কানেকশন শেয়ার হবে
+// Prisma 6 (স্টেবল) — কোনো adapter বা custom output লাগে না
 
-import { PrismaClient } from "@/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "@prisma/client";
 
-// Next.js ডেভ মোডে প্রতিবার রিলোডে নতুন কানেকশন বানায় —
-// তাই আমরা globalThis-এ সেভ করে রাখি, নাহলে কানেকশন লিক হয়
 const globalForPrisma = globalThis as unknown as {
-  prisma: InstanceType<typeof PrismaClient> | undefined;
+  prisma?: PrismaClient;
 };
 
-function createPrismaClient() {
-  const adapter = new PrismaPg({
-    connectionString: process.env.DATABASE_URL,
-  });
-  return new PrismaClient({ adapter });
-}
-
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+export const prisma =
+  globalForPrisma.prisma ?? new PrismaClient();
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;

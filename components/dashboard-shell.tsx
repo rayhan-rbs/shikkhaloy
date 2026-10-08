@@ -1,20 +1,17 @@
 // 📁 components/dashboard-shell.tsx
-// ড্যাশবোর্ড শেল: সাইডবার (ডেস্কটপ ফিক্সড + মোবাইল ওভারলে) + টপবার
-// + Command Palette (Ctrl+K) — রঙ সব shadcn টোকেন, তাই ডার্ক মোড অটো
+// ড্যাশবোর্ড শেল: সাইডবার + টপবার + Command Palette (Ctrl+K)
+// ব্র্যান্ডিং DB থেকে: প্রতিষ্ঠানের নাম + ব্র্যান্ড কালার (সেটিংসে বদলালে লাইভ আপডেট)
 
 "use client";
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-
 import {
   LayoutDashboard, Users, School, Wallet, Settings, Search, Menu, X,
   GraduationCap, Sun, Moon, LogOut, Languages,
 } from "lucide-react";
-import {
-  Dialog, DialogContent, DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   Command, CommandEmpty, CommandGroup, CommandInput,
   CommandItem, CommandList,
@@ -23,9 +20,7 @@ import LanguageSwitcher from "@/components/language-switcher";
 import ThemeToggle from "@/components/theme-toggle";
 import { t, type Lang } from "@/lib/i18n";
 import type { Dictionary } from "@/messages/bn";
-import type { Theme } from "@/lib/theme";
-import { THEME_COOKIE } from "@/lib/theme";
-
+import { THEME_COOKIE, type Theme } from "@/lib/theme";
 
 interface ShellUser {
   fullName: string;
@@ -35,9 +30,11 @@ interface ShellUser {
 }
 
 export default function DashboardShell({
-  user, lang, theme, dict, children,
+  user, institutionName, brandColor, lang, theme, dict, children,
 }: {
   user: ShellUser;
+  institutionName: string;
+  brandColor: string;
   lang: Lang;
   theme: Theme;
   dict: Dictionary;
@@ -48,7 +45,7 @@ export default function DashboardShell({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
 
-  // Ctrl+K → প্যালেট খোলা/বন্ধ
+  // Ctrl+K → প্যালেট
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
@@ -60,17 +57,16 @@ export default function DashboardShell({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // রুট বদলালে মোবাইল সাইডবার বন্ধ
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
 
   const nav = [
-    { href: "/dashboard", label: t(dict, "nav.dashboard"), icon: LayoutDashboard, active: pathname.startsWith("/dashboard"), soon: false },
+    { href: "/dashboard", label: t(dict, "nav.dashboard"), icon: LayoutDashboard, active: pathname === "/dashboard", soon: false },
     { href: "#", label: t(dict, "nav.students"), icon: Users, active: false, soon: true },
     { href: "#", label: t(dict, "nav.classes"), icon: School, active: false, soon: true },
     { href: "#", label: t(dict, "nav.finance"), icon: Wallet, active: false, soon: true },
-    { href: "#", label: t(dict, "nav.settings"), icon: Settings, active: false, soon: true },
+    { href: "/dashboard/settings", label: t(dict, "nav.settings"), icon: Settings, active: pathname.startsWith("/dashboard/settings"), soon: false },
   ];
 
   async function logout() {
@@ -87,13 +83,16 @@ export default function DashboardShell({
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
-      {/* লোগো */}
+      {/* লোগো + প্রতিষ্ঠানের নাম (সেটিংস থেকে — ডায়নামিক!) */}
       <div className="flex h-16 items-center gap-3 border-b border-border px-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-md shadow-indigo-500/25">
+        <div
+          className="flex h-9 w-9 items-center justify-center rounded-xl shadow-md"
+          style={{ background: brandColor }}
+        >
           <GraduationCap size={18} className="text-white" />
         </div>
-        <div>
-          <p className="text-sm font-bold text-foreground">Shikkhaloy</p>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold text-foreground">{institutionName}</p>
           <p className="text-xs text-muted-foreground">{user.branchName}</p>
         </div>
       </div>
@@ -183,7 +182,6 @@ export default function DashboardShell({
               <Menu size={18} />
             </button>
 
-            {/* প্যালেট ট্রিগার */}
             <button
               onClick={() => setPaletteOpen(true)}
               className="hidden items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:flex"
@@ -238,6 +236,15 @@ export default function DashboardShell({
                 >
                   <LayoutDashboard size={15} className="mr-2" />
                   {t(dict, "nav.dashboard")}
+                </CommandItem>
+                <CommandItem
+                  onSelect={() => {
+                    setPaletteOpen(false);
+                    router.push("/dashboard/settings");
+                  }}
+                >
+                  <Settings size={15} className="mr-2" />
+                  {t(dict, "nav.settings")}
                 </CommandItem>
               </CommandGroup>
               <CommandGroup heading={t(dict, "palette.actions")}>

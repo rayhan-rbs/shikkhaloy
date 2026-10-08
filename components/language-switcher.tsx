@@ -1,5 +1,6 @@
 // 📁 components/language-switcher.tsx
 // ভাষা সুইচার — কুকি সেট করে পেজ রিফ্রেশ করে
+// রঙ: shadcn টোকেন (থিম অনুযায়ী অটো বদলায়)
 
 "use client";
 
@@ -17,7 +18,7 @@ export default function LanguageSwitcher({ current }: { current: Lang }) {
   }
 
   return (
-    <div className="flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-0.5">
+    <div className="flex items-center gap-0.5 rounded-lg border border-border bg-background p-0.5">
       {(["bn", "en"] as const).map((lang) => (
         <button
           key={lang}
@@ -25,8 +26,8 @@ export default function LanguageSwitcher({ current }: { current: Lang }) {
           disabled={pending}
           className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
             current === lang
-              ? "bg-indigo-600 text-white"
-              : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
           }`}
         >
           {lang === "bn" ? "বাংলা" : "EN"}

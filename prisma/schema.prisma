@@ -87,3 +87,22 @@ enum UserStatus {
   DEACTIVATED
   ALUMNI
 }
+
+// ═══════════ প্রতিষ্ঠান সেটিংস (সিঙ্গলটন — সিস্টেমে ১টাই রো, key="global") ═══════════
+model InstitutionSetting {
+  id         String    @id @default(cuid())
+  key        String    @unique // সিঙ্গলটন গ্যারান্টি — সবসময় "global"
+  name       String    // প্রতিষ্ঠানের নাম (বাংলা)
+  nameEn     String?   // নাম (ইংরেজি)
+  tagline    String?   // ট্যাগলাইন (বাংলা)
+  taglineEn  String?   // ট্যাগলাইন (ইংরেজি)
+  brandColor String    @default("#4f46e5") // ব্র্যান্ড কালার (hex)
+  eiin       String?   // EIIN / প্রতিষ্ঠান কোড
+  address    String?
+  phone      String?
+  email      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime? // Soft Delete (নীতি ৪)
+}
+

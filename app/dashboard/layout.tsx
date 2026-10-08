@@ -1,5 +1,5 @@
 // 📁 app/dashboard/layout.tsx
-// ড্যাশবোর্ড সেকশনের লেআউট — অথ যাচাই + শেল (সাইডবার/টপবার/প্যালেট)
+// ড্যাশবোর্ড সেকশনের লেআউট — অথ যাচাই + সেটিংস (ব্র্যান্ডিং) + শেল
 
 export const instant = false;
 
@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 import { getDict } from "@/lib/i18n";
 import { getLang, getTheme } from "@/lib/i18n-server";
+import { getInstituteSettings } from "@/lib/settings";
 import DashboardShell from "@/components/dashboard-shell";
 
 export default async function DashboardLayout({
@@ -28,7 +29,11 @@ export default async function DashboardLayout({
   });
   if (!user || user.status !== "ACTIVE") redirect("/login");
 
-  const [lang, theme] = await Promise.all([getLang(), getTheme()]);
+  const [lang, theme, settings] = await Promise.all([
+    getLang(),
+    getTheme(),
+    getInstituteSettings(),
+  ]);
   const dict = getDict(lang);
 
   return (
@@ -39,6 +44,8 @@ export default async function DashboardLayout({
         role: user.role,
         branchName: user.branch.name,
       }}
+      institutionName={settings.name}
+      brandColor={settings.brandColor}
       lang={lang}
       theme={theme}
       dict={dict}

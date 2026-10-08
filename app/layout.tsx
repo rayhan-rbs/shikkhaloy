@@ -4,6 +4,7 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Hind_Siliguri, Inter } from "next/font/google";
 import "./globals.css";
+import { getTheme } from "@/lib/i18n-server";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -27,14 +28,15 @@ export const metadata: Metadata = {
     "স্কুল, কলেজ ও বিশ্ববিদ্যালয়ের জন্য সম্পূর্ণ Multi-Branch ম্যানেজমেন্ট সিস্টেম",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const theme = await getTheme();
   return (
     <html
       lang="bn"
       suppressHydrationWarning
-      className={`${inter.variable} ${hindSiliguri.variable} ${geistMono.variable}`}
+      className={`${inter.variable} ${hindSiliguri.variable} ${geistMono.variable} ${theme === "dark" ? "dark" : ""}`}
     >
       <body className="antialiased">{children}</body>
     </html>

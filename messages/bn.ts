@@ -1,6 +1,5 @@
 // 📁 messages/bn.ts
-// বাংলা অভিধান — এটাই মূল টেমপ্লেট; এর key থেকেই Dictionary টাইপ তৈরি হয়
-// নতুন টেক্সট লাগলে প্রথমে এখানে key, তারপর en.ts-এ অনুবাদ
+// বাংলা অভিধান — মূল টেমপ্লেট; নতুন key আগে এখানে, পরে en.ts-এ
 
 export const bn = {
   common: {
@@ -34,9 +33,30 @@ export const bn = {
     modules: "মডিউল",
     comingSoon: "শীঘ্রই আসছে 🚧",
     modulesNote: "স্টুডেন্ট, ক্লাস, ফি...",
-    nextMilestone: "🗺️ পরের মাইলস্টোন: সাইডবার + ডার্ক মোড + Command Palette",
-    nextMilestoneNote: "প্রতিষ্ঠান সেটিংস, গ্রেডিং কনফিগ, প্রথম মডিউল — সব আসছে",
+    nextMilestone: "🗺️ পরের মাইলস্টোন: ইনস্টিটিউট সেটিংস + গ্রেডিং কনফিগ",
+    nextMilestoneNote: "ফেজ ১ প্রায় শেষ — তারপর স্টুডেন্ট ম্যানেজমেন্ট!",
     phaseBadge: "ফেজ ১ চলছে",
+  },
+  nav: {
+    dashboard: "ড্যাশবোর্ড",
+    students: "শিক্ষার্থী",
+    classes: "ক্লাস",
+    finance: "অর্থ",
+    settings: "সেটিংস",
+    soon: "শীঘ্রই",
+  },
+  palette: {
+    placeholder: "কমান্ড লিখুন...",
+    empty: "কিছু পাওয়া যায়নি",
+    navigation: "নেভিগেশন",
+    actions: "অ্যাকশন",
+    themeToDark: "ডার্ক মোডে যান",
+    themeToLight: "লাইট মোডে যান",
+    toEnglish: "ভাষা বদলান → English",
+    toBangla: "Switch language → বাংলা",
+  },
+  topbar: {
+    search: "খুঁজুন...",
   },
   lang: {
     bn: "বাংলা",

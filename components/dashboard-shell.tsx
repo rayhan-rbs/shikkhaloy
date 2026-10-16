@@ -1,6 +1,6 @@
 // 📁 components/dashboard-shell.tsx
-// ড্যাশবোর্ড শেল: সাইডবার + টপবার + Command Palette (Ctrl+K)
-// ব্র্যান্ডিং DB থেকে: প্রতিষ্ঠানের নাম + ব্র্যান্ড কালার (সেটিংসে বদলালে লাইভ আপডেট)
+// ড্যাশবোর্ড শেল: সাইডবার (গ্রুপ-ভিত্তিক) + টপবার + Command Palette (Ctrl+K)
+// ব্র্যান্ডিং DB থেকে; রঙ সব shadcn টোকেন → ডার্ক মোড অটো
 
 "use client";
 
@@ -9,7 +9,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard, Users, School, Wallet, Settings, Search, Menu, X,
-  GraduationCap, Sun, Moon, LogOut, Languages,
+  GraduationCap, Sun, Moon, LogOut, Languages, Award, type LucideIcon,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -27,6 +27,14 @@ interface ShellUser {
   email: string;
   role: string;
   branchName: string;
+}
+
+interface NavItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  active: boolean;
+  soon: boolean;
 }
 
 export default function DashboardShell({
@@ -61,12 +69,23 @@ export default function DashboardShell({
     setMobileOpen(false);
   }, [pathname]);
 
-  const nav = [
-    { href: "/dashboard", label: t(dict, "nav.dashboard"), icon: LayoutDashboard, active: pathname === "/dashboard", soon: false },
-    { href: "#", label: t(dict, "nav.students"), icon: Users, active: false, soon: true },
-    { href: "#", label: t(dict, "nav.classes"), icon: School, active: false, soon: true },
-    { href: "#", label: t(dict, "nav.finance"), icon: Wallet, active: false, soon: true },
-    { href: "/dashboard/settings", label: t(dict, "nav.settings"), icon: Settings, active: pathname.startsWith("/dashboard/settings"), soon: false },
+  const navGroups: { label: string | null; items: NavItem[] }[] = [
+    {
+      label: null,
+      items: [
+        { href: "/dashboard", label: t(dict, "nav.dashboard"), icon: LayoutDashboard, active: pathname === "/dashboard", soon: false },
+        { href: "#", label: t(dict, "nav.students"), icon: Users, active: false, soon: true },
+        { href: "#", label: t(dict, "nav.classes"), icon: School, active: false, soon: true },
+        { href: "#", label: t(dict, "nav.finance"), icon: Wallet, active: false, soon: true },
+      ],
+    },
+    {
+      label: t(dict, "nav.configGroup"),
+      items: [
+        { href: "/dashboard/settings", label: t(dict, "nav.settings"), icon: Settings, active: pathname.startsWith("/dashboard/settings"), soon: false },
+        { href: "/dashboard/grading", label: t(dict, "nav.grading"), icon: Award, active: pathname.startsWith("/dashboard/grading"), soon: false },
+      ],
+    },
   ];
 
   async function logout() {
@@ -83,7 +102,7 @@ export default function DashboardShell({
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
-      {/* লোগো + প্রতিষ্ঠানের নাম (সেটিংস থেকে — ডায়নামিক!) */}
+      {/* লোগো + প্রতিষ্ঠানের নাম (সেটিংস থেকে — ডায়নামিক) */}
       <div className="flex h-16 items-center gap-3 border-b border-border px-5">
         <div
           className="flex h-9 w-9 items-center justify-center rounded-xl shadow-md"
@@ -97,35 +116,46 @@ export default function DashboardShell({
         </div>
       </div>
 
-      {/* নেভিগেশন */}
-      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-        {nav.map((item) =>
-          item.soon ? (
-            <span
-              key={item.label}
-              className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground/60"
-            >
-              <item.icon size={17} />
-              {item.label}
-              <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                {t(dict, "nav.soon")}
-              </span>
-            </span>
-          ) : (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
-                item.active
-                  ? "bg-primary/10 font-semibold text-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              <item.icon size={17} />
-              {item.label}
-            </Link>
-          )
-        )}
+      {/* নেভিগেশন — গ্রুপ-ভিত্তিক */}
+      <nav className="flex-1 overflow-y-auto p-3">
+        {navGroups.map((group, gi) => (
+          <div key={gi} className={gi > 0 ? "mt-5" : ""}>
+            {group.label && (
+              <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                {group.label}
+              </p>
+            )}
+            <div className="space-y-1">
+              {group.items.map((item) =>
+                item.soon ? (
+                  <span
+                    key={item.label}
+                    className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground/60"
+                  >
+                    <item.icon size={17} />
+                    {item.label}
+                    <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      {t(dict, "nav.soon")}
+                    </span>
+                  </span>
+                ) : (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
+                      item.active
+                        ? "bg-primary/10 font-semibold text-primary"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    <item.icon size={17} />
+                    {item.label}
+                  </Link>
+                )
+              )}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* ইউজার */}
@@ -245,6 +275,15 @@ export default function DashboardShell({
                 >
                   <Settings size={15} className="mr-2" />
                   {t(dict, "nav.settings")}
+                </CommandItem>
+                <CommandItem
+                  onSelect={() => {
+                    setPaletteOpen(false);
+                    router.push("/dashboard/grading");
+                  }}
+                >
+                  <Award size={15} className="mr-2" />
+                  {t(dict, "nav.grading")}
                 </CommandItem>
               </CommandGroup>
               <CommandGroup heading={t(dict, "palette.actions")}>

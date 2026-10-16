@@ -27,6 +27,8 @@ model Branch {
 
   users    User[]
   sessions AcademicSession[]
+  gradingScales GradingScale[]
+
 }
 
 // ─── 👤 ইউজার (স্টুডেন্ট/টিচার/অ্যাডমিন — সবাই এখানেই) ───
@@ -105,4 +107,35 @@ model InstitutionSetting {
   updatedAt  DateTime  @updatedAt
   deletedAt  DateTime? // Soft Delete (নীতি ৪)
 }
+
+// ═══════════ গ্রেডিং সিস্টেম (নীতি ৯: branchId প্রথম দিন থেকেই) ═══════════
+model GradingScale {
+  id        String    @id @default(cuid())
+  branchId  String
+  branch    Branch    @relation(fields: [branchId], references: [id])
+  name      String    // স্কেলের নাম (যেমন: GPA 5.00 বাংলাদেশ স্ট্যান্ডার্ড)
+  nameEn    String?
+  isActive  Boolean   @default(true) // প্রতি ব্রাঞ্চে একটাই অ্যাক্টিভ (MVP)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // স্কেল নিজে Soft Delete (নীতি ৪)
+  rules     GradeRule[]
+
+  @@index([branchId])
+}
+
+model GradeRule {
+  id        String       @id @default(cuid())
+  scaleId   String
+  scale     GradingScale @relation(fields: [scaleId], references: [id], onDelete: Cascade)
+  grade     String       // A+, A, A-, B, C, D, F...
+  minMarks  Float        // রেঞ্জের শুরু (0–100)
+  maxMarks  Float        // রেঞ্জের শেষ
+  point     Float        // গ্রেড পয়েন্ট (0–5)
+  isPassed  Boolean      @default(true) // F = false
+  sortOrder Int          @default(0)    // দেখানোর ক্রম
+
+  @@index([scaleId])
+}
+
 

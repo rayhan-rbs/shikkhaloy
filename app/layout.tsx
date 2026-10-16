@@ -1,6 +1,6 @@
 // 📁 app/layout.tsx
 // রুট লেআউট — ফন্ট: Inter (ইংরেজি) + Hind Siliguri (বাংলা)
-
+export const instant = false; 
 import type { Metadata } from "next";
 import { Geist_Mono, Hind_Siliguri, Inter } from "next/font/google";
 import "./globals.css";

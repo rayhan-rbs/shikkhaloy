@@ -8,9 +8,10 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, Users, School, Wallet, Settings, Search, Menu, X,
+  LayoutDashboard, Users, BookOpen, Wallet, Settings, Search, Menu, X,
   GraduationCap, Sun, Moon, LogOut, Languages, Award, type LucideIcon,
 } from "lucide-react";
+
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   Command, CommandEmpty, CommandGroup, CommandInput,
@@ -74,8 +75,8 @@ export default function DashboardShell({
       label: null,
       items: [
         { href: "/dashboard", label: t(dict, "nav.dashboard"), icon: LayoutDashboard, active: pathname === "/dashboard", soon: false },
-        { href: "#", label: t(dict, "nav.students"), icon: Users, active: false, soon: true },
-        { href: "#", label: t(dict, "nav.classes"), icon: School, active: false, soon: true },
+        { href: "/dashboard/academics", label: t(dict, "nav.academics"), icon: BookOpen, active: pathname.startsWith("/dashboard/academics"), soon: false },
+,
         { href: "#", label: t(dict, "nav.finance"), icon: Wallet, active: false, soon: true },
       ],
     },
@@ -84,6 +85,7 @@ export default function DashboardShell({
       items: [
         { href: "/dashboard/settings", label: t(dict, "nav.settings"), icon: Settings, active: pathname.startsWith("/dashboard/settings"), soon: false },
         { href: "/dashboard/grading", label: t(dict, "nav.grading"), icon: Award, active: pathname.startsWith("/dashboard/grading"), soon: false },
+
       ],
     },
   ];
@@ -301,6 +303,16 @@ export default function DashboardShell({
                   <Languages size={15} className="mr-2" />
                   {lang === "bn" ? t(dict, "palette.toEnglish") : t(dict, "palette.toBangla")}
                 </CommandItem>
+                <CommandItem
+                  onSelect={() => {
+                    setPaletteOpen(false);
+                    router.push("/dashboard/academics");
+                  }}
+                >
+                  <BookOpen size={15} className="mr-2" />
+                  {t(dict, "nav.academics")}
+                </CommandItem>
+
                 <CommandItem onSelect={() => { setPaletteOpen(false); logout(); }}>
                   <LogOut size={15} className="mr-2" />
                   {t(dict, "common.logout")}

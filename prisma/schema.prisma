@@ -29,6 +29,10 @@ model Branch {
   sessions AcademicSession[]
   gradingScales GradingScale[]
 
+  departments Department[]
+  classes     AcademicClass[]
+
+
 }
 
 // ─── 👤 ইউজার (স্টুডেন্ট/টিচার/অ্যাডমিন — সবাই এখানেই) ───
@@ -122,6 +126,8 @@ model GradingScale {
   rules     GradeRule[]
 
   @@index([branchId])
+  classes AcademicClass[]
+
 }
 
 model GradeRule {
@@ -137,5 +143,72 @@ model GradeRule {
 
   @@index([scaleId])
 }
+
+// ═══════════ একাডেমিক কাঠামো (নীতি ৯: branchId সব টেবিলে) ═══════════
+model Department {
+  id        String          @id @default(cuid())
+  branchId  String
+  branch    Branch          @relation(fields: [branchId], references: [id])
+  name      String          // যেমন: কম্পিউটার সায়েন্স (ভার্সিটি) / বিজ্ঞান (স্কুল)
+  nameEn    String?
+  code      String?         // CSE, SCI
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  deletedAt DateTime?
+  classes   AcademicClass[]
+
+  @@index([branchId])
+}
+
+model AcademicClass {
+  id             String        @id @default(cuid())
+  branchId       String
+  branch         Branch        @relation(fields: [branchId], references: [id])
+  departmentId   String?
+  department     Department?   @relation(fields: [departmentId], references: [id])
+  gradingScaleId String?       // null = ব্রাঞ্চের সক্রিয় স্কেল (১.১২-এর বাঁধাই!)
+  gradingScale   GradingScale? @relation(fields: [gradingScaleId], references: [id])
+  name           String        // ষষ্ঠ শ্রেণী / BSc CSE — সেমিস্টার ১
+  nameEn         String?
+  numericLevel   Int?          // স্কুল: ৬,৭,৮...; ভার্সিটি: সেমিস্টার নম্বর — প্রমোশনে কাজে লাগবে
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  deletedAt      DateTime?
+  sections       Section[]
+  subjects       Subject[]
+
+  @@index([branchId])
+  @@index([departmentId])
+}
+
+model Section {
+  id        String        @id @default(cuid())
+  classId   String
+  class     AcademicClass @relation(fields: [classId], references: [id])
+  name      String        // ক / A / Morning
+  capacity  Int?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  deletedAt DateTime?
+
+  @@index([classId])
+}
+
+model Subject {
+  id          String        @id @default(cuid())
+  classId     String
+  class       AcademicClass @relation(fields: [classId], references: [id])
+  name        String        // গণিত / Introduction to Programming
+  nameEn      String?
+  code        String?       // MATH-101
+  creditHours Float         @default(1) // ভার্সিটির GPA-ওজনে (ফেজ ৩) কাজে লাগবে
+  isElective  Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+
+  @@index([classId])
+}
+
 
 

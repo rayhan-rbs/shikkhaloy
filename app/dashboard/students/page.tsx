@@ -1,5 +1,4 @@
 // 📁 app/dashboard/students/page.tsx
-// শিক্ষার্থী পেজ — ভর্তি-রেকর্ডভিত্তিক তালিকা (নীতি ২); ডেটা সার্ভারেই লোড
 
 export const instant = false;
 
@@ -30,7 +29,12 @@ export default async function StudentsPage() {
     prisma.enrollment.findMany({
       where: { branchId: user.branchId, deletedAt: null },
       include: {
-        student: { select: { fullName: true, email: true, status: true } },
+        student: {
+          select: {
+            fullName: true, email: true, status: true,
+            studentProfile: { select: { photoUrl: true } },
+          },
+        },
         klass: true,
         section: true,
       },
@@ -70,6 +74,7 @@ export default async function StudentsPage() {
             id: e.id,
             name: e.student.fullName,
             email: e.student.email,
+            photoUrl: e.student.studentProfile?.photoUrl || null,
             accountStatus: e.student.status,
             classId: e.classId,
             className: e.klass.name,

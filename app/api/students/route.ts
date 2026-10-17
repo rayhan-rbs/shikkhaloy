@@ -1,6 +1,6 @@
 // 📁 app/api/students/route.ts
-// ভর্তি API — নীতি ২: User (অ্যাকাউন্ট) + Enrollment (ভর্তি-রেকর্ড) আলাদা কিন্তু
-// একসাথে তৈরি; নীতি ১: DELETE = অ্যাকাউন্ট ডিলিট না, status → DEACTIVATED
+// ভর্তি — নীতি ২: User + Enrollment + StudentProfile (১:১) এক tx-তে;
+// নীতি ১: DELETE = অ্যাকাউন্ট ডিলিট না, status → DEACTIVATED
 
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
@@ -23,7 +23,6 @@ function opt(v: unknown): string | null {
   return s ? s : null;
 }
 
-// সাময়িক পাসওয়ার্ড — ১০ অক্ষর, বিভ্রান্তিকর অক্ষর (l,I,O,0,1) বাদ
 function genPassword(): string {
   const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
   const bytes = randomBytes(10);
@@ -32,7 +31,6 @@ function genPassword(): string {
   return pw;
 }
 
-// ইমেইল অটো-জেনারেট (ফাঁকা রাখলে)
 async function genEmail(): Promise<string> {
   for (let i = 0; i < 5; i++) {
     const candidate = `student${randomBytes(3).toString("hex")}@shikkhaloy.local`;
@@ -49,7 +47,12 @@ export async function GET(request: NextRequest) {
     const enrollments = await prisma.enrollment.findMany({
       where: { branchId: guard.session.branchId, deletedAt: null },
       include: {
-        student: { select: { fullName: true, email: true, status: true } },
+        student: {
+          select: {
+            fullName: true, email: true, status: true,
+            studentProfile: { select: { photoUrl: true } },
+          },
+        },
         klass: true,
         section: true,
       },
@@ -80,7 +83,6 @@ export async function POST(request: NextRequest) {
     if (!fullName) return NextResponse.json({ success: false, error: "শিক্ষার্থীর নাম দিন" }, { status: 400 });
     if (!classId) return NextResponse.json({ success: false, error: "ক্লাস নির্বাচন করুন" }, { status: 400 });
 
-    // ক্লাস + সেকশন যাচাই (সেকশন অবশ্যই ওই ক্লাসের হতে হবে)
     const klass = await prisma.academicClass.findFirst({
       where: { id: classId, branchId: session.branchId, deletedAt: null },
     });
@@ -90,7 +92,6 @@ export async function POST(request: NextRequest) {
       if (!section) return NextResponse.json({ success: false, error: "সেকশনটি এই ক্লাসের নয়" }, { status: 400 });
     }
 
-    // রোল: দেওয়া থাকলে ডুপ্লিকেট-চেক, না থাকলে পরের ফাঁকা রোল অটো
     let rollNumber: number | null = null;
     const rollInput = String(body.rollNumber ?? "").trim();
     if (rollInput) {
@@ -116,7 +117,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "ভর্তির তারিখ সঠিক নয়" }, { status: 400 });
     }
 
-    // অ্যাকাউন্ট: নতুন তৈরি অথবা DEACTIVATED অ্যাকাউন্ট পুনরুজ্জীবিত (নীতি ১+২-এর সুবিধা!)
+    // প্রোফাইল-ফিল্ড (সব ঐচ্ছিক)
+    const dob = body.dateOfBirth ? new Date(String(body.dateOfBirth)) : null;
+    const photoUrl = opt(body.photoUrl);
+    if (photoUrl && !photoUrl.startsWith("https://")) {
+      return NextResponse.json({ success: false, error: "ছবির URL সঠিক নয়" }, { status: 400 });
+    }
+    const profileData = {
+      photoUrl,
+      dateOfBirth: dob && !Number.isNaN(dob.getTime()) ? dob : null,
+      gender: opt(body.gender),
+      bloodGroup: opt(body.bloodGroup),
+      fatherName: opt(body.fatherName),
+      motherName: opt(body.motherName),
+      guardianPhone: opt(body.guardianPhone),
+      address: opt(body.address),
+      birthCertificateNo: opt(body.birthCertificateNo),
+      studentPhone: opt(body.studentPhone),
+      nationality: opt(body.nationality),
+      religion: opt(body.religion),
+      previousInstitution: opt(body.previousInstitution),
+      previousQualification: opt(body.previousQualification),
+      guardianRelation: opt(body.guardianRelation),
+      guardianOccupation: opt(body.guardianOccupation),
+      guardianNid: opt(body.guardianNid),
+      notes: opt(body.notes),
+    };
+
+    const hasProfile = Object.values(profileData).some((v) => v !== null);
+
     const email = emailInput || (await genEmail());
     const existingUser = await prisma.user.findFirst({ where: { email, deletedAt: null } });
     if (existingUser && existingUser.role !== "STUDENT") {
@@ -132,7 +161,6 @@ export async function POST(request: NextRequest) {
     const enrollment = await prisma.$transaction(async (tx) => {
       let studentId: string;
       if (existingUser) {
-        // পুরনো অ্যাকাউন্ট পুনরুজ্জীবিত — মানুষ একই, নতুন ভর্তি-রেকর্ড (নীতি ২!)
         await tx.user.update({
           where: { id: existingUser.id },
           data: { status: "ACTIVE", password: hashed, fullName, isFirstLogin: true },
@@ -147,6 +175,13 @@ export async function POST(request: NextRequest) {
           },
         });
         studentId = created.id;
+      }
+      if (hasProfile) {
+        await tx.studentProfile.upsert({
+          where: { userId: studentId },
+          create: { userId: studentId, ...profileData },
+          update: profileData,
+        });
       }
       return tx.enrollment.create({
         data: {
@@ -184,7 +219,6 @@ export async function DELETE(request: NextRequest) {
     });
     if (!existing) return NextResponse.json({ success: false, error: "ভর্তি-রেকর্ড পাওয়া যায়নি" }, { status: 404 });
 
-    // নীতি ১: অ্যাকাউন্ট কখনো ডিলিট না — শুধু স্ট্যাটাস বদল
     await prisma.$transaction([
       prisma.enrollment.update({ where: { id }, data: { deletedAt: new Date(), status: "DROPPED" } }),
       prisma.user.update({ where: { id: existing.studentId }, data: { status: "DEACTIVATED" } }),

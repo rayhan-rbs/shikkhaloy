@@ -59,6 +59,7 @@ model User {
   @@index([role])
   @@index([status])
   enrollments Enrollment[]
+  studentProfile StudentProfile?
 }
 
 // ─── 📅 একাডেমিক সেশন (যেমন: ২০২৫-২৬) ───
@@ -238,6 +239,36 @@ model Enrollment {
   @@index([branchId])
   @@index([classId])
   @@index([studentId])
+}
+
+// ═══════════ শিক্ষার্থী-প্রোফাইল (প্রতি অ্যাকাউন্টে ১:১ — নীতি ২) ═══════════
+model StudentProfile {
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  user               User      @relation(fields: [userId], references: [id])
+  photoUrl           String?
+  dateOfBirth        DateTime?
+  gender             String?   // MALE / FEMALE / OTHER
+  bloodGroup         String?
+  fatherName         String?
+  motherName         String?
+  guardianPhone      String?
+  address            String?
+  birthCertificateNo String?
+  studentPhone       String?
+  nationality        String?
+  religion           String?   // ISLAM/HINDU/CHRISTIAN/BUDDHIST/OTHER
+  previousInstitution String?
+  previousQualification String?
+  guardianRelation   String?   // FATHER/MOTHER/UNCLE/AUNT/GRANDFATHER/GRANDMOTHER/OTHER
+  guardianOccupation String?
+  guardianNid        String?
+  notes              String?
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([userId])
 }
 
 

@@ -27,6 +27,7 @@ model Branch {
 
   users    User[]
   sessions AcademicSession[]
+  shifts   Shift[]
   gradingScales GradingScale[]
 
   departments Department[]
@@ -64,20 +65,23 @@ model User {
 
 // ─── 📅 একাডেমিক সেশন (যেমন: ২০২৫-২৬) ───
 model AcademicSession {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
+  branchId  String
+  branch    Branch    @relation(fields: [branchId], references: [id])
   name      String
+  nameEn    String?
   startDate DateTime
   endDate   DateTime
-  isActive  Boolean  @default(false)
-  branchId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isActive  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  branch Branch @relation(fields: [branchId], references: [id])
-
-  @@unique([name, branchId])
   enrollments Enrollment[]
+
+  @@index([branchId])
 }
+
 
 // ─── 🔖 Enums ───
 enum Role {
@@ -269,6 +273,22 @@ model StudentProfile {
   updatedAt          DateTime  @updatedAt
 
   @@index([userId])
+}
+
+// ═══════════ শিফট (প্রভাতী/দিবা — একাধিক সমান্তরাল চলে) ═══════════
+model Shift {
+  id        String    @id @default(cuid())
+  branchId  String
+  branch    Branch    @relation(fields: [branchId], references: [id])
+  name      String
+  nameEn    String?
+  startTime String?   // "07:30"
+  endTime   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([branchId])
 }
 
 

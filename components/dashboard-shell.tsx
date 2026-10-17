@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, Users, BookOpen, Wallet, Settings, Search, Menu, X,
+  LayoutDashboard, Calendar, Users, BookOpen, Wallet, Settings, Search, Menu, X,
   GraduationCap, Sun, Moon, LogOut, Languages, Award, type LucideIcon,
 } from "lucide-react";
 
@@ -86,6 +86,8 @@ export default function DashboardShell({
       label: t(dict, "nav.configGroup"),
       items: [
         { href: "/dashboard/settings", label: t(dict, "nav.settings"), icon: Settings, active: pathname.startsWith("/dashboard/settings"), soon: false },
+        { href: "/dashboard/settings/academic", label: t(dict, "nav.academicCal"), icon: Calendar, active: pathname.startsWith("/dashboard/settings/academic"), soon: false },
+
         { href: "/dashboard/grading", label: t(dict, "nav.grading"), icon: Award, active: pathname.startsWith("/dashboard/grading"), soon: false },
 
       ],
@@ -133,7 +135,7 @@ export default function DashboardShell({
               {group.items.map((item) =>
                 item.soon ? (
                   <span
-                    key={item.label}
+                    key={item.href}
                     className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground/60"
                   >
                     <item.icon size={17} />
@@ -314,7 +316,7 @@ export default function DashboardShell({
                   <BookOpen size={15} className="mr-2" />
                   {t(dict, "nav.academics")}
                 </CommandItem>
-                                <CommandItem
+                <CommandItem
                   onSelect={() => {
                     setPaletteOpen(false);
                     router.push("/dashboard/students");
@@ -322,6 +324,15 @@ export default function DashboardShell({
                 >
                   <Users size={15} className="mr-2" />
                   {t(dict, "nav.students")}
+                </CommandItem>
+                <CommandItem
+                  onSelect={() => {
+                    setPaletteOpen(false);
+                    router.push("/dashboard/settings/academic");
+                  }}
+                >
+                  <Calendar size={15} className="mr-2" />
+                  {t(dict, "nav.academicCal")}
                 </CommandItem>
 
                 <CommandItem onSelect={() => { setPaletteOpen(false); logout(); }}>

@@ -183,9 +183,13 @@ export async function POST(request: NextRequest) {
           update: profileData,
         });
       }
+      const activeSession = await tx.academicSession.findFirst({
+        where: { branchId: session.branchId, isActive: true, deletedAt: null },
+      });
       return tx.enrollment.create({
         data: {
           branchId: session.branchId,
+          sessionId: activeSession?.id ?? null,
           studentId, classId, sectionId, rollNumber,
           status: "ACTIVE",
           admissionDate,

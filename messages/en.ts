@@ -41,6 +41,7 @@ export const en: Dictionary = {
   nav: {
     dashboard: "Dashboard",
     students: "Students",
+    teachers: "Teacher & Staff",
     academics: "Academics",
     academicCal: "Academic calendar",
     finance: "Finance",
@@ -344,6 +345,21 @@ export const en: Dictionary = {
     networkError: "Cannot reach the server",
     copy: "Copy", copied: "Copied!", close: "Close",
     saving: "Saving...", submit: "Create",
+  },
+  promo: {
+    btn: "Promote", title: "Bulk promotion",
+    fromClass: "Current class", fromSection: "Current section (All = whole class)",
+    toClass: "New class", toSection: "New section (— = no section)",
+    allSections: "All sections",
+    rollNote: "Rolls will auto-regenerate in the new class-section; original admission date is kept",
+    candidateEmpty: "No active students in this class/section",
+    excludeHint: "Uncheck anyone not being promoted (failed/TC/excluded)",
+    selected: "Selected", excludedCount: "Excluded",
+    confirm: "Selected students will be promoted to the new class — old enrollments become COMPLETED. Continue?",
+    go: "Promote", promoted: "promoted", skipped: "skipped",
+    needClasses: "Pick both current and new class",
+    sameComboErr: "Cannot promote to the same class-section",
+    noCandidates: "No students selected for promotion",
   },
 
 

@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, KeyRound, Trash2, Copy, X, Camera, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, KeyRound, ArrowUpRight, Trash2, Copy, X, Camera, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -89,18 +89,27 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [sectionFilter, setSectionFilter] = useState("");
+
+  const [statusFilter, setStatusFilter] = useState("ACTIVE"); // ডিফল্ট: শুধু সক্রিয় ভর্তি
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [pFrom, setPFrom] = useState(""); const [pFromSec, setPFromSec] = useState("");
+  const [pTo, setPTo] = useState(""); const [pToSec, setPToSec] = useState("");
+  const [excluded, setExcluded] = useState<string[]>([]);
+  const [promoOk, setPromoOk] = useState("");
+
   
-  useEffect(() => { setPage(1); }, [search, classFilter, sectionFilter]);
+  useEffect(() => { setPage(1); }, [search, classFilter, sectionFilter, statusFilter]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return students.filter((s) => {
       if (classFilter && s.classId !== classFilter) return false;
+      if (statusFilter && s.status !== statusFilter) return false;
       if (sectionFilter && s.sectionId !== sectionFilter) return false;
       if (!q) return true;
       return `${s.name} ${s.email} ${s.rollNumber ?? ""}`.toLowerCase().includes(q);
     });
-  }, [students, search, classFilter, sectionFilter]);
+  }, [students, search, classFilter, sectionFilter, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -185,6 +194,27 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
     }
   }
 
+  async function submitPromotion(e: React.FormEvent) {
+    e.preventDefault();
+    setError(""); setPromoOk("");
+    if (!pFrom || !pTo) { setError(t(dict, "promo.needClasses")); return; }
+    if (pFrom === pTo && pFromSec === pToSec) { setError(t(dict, "promo.sameComboErr")); return; }
+    if (promoCandidates.length - excluded.length === 0) { setError(t(dict, "promo.noCandidates")); return; }
+    if (!confirm(t(dict, "promo.confirm"))) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/students/promote", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fromClassId: pFrom, fromSectionId: pFromSec || null, toClassId: pTo, toSectionId: pToSec || null, exclude: excluded }),
+      });
+      const json = await res.json();
+      if (!json.success) { setError(json.error || t(dict, "students.networkError")); return; }
+      setPromoOk(`${json.data.promoted} ${t(dict, "promo.promoted")} · ${json.data.skipped} ${t(dict, "promo.skipped")}`);
+      setPromoOpen(false); setPFrom(""); setPFromSec(""); setPTo(""); setPToSec(""); setExcluded([]);
+      router.refresh();
+    } catch { setError(t(dict, "students.networkError")); } finally { setBusy(false); }
+  }
+
 
   async function removeStudent(s: StudentRow) {
     if (!confirm(`${s.name} — ${t(dict, "students.confirmDelete")}`)) return;
@@ -222,6 +252,14 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
   }
 
   const sectionHead = "text-xs font-semibold uppercase tracking-wide text-muted-foreground";
+
+  const sel = "h-9 w-full rounded-lg border border-border bg-background px-3 text-sm";
+
+  const promoCandidates = useMemo(() => {
+    if (!pFrom) return [];
+    return students.filter((s) => s.status === "ACTIVE" && s.classId === pFrom && (!pFromSec || s.sectionId === pFromSec));
+  }, [students, pFrom, pFromSec]);
+
 
   return (
     <>
@@ -272,7 +310,9 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
           <p className="mt-2 text-xs text-muted-foreground">{t(dict, "students.credsNote2")}</p>
         </div>
       )}
-
+      {promoOk && (
+        <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">🎉 {promoOk}</div>
+      )}
       {error && (
         <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-300">⚠️ {error}</div>
       )}
@@ -281,6 +321,20 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
         <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>{t(dict, "students.title")}</CardTitle>
           <div className="flex flex-wrap items-center gap-2">
+
+
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-9 rounded-lg border border-border bg-background px-3 text-sm">
+              <option value="ACTIVE">{t(dict, "students.stActive")}</option>
+              <option value="COMPLETED">{t(dict, "students.stCompleted")}</option>
+              <option value="TRANSFERRED">{t(dict, "students.stTransferred")}</option>
+              <option value="DROPPED">{t(dict, "students.stDropped")}</option>
+              <option value="">{t(dict, "students.allStatuses")}</option>
+            </select>
+            <Button size="sm" variant="outline" onClick={() => { setError(""); setPromoOk(""); setExcluded([]); setPromoOpen(true); }}>
+              <ArrowUpRight size={14} className="mr-1" />{t(dict, "promo.btn")}
+            </Button>
+
+
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t(dict, "students.search")} className="w-44" />
             <select value={classFilter} onChange={(e) => { setClassFilter(e.target.value); setSectionFilter(""); }}
               className="h-9 rounded-lg border border-border bg-background px-3 text-sm">
@@ -641,6 +695,75 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
           </form>
         </DialogContent>
       </Dialog>
+            {/* বাল্ক প্রমোশন ডায়লগ */}
+      <Dialog open={promoOpen} onOpenChange={setPromoOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader><DialogTitle>{t(dict, "promo.title")}</DialogTitle></DialogHeader>
+          <form onSubmit={submitPromotion} className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label>{t(dict, "promo.fromClass")} *</Label>
+                <select value={pFrom} className={sel} onChange={(e) => { setPFrom(e.target.value); setPFromSec(""); setExcluded([]); }}>
+                  <option value="">—</option>
+                  {classes.map((c) => <option key={c.id} value={c.id}>{pick(lang, c.name, c.nameEn)}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t(dict, "promo.fromSection")}</Label>
+                <select value={pFromSec} disabled={!pFrom} className={`${sel} disabled:opacity-50`} onChange={(e) => { setPFromSec(e.target.value); setExcluded([]); }}>
+                  <option value="">{t(dict, "promo.allSections")}</option>
+                  {pFrom && (classes.find((c) => c.id === pFrom)?.sections ?? []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t(dict, "promo.toClass")} *</Label>
+                <select value={pTo} className={sel} onChange={(e) => setPTo(e.target.value)}>
+                  <option value="">—</option>
+                  {classes.map((c) => <option key={c.id} value={c.id}>{pick(lang, c.name, c.nameEn)}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t(dict, "promo.toSection")}</Label>
+                <select value={pToSec} disabled={!pTo} className={`${sel} disabled:opacity-50`} onChange={(e) => setPToSec(e.target.value)}>
+                  <option value="">—</option>
+                  {pTo && (classes.find((c) => c.id === pTo)?.sections ?? []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">{t(dict, "promo.rollNote")}</p>
+            {pFrom && (
+              promoCandidates.length === 0 ? (
+                <p className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">{t(dict, "promo.candidateEmpty")}</p>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium">{t(dict, "promo.selected")}: {promoCandidates.length - excluded.length}</span>
+                    <span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-700 dark:text-amber-300">{t(dict, "promo.excludedCount")}: {excluded.length}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{t(dict, "promo.excludeHint")}</p>
+                  <div className="max-h-48 overflow-y-auto rounded-lg border border-border">
+                    {promoCandidates.map((s) => (
+                      <label key={s.id} className="flex cursor-pointer items-center gap-2.5 border-b border-border/60 px-3 py-2 text-sm last:border-0 hover:bg-muted/50">
+                        <input type="checkbox" checked={!excluded.includes(s.id)}
+                          onChange={(e) => setExcluded((x) => e.target.checked ? x.filter((id) => id !== s.id) : [...x, s.id])} />
+                        <span className="min-w-0 flex-1 truncate">{s.name}</span>
+                        <span className="text-xs text-muted-foreground">{s.sectionName || "—"} · {t(dict, "students.colRoll")} {s.rollNumber ?? "—"}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )
+            )}
+            <div className="flex gap-2">
+              <Button type="submit" disabled={busy || !pFrom || !pTo} className="bg-primary text-primary-foreground">
+                {busy ? t(dict, "students.saving") : t(dict, "promo.go")}
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setPromoOpen(false)}>{t(dict, "students.close")}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
     </>
   );
 }

@@ -77,6 +77,7 @@ export default async function StudentsPage() {
             photoUrl: e.student.studentProfile?.photoUrl || null,
             accountStatus: e.student.status,
             classId: e.classId,
+            sectionId: e.sectionId,
             className: e.klass.name,
             classNameEn: e.klass.nameEn || "",
             sectionName: e.section?.name || null,

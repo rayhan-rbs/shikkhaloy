@@ -273,6 +273,12 @@ export const bn = {
     admissionOn: "ভর্তির তারিখ",
     notSet: "—",
     viewProfile: "প্রোফাইল দেখো",
+    password: "পাসওয়ার্ড (ঐচ্ছিক)",
+    passwordHint: "ফাঁকা রাখলে শক্তিশালী সাময়িক পাসওয়ার্ড অটো-জেনারেট হবে",
+    errPassword: "পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে",
+    allSections: "সব সেকশন",
+    pickClassFirst: "আগে ক্লাস বাছুন",
+
 
   },
 

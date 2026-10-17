@@ -155,8 +155,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "এই ইমেইলে সক্রিয় স্টুডেন্ট-অ্যাকাউন্ট আগেই আছে" }, { status: 400 });
     }
 
-    const tempPassword = genPassword();
+    // পাসওয়ার্ড: অ্যাডমিন দিলে সেটাই (≥৮ অক্ষর), না দিলে শক্তিশালী অটো-জেনারেট
+    // (নোট ১৪: চাইলে এই লেনথ-চেকের বদলে auth-পেজগুলোর validatePassword ব্যবহার করা যাবে)
+    const manualPassword = String(body.password ?? "").trim();
+    if (manualPassword && manualPassword.length < 8) {
+      return NextResponse.json({ success: false, error: "পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে" }, { status: 400 });
+    }
+    const tempPassword = manualPassword || genPassword();
     const hashed = await bcrypt.hash(tempPassword, 10);
+
 
     const enrollment = await prisma.$transaction(async (tx) => {
       let studentId: string;

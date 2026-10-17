@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Copy, X, Camera, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, KeyRound, Trash2, Copy, X, Camera, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -17,7 +17,7 @@ import type { Dictionary } from "@/messages/bn";
 
 interface StudentRow {
   id: string; name: string; email: string; photoUrl: string | null; accountStatus: string;
-  classId: string; className: string; classNameEn: string;
+  classId: string; sectionId: string | null; className: string; classNameEn: string;
   sectionName: string | null; rollNumber: number | null;
   status: string; admissionDate: string;
 }
@@ -51,7 +51,7 @@ function pageList(current: number, total: number): number[] {
 }
 
 interface AdmForm {
-  open: boolean; fullName: string; email: string; classId: string; sectionId: string;
+  open: boolean; fullName: string; email: string; password: string; classId: string; sectionId: string;
   roll: string; admissionDate: string;
   dob: string; gender: string; bloodGroup: string;
   fatherName: string; motherName: string; guardianPhone: string; address: string; bcNo: string;
@@ -61,7 +61,7 @@ interface AdmForm {
   guardianRelation: string; guardianOccupation: string; guardianNid: string; notes: string;
 }
 const EMPTY_ADM: AdmForm = {
-  open: false, fullName: "", email: "", classId: "", sectionId: "", roll: "", admissionDate: "",
+  open: false, fullName: "", email: "", password: "", classId: "", sectionId: "", roll: "", admissionDate: "",
   dob: "", gender: "", bloodGroup: "", fatherName: "", motherName: "", guardianPhone: "", address: "", bcNo: "",
   photoUrl: "",
   studentPhone: "", nationality: "", religion: "",
@@ -88,17 +88,19 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => { setPage(1); }, [search, classFilter]);
+  const [sectionFilter, setSectionFilter] = useState("");
+  
+  useEffect(() => { setPage(1); }, [search, classFilter, sectionFilter]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return students.filter((s) => {
       if (classFilter && s.classId !== classFilter) return false;
+      if (sectionFilter && s.sectionId !== sectionFilter) return false;
       if (!q) return true;
       return `${s.name} ${s.email} ${s.rollNumber ?? ""}`.toLowerCase().includes(q);
     });
-  }, [students, search, classFilter]);
+  }, [students, search, classFilter, sectionFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -110,6 +112,7 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
     setError("");
     if (!adm.fullName.trim()) { setError(t(dict, "students.errName")); return; }
     if (!adm.classId) { setError(t(dict, "students.errClass")); return; }
+    if (adm.password && adm.password.length < 8) { setError(t(dict, "students.errPassword")); return; }
     setBusy(true);
     try {
       const res = await fetch("/api/students", {
@@ -117,6 +120,7 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fullName: adm.fullName, email: adm.email || null,
+          password: adm.password || null,
           classId: adm.classId, sectionId: adm.sectionId || null,
           rollNumber: adm.roll || null, admissionDate: adm.admissionDate || null,
           dateOfBirth: adm.dob || null, gender: adm.gender || null,
@@ -163,6 +167,24 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
       setUploading(false);
     }
   }
+
+    async function resetPassword(s: StudentRow) {
+    if (!confirm(`${s.name} — ${t(dict, "students.resetConfirm")}`)) return;
+    setError("");
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/students/${s.id}`, { method: "PATCH" });
+      const json = await res.json();
+      if (!json.success) { setError(json.error || t(dict, "students.networkError")); return; }
+      setCreds(json.data.credentials); // একই সবুজ ব্যানার — নতুন সাময়িক পাসওয়ার্ড
+      router.refresh();
+    } catch {
+      setError(t(dict, "students.networkError"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
 
   async function removeStudent(s: StudentRow) {
     if (!confirm(`${s.name} — ${t(dict, "students.confirmDelete")}`)) return;
@@ -260,11 +282,20 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
           <CardTitle>{t(dict, "students.title")}</CardTitle>
           <div className="flex flex-wrap items-center gap-2">
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t(dict, "students.search")} className="w-44" />
-            <select value={classFilter} onChange={(e) => setClassFilter(e.target.value)}
+            <select value={classFilter} onChange={(e) => { setClassFilter(e.target.value); setSectionFilter(""); }}
               className="h-9 rounded-lg border border-border bg-background px-3 text-sm">
               <option value="">{t(dict, "students.allClasses")}</option>
               {classes.map((c) => <option key={c.id} value={c.id}>{pick(lang, c.name, c.nameEn)}</option>)}
             </select>
+            <select value={sectionFilter} disabled={!classFilter}
+              onChange={(e) => setSectionFilter(e.target.value)}
+              className="h-9 rounded-lg border border-border bg-background px-3 text-sm disabled:opacity-50">
+              <option value="">{classFilter ? t(dict, "students.allSections") : t(dict, "students.pickClassFirst")}</option>
+              {classFilter && (classes.find((c) => c.id === classFilter)?.sections ?? []).map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+
             <Button size="sm" className="bg-primary text-primary-foreground"
               onClick={() => { setError(""); setAdm({ ...EMPTY_ADM, open: true, admissionDate: todayStr() }); }}>
               <Plus size={14} className="mr-1" />{t(dict, "students.addBtn")}
@@ -300,6 +331,7 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
                             <p className="truncate text-xs text-muted-foreground">{s.email}</p>
                           </div>
                         </button>
+
                       </td>
                       <td className="py-2.5 pr-3">{pick(lang, s.className, s.classNameEn)}</td>
                       <td className="py-2.5 pr-3">{s.sectionName || "—"}</td>
@@ -311,11 +343,18 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
                         )}
                       </td>
                       <td className="py-2.5 text-right">
+                        <button onClick={() => resetPassword(s)} disabled={busy}
+                          className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-amber-500/10 hover:text-amber-600"
+                          title={t(dict, "students.resetPass")}>
+                          <KeyRound size={14} />
+                        </button>
+
                         <button onClick={() => removeStudent(s)} disabled={busy}
                           className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-600"
                           aria-label={t(dict, "students.confirmDelete")}>
                           <Trash2 size={14} />
                         </button>
+
                       </td>
                     </tr>
                   ))}
@@ -407,6 +446,13 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
                   onChange={(e) => setAdm((f) => ({ ...f, email: e.target.value }))} />
                 <p className="text-xs text-muted-foreground">{t(dict, "students.emailHint")}</p>
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="stPass">{t(dict, "students.password")}</Label>
+                <Input id="stPass" type="text" autoComplete="new-password" value={adm.password}
+                  onChange={(e) => setAdm((f) => ({ ...f, password: e.target.value }))} />
+                <p className="text-xs text-muted-foreground">{t(dict, "students.passwordHint")}</p>
+              </div>
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="stDob">{t(dict, "students.dob")}</Label>

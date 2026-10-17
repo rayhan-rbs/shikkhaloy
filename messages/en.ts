@@ -273,6 +273,12 @@ export const en: Dictionary = {
     admissionOn: "Admission date",
     notSet: "—",
     viewProfile: "View profile",
+    password: "Password (optional)",
+    passwordHint: "Leave blank to auto-generate a strong temporary password",
+    errPassword: "Password must be at least 8 characters",
+    allSections: "All sections",
+    pickClassFirst: "Pick a class first",
+
 
   },
 

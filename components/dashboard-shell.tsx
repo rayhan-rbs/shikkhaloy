@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, Calendar, Users, BookOpen, Wallet, Settings, Search, Menu, X,
+  LayoutDashboard, UserCog, Calendar, Users, BookOpen, Wallet, Settings, Search, Menu, X,
   GraduationCap, Sun, Moon, LogOut, Languages, Award, type LucideIcon,
 } from "lucide-react";
 
@@ -77,7 +77,7 @@ export default function DashboardShell({
         { href: "/dashboard", label: t(dict, "nav.dashboard"), icon: LayoutDashboard, active: pathname === "/dashboard", soon: false },
         { href: "/dashboard/academics", label: t(dict, "nav.academics"), icon: BookOpen, active: pathname.startsWith("/dashboard/academics"), soon: false },
         { href: "/dashboard/students", label: t(dict, "nav.students"), icon: Users, active: pathname.startsWith("/dashboard/students"), soon: false },
-
+        { href: "/dashboard/teachers", label: t(dict, "nav.teachers"), icon: UserCog, active: pathname.startsWith("/dashboard/teachers"), soon: false },
 
         { href: "#", label: t(dict, "nav.finance"), icon: Wallet, active: false, soon: true },
       ],
@@ -291,6 +291,11 @@ export default function DashboardShell({
                   <Award size={15} className="mr-2" />
                   {t(dict, "nav.grading")}
                 </CommandItem>
+                <CommandItem onSelect={() => { setPaletteOpen(false); router.push("/dashboard/teachers"); }}>
+                  <UserCog size={15} className="mr-2" />
+                  {t(dict, "nav.teachers")}
+                </CommandItem>
+
               </CommandGroup>
               <CommandGroup heading={t(dict, "palette.actions")}>
                 <CommandItem

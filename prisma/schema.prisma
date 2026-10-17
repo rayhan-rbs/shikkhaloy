@@ -1,7 +1,9 @@
-// ═══════════════════════════════════════════
-//  SHIKKHALOY — Database Schema v0.1
-//  Phase 1: Branch, User, AcademicSession
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  SHIKKHALOY — Database Schema (ক্যানোনিকাল)
+//  Phase 1 ✅ | Phase 2: Enrollment + StudentProfile + Shift
+//                  + StaffProfile + TeacherAssignment
+//  Source of Truth: এই ফাইলটাই (নীতি ১৩)
+// ═══════════════════════════════════════════════════════
 
 generator client {
   provider = "prisma-client-js"
@@ -25,20 +27,17 @@ model Branch {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users    User[]
-  sessions AcademicSession[]
-  shifts   Shift[]
-  gradingScales GradingScale[]
-
-  departments Department[]
-  classes     AcademicClass[]
-  enrollments Enrollment[]
-
-
+  users              User[]
+  sessions           AcademicSession[]
+  shifts             Shift[]
+  gradingScales      GradingScale[]
+  departments        Department[]
+  classes            AcademicClass[]
+  enrollments        Enrollment[]
+  teacherAssignments TeacherAssignment[]
 }
 
-// ─── 👤 ইউজার (স্টুডেন্ট/টিচার/অ্যাডমিন — সবাই এখানেই) ───
-// নীতি: অ্যাকাউন্ট কখনো DELETE হবে না, শুধু status বদলাবে
+// ─── 👤 ইউজার (নীতি ১: কখনো DELETE না — status বদলাবে) ───
 model User {
   id           String     @id @default(cuid())
   email        String     @unique
@@ -54,16 +53,18 @@ model User {
   updatedAt    DateTime   @updatedAt
   deletedAt    DateTime?
 
-  branch Branch @relation(fields: [branchId], references: [id])
+  branch             Branch             @relation(fields: [branchId], references: [id])
+  enrollments        Enrollment[]
+  studentProfile     StudentProfile?
+  staffProfile       StaffProfile?
+  teacherAssignments TeacherAssignment[]
 
   @@index([branchId])
   @@index([role])
   @@index([status])
-  enrollments Enrollment[]
-  studentProfile StudentProfile?
 }
 
-// ─── 📅 একাডেমিক সেশন (যেমন: ২০২৫-২৬) ───
+// ─── 📅 একাডেমিক সেশন (২.৫: একাধিক, ১টি সক্রিয়; ডুপ-চেক অ্যাপ-লেভেলে) ───
 model AcademicSession {
   id        String    @id @default(cuid())
   branchId  String
@@ -82,6 +83,21 @@ model AcademicSession {
   @@index([branchId])
 }
 
+// ─── ⏰ শিফট (২.৫ — সমান্তরাল তালিকা; শুধু ব্রাঞ্চের সাথে যুক্ত) ───
+model Shift {
+  id        String    @id @default(cuid())
+  branchId  String
+  branch    Branch    @relation(fields: [branchId], references: [id])
+  name      String
+  nameEn    String?
+  startTime String?   // HH:MM
+  endTime   String?   // HH:MM (end > start)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([branchId])
+}
 
 // ─── 🔖 Enums ───
 enum Role {
@@ -102,64 +118,63 @@ enum UserStatus {
   ALUMNI
 }
 
-// ═══════════ প্রতিষ্ঠান সেটিংস (সিঙ্গলটন — সিস্টেমে ১টাই রো, key="global") ═══════════
+// ─── ⚙️ প্রতিষ্ঠান সেটিংস (সিঙ্গলটন — key="global") ───
 model InstitutionSetting {
   id         String    @id @default(cuid())
-  key        String    @unique // সিঙ্গলটন গ্যারান্টি — সবসময় "global"
-  name       String    // প্রতিষ্ঠানের নাম (বাংলা)
-  nameEn     String?   // নাম (ইংরেজি)
-  tagline    String?   // ট্যাগলাইন (বাংলা)
-  taglineEn  String?   // ট্যাগলাইন (ইংরেজি)
-  brandColor String    @default("#4f46e5") // ব্র্যান্ড কালার (hex)
-  eiin       String?   // EIIN / প্রতিষ্ঠান কোড
+  key        String    @unique
+  name       String
+  nameEn     String?
+  tagline    String?
+  taglineEn  String?
+  brandColor String    @default("#4f46e5")
+  eiin       String?
   address    String?
   phone      String?
   email      String?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
-  deletedAt  DateTime? // Soft Delete (নীতি ৪)
+  deletedAt  DateTime?
 }
 
-// ═══════════ গ্রেডিং সিস্টেম (নীতি ৯: branchId প্রথম দিন থেকেই) ═══════════
+// ─── 🎯 গ্রেডিং (নীতি ৯: branchId প্রথম দিন থেকেই) ───
 model GradingScale {
   id        String    @id @default(cuid())
   branchId  String
   branch    Branch    @relation(fields: [branchId], references: [id])
-  name      String    // স্কেলের নাম (যেমন: GPA 5.00 বাংলাদেশ স্ট্যান্ডার্ড)
+  name      String
   nameEn    String?
-  isActive  Boolean   @default(true) // প্রতি ব্রাঞ্চে একটাই অ্যাক্টিভ (MVP)
+  isActive  Boolean   @default(true)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  deletedAt DateTime? // স্কেল নিজে Soft Delete (নীতি ৪)
+  deletedAt DateTime?
   rules     GradeRule[]
+  classes   AcademicClass[]
 
   @@index([branchId])
-  classes AcademicClass[]
-
 }
 
 model GradeRule {
   id        String       @id @default(cuid())
   scaleId   String
   scale     GradingScale @relation(fields: [scaleId], references: [id], onDelete: Cascade)
-  grade     String       // A+, A, A-, B, C, D, F...
-  minMarks  Float        // রেঞ্জের শুরু (0–100)
-  maxMarks  Float        // রেঞ্জের শেষ
-  point     Float        // গ্রেড পয়েন্ট (0–5)
-  isPassed  Boolean      @default(true) // F = false
-  sortOrder Int          @default(0)    // দেখানোর ক্রম
+  grade     String
+  minMarks  Float
+  maxMarks  Float
+  point     Float
+  isPassed  Boolean      @default(true)
+  sortOrder Int          @default(0)
 
   @@index([scaleId])
 }
 
-// ═══════════ একাডেমিক কাঠামো (নীতি ৯: branchId সব টেবিলে) ═══════════
+// ─── 🏛️ একাডেমিক কাঠামো ───
 model Department {
   id        String          @id @default(cuid())
   branchId  String
   branch    Branch          @relation(fields: [branchId], references: [id])
-  name      String          // যেমন: কম্পিউটার সায়েন্স (ভার্সিটি) / বিজ্ঞান (স্কুল)
+  name      String
   nameEn    String?
-  code      String?         // CSE, SCI
+  code      String?
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
   deletedAt DateTime?
@@ -174,53 +189,56 @@ model AcademicClass {
   branch         Branch        @relation(fields: [branchId], references: [id])
   departmentId   String?
   department     Department?   @relation(fields: [departmentId], references: [id])
-  gradingScaleId String?       // null = ব্রাঞ্চের সক্রিয় স্কেল (১.১২-এর বাঁধাই!)
+  gradingScaleId String?
   gradingScale   GradingScale? @relation(fields: [gradingScaleId], references: [id])
-  name           String        // ষষ্ঠ শ্রেণী / BSc CSE — সেমিস্টার ১
+  name           String
   nameEn         String?
-  numericLevel   Int?          // স্কুল: ৬,৭,৮...; ভার্সিটি: সেমিস্টার নম্বর — প্রমোশনে কাজে লাগবে
+  numericLevel   Int?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   deletedAt      DateTime?
   sections       Section[]
   subjects       Subject[]
+  enrollments    Enrollment[]
+  teacherAssignments TeacherAssignment[]
 
   @@index([branchId])
   @@index([departmentId])
-  enrollments Enrollment[]
 }
 
 model Section {
   id        String        @id @default(cuid())
   classId   String
   class     AcademicClass @relation(fields: [classId], references: [id])
-  name      String        // ক / A / Morning
+  name      String
   capacity  Int?
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   deletedAt DateTime?
+  enrollments        Enrollment[]
+  teacherAssignments TeacherAssignment[]
 
   @@index([classId])
-  enrollments Enrollment[]
 }
 
 model Subject {
   id          String        @id @default(cuid())
   classId     String
   class       AcademicClass @relation(fields: [classId], references: [id])
-  name        String        // গণিত / Introduction to Programming
+  name        String
   nameEn      String?
-  code        String?       // MATH-101
-  creditHours Float         @default(1) // ভার্সিটির GPA-ওজনে (ফেজ ৩) কাজে লাগবে
+  code        String?
+  creditHours Float         @default(1)
   isElective  Boolean       @default(false)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   deletedAt   DateTime?
+  teacherAssignments TeacherAssignment[]
 
   @@index([classId])
 }
 
-// ═══════════ ভর্তি (নীতি ২: অ্যাকাউন্ট ≠ ভর্তি-রেকর্ড) ═══════════
+// ─── 🎓 ভর্তি (নীতি ২: অ্যাকাউন্ট ≠ ভর্তি-রেকর্ড) ───
 model Enrollment {
   id            String           @id @default(cuid())
   branchId      String
@@ -231,7 +249,7 @@ model Enrollment {
   klass         AcademicClass    @relation(fields: [classId], references: [id]) // 'class' সংরক্ষিত শব্দ — তাই klass
   sectionId     String?
   section       Section?         @relation(fields: [sectionId], references: [id])
-  sessionId     String?          // AcademicSession UI আসলে ভরা হবে (ফেজ ২)
+  sessionId     String?
   session       AcademicSession? @relation(fields: [sessionId], references: [id])
   rollNumber    Int?
   status        String           @default("ACTIVE") // ACTIVE/COMPLETED/TRANSFERRED/DROPPED
@@ -245,52 +263,66 @@ model Enrollment {
   @@index([studentId])
 }
 
-// ═══════════ শিক্ষার্থী-প্রোফাইল (প্রতি অ্যাকাউন্টে ১:১ — নীতি ২) ═══════════
+// ─── 🧑‍🎓 শিক্ষার্থী-প্রোফাইল (২.৪ — User ১:১, ১৮ ফিল্ড) ───
 model StudentProfile {
-  id                 String    @id @default(cuid())
-  userId             String    @unique
-  user               User      @relation(fields: [userId], references: [id])
-  photoUrl           String?
-  dateOfBirth        DateTime?
-  gender             String?   // MALE / FEMALE / OTHER
-  bloodGroup         String?
-  fatherName         String?
-  motherName         String?
-  guardianPhone      String?
-  address            String?
-  birthCertificateNo String?
-  studentPhone       String?
-  nationality        String?
-  religion           String?   // ISLAM/HINDU/CHRISTIAN/BUDDHIST/OTHER
-  previousInstitution String?
+  id                    String    @id @default(cuid())
+  userId                String    @unique
+  user                  User      @relation(fields: [userId], references: [id])
+  photoUrl              String?
+  dateOfBirth           DateTime?
+  gender                String?
+  bloodGroup            String?
+  fatherName            String?
+  motherName            String?
+  guardianPhone         String?
+  address               String?
+  birthCertificateNo    String?
+  studentPhone          String?
+  nationality           String?
+  religion              String?
+  previousInstitution   String?
   previousQualification String?
-  guardianRelation   String?   // FATHER/MOTHER/UNCLE/AUNT/GRANDFATHER/GRANDMOTHER/OTHER
-  guardianOccupation String?
-  guardianNid        String?
-  notes              String?
-
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-
-  @@index([userId])
+  guardianRelation      String?
+  guardianOccupation    String?
+  guardianNid           String?
+  notes                 String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
 }
 
-// ═══════════ শিফট (প্রভাতী/দিবা — একাধিক সমান্তরাল চলে) ═══════════
-model Shift {
-  id        String    @id @default(cuid())
+// ─── 👩‍🏫 স্টাফ-প্রোফাইল (২.৬ — User ১:১) ───
+model StaffProfile {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id])
+  photoUrl      String?
+  designation   String?
+  qualification String?
+  phone         String?
+  joiningDate   DateTime?
+  address       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// ─── 📚 শিক্ষক-অ্যাসাইনমেন্ট (২.৬ — রুটিন/অ্যাটেনডেন্স/মার্কসের ভিত) ───
+model TeacherAssignment {
+  id        String        @id @default(cuid())
   branchId  String
-  branch    Branch    @relation(fields: [branchId], references: [id])
-  name      String
-  nameEn    String?
-  startTime String?   // "07:30"
-  endTime   String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  branch    Branch        @relation(fields: [branchId], references: [id])
+  teacherId String
+  teacher   User          @relation(fields: [teacherId], references: [id])
+  classId   String
+  klass     AcademicClass @relation(fields: [classId], references: [id])
+  sectionId String?
+  section   Section?      @relation(fields: [sectionId], references: [id])
+  subjectId String
+  subject   Subject       @relation(fields: [subjectId], references: [id])
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
   deletedAt DateTime?
 
   @@index([branchId])
+  @@index([teacherId])
 }
-
-
-
-

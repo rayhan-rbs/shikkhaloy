@@ -76,7 +76,9 @@ export default function DashboardShell({
       items: [
         { href: "/dashboard", label: t(dict, "nav.dashboard"), icon: LayoutDashboard, active: pathname === "/dashboard", soon: false },
         { href: "/dashboard/academics", label: t(dict, "nav.academics"), icon: BookOpen, active: pathname.startsWith("/dashboard/academics"), soon: false },
-,
+        { href: "/dashboard/students", label: t(dict, "nav.students"), icon: Users, active: pathname.startsWith("/dashboard/students"), soon: false },
+
+
         { href: "#", label: t(dict, "nav.finance"), icon: Wallet, active: false, soon: true },
       ],
     },
@@ -311,6 +313,15 @@ export default function DashboardShell({
                 >
                   <BookOpen size={15} className="mr-2" />
                   {t(dict, "nav.academics")}
+                </CommandItem>
+                                <CommandItem
+                  onSelect={() => {
+                    setPaletteOpen(false);
+                    router.push("/dashboard/students");
+                  }}
+                >
+                  <Users size={15} className="mr-2" />
+                  {t(dict, "nav.students")}
                 </CommandItem>
 
                 <CommandItem onSelect={() => { setPaletteOpen(false); logout(); }}>

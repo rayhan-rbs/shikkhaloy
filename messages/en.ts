@@ -162,6 +162,18 @@ export const en: Dictionary = {
     edit: "Edit",
     confirmDelete: "Really delete this?",
     nameRequired: "Name is required",
+    capacity: "Capacity",
+    addSection: "+ Section",
+    addSubject: "+ Subject",
+    editSubject: "Edit subject",
+    subjectName: "Subject name (Bangla)",
+    credit: "credit",
+    elective: "Elective",
+    emptyList: "None yet",
+    details: "View sections/subjects",
+    capInvalid: "Capacity must be 0 or a positive whole number",
+    creditInvalid: "Credit must be between 0 and 10",
+
   },
   lang: {
     bn: "বাংলা",

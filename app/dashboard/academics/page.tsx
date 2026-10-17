@@ -1,5 +1,5 @@
 // 📁 app/dashboard/academics/page.tsx
-// একাডেমিক পেজ — ডেটা সার্ভারেই লোড, ক্লায়েন্টে props হিসেবে যায়
+// একাডেমিক পেজ — বিভাগ + ক্লাস + সেকশন + বিষয় সার্ভারেই লোড; lang-aware নামের জন্য lang পাঠায়
 
 export const instant = false;
 
@@ -25,7 +25,7 @@ export default async function AcademicsPage() {
   if (!user || user.status !== "ACTIVE") redirect("/login");
   if (user.isFirstLogin) redirect("/change-password");
 
-  const [lang, departments, classes, scales] = await Promise.all([
+  const [lang, departments, classes, scales, allSections, allSubjects] = await Promise.all([
     getLang(),
     prisma.department.findMany({
       where: { branchId: user.branchId, deletedAt: null },
@@ -33,23 +33,37 @@ export default async function AcademicsPage() {
     }),
     prisma.academicClass.findMany({
       where: { branchId: user.branchId, deletedAt: null },
-      include: {
-        department: true,
-        gradingScale: true,
-        _count: {
-          select: {
-            sections: { where: { deletedAt: null } },
-            subjects: { where: { deletedAt: null } },
-          },
-        },
-      },
+      include: { department: true, gradingScale: true },
       orderBy: [{ numericLevel: "asc" }, { name: "asc" }],
     }),
     prisma.gradingScale.findMany({
       where: { branchId: user.branchId, deletedAt: null },
       orderBy: { createdAt: "asc" },
     }),
+    prisma.section.findMany({
+      where: { class: { branchId: user.branchId }, deletedAt: null },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.subject.findMany({
+      where: { class: { branchId: user.branchId }, deletedAt: null },
+      orderBy: { createdAt: "asc" },
+    }),
   ]);
+
+  // ক্লাস-প্রতি সেকশন/বিষয় গ্রুপ করা
+  const sectionsByClass = new Map<string, { id: string; name: string; capacity: number | null }[]>();
+  for (const s of allSections) {
+    const list = sectionsByClass.get(s.classId) ?? [];
+    list.push({ id: s.id, name: s.name, capacity: s.capacity });
+    sectionsByClass.set(s.classId, list);
+  }
+  const subjectsByClass = new Map<string, { id: string; name: string; nameEn: string; code: string; creditHours: number; isElective: boolean }[]>();
+  for (const s of allSubjects) {
+    const list = subjectsByClass.get(s.classId) ?? [];
+    list.push({ id: s.id, name: s.name, nameEn: s.nameEn || "", code: s.code || "", creditHours: s.creditHours, isElective: s.isElective });
+    subjectsByClass.set(s.classId, list);
+  }
+
   const dict = getDict(lang);
   const canEdit = ADMIN_ROLES.includes(user.role);
 
@@ -69,6 +83,7 @@ export default async function AcademicsPage() {
       ) : (
         <AcademicsClient
           dict={dict}
+          lang={lang}
           departments={departments.map((d) => ({
             id: d.id, name: d.name, nameEn: d.nameEn || "", code: d.code || "",
           }))}
@@ -79,12 +94,14 @@ export default async function AcademicsPage() {
             numericLevel: c.numericLevel,
             departmentId: c.departmentId,
             departmentName: c.department?.name || null,
+            departmentNameEn: c.department?.nameEn || null,
             gradingScaleId: c.gradingScaleId,
             gradingScaleName: c.gradingScale?.name || null,
-            sectionCount: c._count.sections,
-            subjectCount: c._count.subjects,
+            gradingScaleNameEn: c.gradingScale?.nameEn || null,
+            sections: sectionsByClass.get(c.id) ?? [],
+            subjects: subjectsByClass.get(c.id) ?? [],
           }))}
-          scales={scales.map((s) => ({ id: s.id, name: s.name, isActive: s.isActive }))}
+          scales={scales.map((s) => ({ id: s.id, name: s.name, nameEn: s.nameEn || "", isActive: s.isActive }))}
         />
       )}
     </>

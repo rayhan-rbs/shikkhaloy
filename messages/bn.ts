@@ -160,6 +160,18 @@ export const bn = {
     edit: "সম্পাদনা",
     confirmDelete: "সত্যিই মুছে ফেলবে?",
     nameRequired: "নাম দিন",
+    capacity: "ধারণক্ষমতা",
+    addSection: "+ সেকশন",
+    addSubject: "+ বিষয়",
+    editSubject: "বিষয় সম্পাদনা",
+    subjectName: "বিষয়ের নাম (বাংলা)",
+    credit: "ক্রেডিট",
+    elective: "ঐচ্ছিক",
+    emptyList: "এখনো নেই",
+    details: "সেকশন/বিষয় দেখো",
+    capInvalid: "ধারণক্ষমতা হবে ০ বা বড় পূর্ণসংখ্যা",
+    creditInvalid: "ক্রেডিট 0–10-এর ভেতরে দিন",
+
   },
   lang: {
     bn: "বাংলা",

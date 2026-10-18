@@ -47,8 +47,10 @@ const SLOT_INCLUDE = {
   teacher: { select: { fullName: true } },
   subject: { select: { name: true, nameEn: true } },
   klass: { select: { name: true, nameEn: true } },
-  section: { select: { name: true } },
+  section: { select: { name: true } }, classroom: { select: { name: true } },
 };
+
+
 
 type SlotRowFull = Prisma.RoutineSlotGetPayload<{ include: typeof SLOT_INCLUDE }>;
 
@@ -59,7 +61,7 @@ function toDTO(s: SlotRowFull) {
     subjectName: s.subject.name, subjectNameEn: s.subject.nameEn || "",
     className: s.klass.name, classNameEn: s.klass.nameEn || "",
     sectionId: s.sectionId, sectionName: s.section?.name || null,
-    day: s.day, period: s.period, room: s.room,
+    classroomName: s.classroom?.name || null, day: s.day, period: s.period, room: s.room,
   };
 }
 
@@ -122,6 +124,8 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const assignmentId = String(body.assignmentId || "");
+    const classroomId = body.classroomId ? String(body.classroomId) : "";
+
     const room = String(body.room || "").trim();
     const day = Number(body.day);
     const period = Number(body.period);
@@ -134,6 +138,21 @@ export async function POST(request: NextRequest) {
     });
     if (!asg) return err("অ্যাসাইনমেন্ট পাওয়া যায়নি", 404);
     if (asg.teacher.status !== "ACTIVE") return err("শিক্ষক নিষ্ক্রিয় — রুটিনে বসানো যাবে না");
+
+
+    // ③ কক্ষ-কনফ্লিক্ট (৩.৪): একই কক্ষ একই দিন-পিরিয়ডে দুই ক্লাস = ব্লক
+    if (classroomId) {
+      const cr = await prisma.classroom.findFirst({ where: { id: classroomId, branchId, deletedAt: null } });
+      if (!cr) return err("কক্ষ পাওয়া যায়নি", 404);
+      const cHit = await prisma.routineSlot.findFirst({
+        where: { branchId, day, period, classroomId, deletedAt: null },
+        include: SLOT_INCLUDE,
+      });
+      if (cHit) {
+        return err(`কক্ষ ${cr.name} ওই সময়ে ব্যস্ত — ${cHit.subject.name} (${cHit.klass.name}${cHit.section ? `-${cHit.section.name}` : ""})`);
+      }
+    }
+
 
     // ① টিচার-কনফ্লিক্ট: একই শিক্ষক একই দিন-পিরিয়ডে
     const tHit = await prisma.routineSlot.findFirst({
@@ -165,7 +184,7 @@ export async function POST(request: NextRequest) {
         branchId, assignmentId,
         teacherId: asg.teacherId, subjectId: asg.subjectId,
         classId: asg.classId, sectionId: asg.sectionId,
-        day, period, room: room || null,
+        day, period, room: room || null, classroomId: classroomId || null,
       },
     });
     return NextResponse.json({ success: true, data: { id: slot.id } });

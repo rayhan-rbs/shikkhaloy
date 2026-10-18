@@ -26,7 +26,7 @@ export default async function RoutinePage() {
   const isAdmin = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"].includes(user.role);
   if (!isAdmin && user.role !== "TEACHER") redirect("/dashboard");
 
-  const [lang, classes, assignments, teachers, settings] = await Promise.all([
+  const [lang, classes, assignments, teachers, classrooms, settings] = await Promise.all([
     getLang(),
     prisma.academicClass.findMany({
       where: { branchId: user.branchId, deletedAt: null },
@@ -49,6 +49,7 @@ export default async function RoutinePage() {
           orderBy: { fullName: "asc" },
         })
       : Promise.resolve([{ id: user.id, fullName: user.fullName }]),
+    prisma.classroom.findMany({ where: { branchId: user.branchId, deletedAt: null }, orderBy: { name: "asc" },}),
     prisma.institutionSetting.findUnique({ where: { key: "global" } }),
   ]);
 
@@ -92,6 +93,7 @@ export default async function RoutinePage() {
           teacherId: a.teacherId, teacherName: a.teacher.fullName,
         }))}
       teachers={teachers.map((t) => ({ id: t.id, name: t.fullName }))}
+      classrooms={classrooms.map((c) => ({ id: c.id, name: c.name, capacity: c.capacity }))}
     />
   );
 }

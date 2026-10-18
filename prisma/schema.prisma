@@ -37,6 +37,7 @@ model Branch {
   attendances        Attendance[]
   leaveApplications  LeaveApplication[]
   routineSlots       RoutineSlot[]
+  classrooms         Classroom[]
 }
 
 // ─── 👤 ইউজার (নীতি ১) ───
@@ -409,6 +410,9 @@ model RoutineSlot {
   klass        AcademicClass     @relation(fields: [classId], references: [id])
   sectionId    String?           // null = পুরো ক্লাস দখল করে
   section      Section?          @relation(fields: [sectionId], references: [id])
+  classroomId  String?           // ৩.৪ — কক্ষ-কনফ্লিক্টের চাবি (ঐচ্ছিক)
+  classroom    Classroom?        @relation(fields: [classroomId], references: [id])
+
   day          Int               // ০=শনি … ৬=শুক্র
   period       Int               // ১..৮ (MVP fixed)
   room         String?
@@ -420,4 +424,22 @@ model RoutineSlot {
   @@index([branchId])
   @@index([classId, day, period])
   @@index([teacherId, day, period])
+  @@index([classroomId, day, period])
+
 }
+
+// ─── 🏫 ক্লাসরুম (৩.৪ — রুটিনের কক্ষ-কনফ্লিক্টের উৎস) ───
+model Classroom {
+  id        String    @id @default(cuid())
+  branchId  String
+  branch    Branch    @relation(fields: [branchId], references: [id])
+  name      String
+  capacity  Int?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  routineSlots RoutineSlot[]
+
+  @@index([branchId])
+}
+

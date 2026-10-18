@@ -1,13 +1,11 @@
 // 📁 app/dashboard/routine/routine-client.tsx
-// ৩.৩: ক্লাস-গ্রিড (দিন×পিরিয়ড, লাল=কনফ্লিক্ট) + স্লট-যোগ-ফর্ম (প্রি-কনফ্লিক্ট-হিন্ট)
-// + টিচার-রুটিন ভিউ + ⬇️/🖨️ (landscape গ্রিড) | teacher = read-only
+// ৩.৩ গ্রিড + ৩.৪: room-টেক্সটের বদলে ক্লাসরুম-সিলেক্ট; চিপে কক্ষ-নাম দেখায়
 
 "use client";
 import { useMemo, useState } from "react";
 import { CalendarRange, Download, Plus, Printer, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { t, type Lang } from "@/lib/i18n";
 import type { Dictionary } from "@/messages/bn";
@@ -17,11 +15,12 @@ import { printTable, type PrintHeader } from "@/lib/print";
 interface ClassOption { id: string; name: string; nameEn: string; sections: { id: string; name: string }[]; }
 interface AssignmentOpt { id: string; classId: string; sectionId: string | null; sectionName: string | null; subjectName: string; subjectNameEn: string; teacherId: string; teacherName: string; }
 interface TeacherOpt { id: string; name: string; }
+interface RoomOpt { id: string; name: string; capacity: number | null; }
 interface SlotRow {
   id: string; assignmentId: string; teacherId: string; teacherName: string;
   subjectName: string; subjectNameEn: string;
   className: string; classNameEn: string; sectionId: string | null; sectionName: string | null;
-  day: number; period: number; room: string | null;
+  day: number; period: number; room: string | null; classroomName: string | null;
 }
 
 const PERIODS = 8;
@@ -37,11 +36,10 @@ function dayLabels(lang: Lang): string[] {
     : ["শনি", "রবি", "সোম", "মঙ্গল", "বুধ", "বৃহস্পতি", "শুক্র"];
 }
 
-// কনফ্লিক্ট-ডিটেক্টর (ক্লায়েন্ট-হাইলাইট) — সার্ভার-ব্লকের জ্যোতিষ্ক-প্রতিবিম্ব (নোট ৩৫)
 function computeConflicts(slots: SlotRow[]): Set<string> {
   const bad = new Set<string>();
-  const byTP = new Map<string, SlotRow[]>(); // টিচার+দিন+পিরিয়ড
-  const byDP = new Map<string, SlotRow[]>(); // দিন+পিরিয়ড (সেকশন-ওভারল্যাপের জন্য)
+  const byTP = new Map<string, SlotRow[]>();
+  const byDP = new Map<string, SlotRow[]>();
   for (const s of slots) {
     const k1 = `${s.day}-${s.period}-${s.teacherId}`;
     const a = byTP.get(k1) ?? []; a.push(s); byTP.set(k1, a);
@@ -93,6 +91,7 @@ function GridBlock({ slots, lang, dict, isAdmin, onDelete, busy }: {
                       <div className="space-y-1">
                         {cell.map((s) => {
                           const bad = conflicts.has(s.id);
+                          const roomTxt = s.classroomName || s.room;
                           return (
                             <div key={s.id}
                               className={`rounded-md border px-1.5 py-1 leading-snug ${
@@ -104,7 +103,7 @@ function GridBlock({ slots, lang, dict, isAdmin, onDelete, busy }: {
                               <p className="text-[10px] opacity-80">
                                 {s.teacherName}
                                 {s.sectionName ? ` · ${s.sectionName}` : ""}
-                                {s.room ? ` · ${s.room}` : ""}
+                                {roomTxt ? ` · ${roomTxt}` : ""}
                               </p>
                               {bad && <p className="text-[10px] font-semibold">⚠️ {t(dict, "routine.conflict")}</p>}
                               {isAdmin && (
@@ -130,7 +129,7 @@ function GridBlock({ slots, lang, dict, isAdmin, onDelete, busy }: {
   );
 }
 
-export default function RoutineClient({ dict, lang, institution, isAdmin, meId, meName, classes, assignments, teachers }: {
+export default function RoutineClient({ dict, lang, institution, isAdmin, meId, meName, classes, assignments, teachers, classrooms }: {
   dict: Dictionary;
   lang: Lang;
   institution: PrintHeader;
@@ -140,17 +139,15 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
   classes: ClassOption[];
   assignments: AssignmentOpt[];
   teachers: TeacherOpt[];
+  classrooms: RoomOpt[];
 }) {
-  // ক্লাস-মোড
   const [classId, setClassId] = useState("");
   const [sectionId, setSectionId] = useState("");
   const [clsSlots, setClsSlots] = useState<SlotRow[] | null>(null);
-  // স্লট-যোগ-ফর্ম
   const [fDay, setFDay] = useState("");
   const [fPeriod, setFPeriod] = useState("");
   const [fAssignId, setFAssignId] = useState("");
-  const [fRoom, setFRoom] = useState("");
-  // টিচার-মোড
+  const [fRoomId, setFRoomId] = useState(""); // ৩.৪: কক্ষ-সিলেক্ট
   const [tTeacherId, setTTeacherId] = useState(isAdmin ? "" : meId);
   const [tSlots, setTSlots] = useState<SlotRow[] | null>(null);
   const [tTeacherName, setTTeacherName] = useState(isAdmin ? "" : meName);
@@ -163,7 +160,6 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
   const selClass = classes.find((c) => c.id === classId) || null;
   const days = dayLabels(lang);
 
-  // যোগ-ফর্মের অ্যাসাইনমেন্ট-অপশন: বাছাই-স্কোপের সাথে মেলে (সেকশন-ভিউতে class-wide + সেটাই)
   const assignOptions = useMemo(() => {
     if (!classId) return [];
     return assignments.filter((a) =>
@@ -172,7 +168,6 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
   }, [assignments, classId, sectionId]);
   const fAssign = assignOptions.find((a) => a.id === fAssignId) || null;
 
-  // প্রি-কনফ্লিক্ট-হিন্ট — সার্ভারও আটকাবে, এটা বন্ধুসূত্র সতর্কতা
   const previewWarn = useMemo(() => {
     if (!fAssign || fDay === "" || !fPeriod) return false;
     const d = Number(fDay), p = Number(fPeriod);
@@ -217,12 +212,12 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
     try {
       const res = await fetch("/api/routine", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assignmentId: fAssignId, day: Number(fDay), period: Number(fPeriod), room: fRoom }),
+        body: JSON.stringify({ assignmentId: fAssignId, day: Number(fDay), period: Number(fPeriod), classroomId: fRoomId || null }),
       });
       const json = await res.json();
       if (!json.success) { setError(json.error || t(dict, "routine.networkError")); return; }
       setOkMsg(t(dict, "routine.saved"));
-      setFAssignId(""); setFRoom("");
+      setFAssignId(""); setFRoomId("");
       loadClass();
     } catch { setError(t(dict, "routine.networkError")); } finally { setBusy(false); }
   }
@@ -238,13 +233,16 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
     } catch { setError(t(dict, "routine.networkError")); } finally { setBusy(false); }
   }
 
-  // গ্রিড → টেবিল-রো (printTable/excel উভয়ের জন্য — পিরিয়ড-সারি × দিন-কলাম)
+  function roomTxt(s: SlotRow): string {
+    return s.classroomName || s.room || "";
+  }
+
   function gridRows(slots: SlotRow[]): { key: string; vals: string[] }[] {
     return Array.from({ length: PERIODS }, (_, pi) => {
       const vals = days.map((_, d) => {
         const cell = slots.filter((s) => s.day === d && s.period === pi + 1);
         return cell.length === 0 ? "—" : cell
-          .map((s) => `${pick(lang, s.subjectName, s.subjectNameEn)} · ${s.teacherName}${s.sectionName ? ` (${s.sectionName})` : ""}${s.room ? ` · ${s.room}` : ""}`)
+          .map((s) => `${pick(lang, s.subjectName, s.subjectNameEn)} · ${s.teacherName}${s.sectionName ? ` (${s.sectionName})` : ""}${roomTxt(s) ? ` · ${roomTxt(s)}` : ""}`)
           .join(" | ");
       });
       return { key: String(pi + 1), vals };
@@ -290,7 +288,6 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
         <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">🎉 {okMsg}</div>
       )}
 
-      {/* ক্লাস রুটিন */}
       <Card>
         <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="flex items-center gap-2"><CalendarRange size={18} />{t(dict, "routine.classTab")}</CardTitle>
@@ -325,7 +322,6 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
             <GridBlock slots={clsSlots} lang={lang} dict={dict} isAdmin={isAdmin} onDelete={deleteSlot} busy={busy} />
           )}
 
-          {/* স্লট যোগ — শুধু admin */}
           {isAdmin && clsSlots != null && (
             <form onSubmit={addSlot} className="mt-5 space-y-3 rounded-xl border border-border p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t(dict, "routine.addSlot")}</p>
@@ -361,7 +357,10 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
                     </div>
                     <div className="space-y-1.5">
                       <Label>{t(dict, "routine.room")}</Label>
-                      <Input value={fRoom} placeholder={t(dict, "routine.roomPh")} onChange={(e) => setFRoom(e.target.value)} />
+                      <select value={fRoomId} className={sel} onChange={(e) => setFRoomId(e.target.value)}>
+                        <option value="">{t(dict, "routine.roomNone")}</option>
+                        {classrooms.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                      </select>
                     </div>
                   </div>
                   {previewWarn && (
@@ -377,7 +376,6 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
         </CardContent>
       </Card>
 
-      {/* টিচার রুটিন ভিউ */}
       <Card className="mt-6">
         <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>{t(dict, "routine.teacherTab")}</CardTitle>

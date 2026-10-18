@@ -37,7 +37,7 @@ export default async function AttendancePage() {
           select: { classId: true, sectionId: true },
         })
       : Promise.resolve([] as { classId: string; sectionId: string | null }[]),
-    prisma.institutionSetting.findUnique({ where: { key: "global" }, select: { name: true } }),
+    prisma.institutionSetting.findUnique({ where: { key: "global" } }),
   ]);
 
   // শিক্ষক = শুধু নিজের অ্যাসাইন ক্লাস-সেকশন; admin = null মানে সব
@@ -54,7 +54,13 @@ export default async function AttendancePage() {
     <AttendanceClient
       dict={dict}
       lang={lang}
-      institutionName={settings?.name || "শিক্ষালয়"}
+      institution={{
+        name: settings?.name || "শিক্ষালয়", nameEn: settings?.nameEn || null,
+        tagline: settings?.tagline || null, taglineEn: settings?.taglineEn || null,
+        address: settings?.address || null, phone: settings?.phone || null,
+        email: settings?.email || null, eiin: settings?.eiin || null,
+        logoUrl: settings?.logoUrl || null,
+      }}
       classes={visibleClasses.map((c) => ({
         id: c.id, name: c.name, nameEn: c.nameEn || "",
         sections: c.sections.map((s) => ({ id: s.id, name: s.name })),

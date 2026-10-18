@@ -41,7 +41,7 @@ export default async function TeachersPage() {
       orderBy: [{ numericLevel: "asc" }, { name: "asc" }],
     }),
     // ২.৯: প্রিন্ট-হেডারের জন্য প্রতিষ্ঠানের নাম
-    prisma.institutionSetting.findUnique({ where: { key: "global" }, select: { name: true } }),
+    prisma.institutionSetting.findUnique({ where: { key: "global" } }),
   ]);
 
   if (!ADMIN_ROLES.includes(user.role)) redirect("/dashboard");
@@ -51,7 +51,14 @@ export default async function TeachersPage() {
     <TeachersClient
       dict={dict}
       lang={lang}
-      institutionName={settings?.name || "শিক্ষালয়"}
+      institution={{
+        name: settings?.name || "শিক্ষালয়", nameEn: settings?.nameEn || null,
+        tagline: settings?.tagline || null, taglineEn: settings?.taglineEn || null,
+        address: settings?.address || null, phone: settings?.phone || null,
+        email: settings?.email || null, eiin: settings?.eiin || null,
+        logoUrl: settings?.logoUrl || null,
+      }}
+
       teachers={teachers.map((t) => ({
         id: t.id, name: t.fullName, email: t.email, role: t.role, status: t.status,
         photoUrl: t.staffProfile?.photoUrl || null,

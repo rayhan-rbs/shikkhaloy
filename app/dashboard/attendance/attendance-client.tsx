@@ -1,5 +1,6 @@
 // 📁 app/dashboard/attendance/attendance-client.tsx
 // ৩.১: দৈনিক হাজিরা (বাল্ক) + মাসিক সারাংশ (⬇️/🖨️ — lib/export+print রিইউজ)
+// ৩.১.১: institution-অবজেক্ট কন্ট্রাক্ট (PrintHeader)
 
 "use client";
 import { useMemo, useState } from "react";
@@ -10,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { t, type Lang } from "@/lib/i18n";
 import type { Dictionary } from "@/messages/bn";
 import { exportExcel } from "@/lib/export";
-import { printTable } from "@/lib/print";
+import { printTable, type PrintHeader } from "@/lib/print";
 
 interface ClassOption { id: string; name: string; nameEn: string; sections: { id: string; name: string }[]; }
 interface RosterRow { enrollmentId: string; studentId: string; name: string; email: string; photoUrl: string | null; roll: number | null; status: string | null; note: string | null; }
@@ -33,10 +34,10 @@ const STATUS_OPTS: { key: Mark; labelKey: string; activeCls: string }[] = [
   { key: "LEAVE", labelKey: "att.leave", activeCls: "border-amber-500 bg-amber-500/15 text-amber-700 dark:text-amber-300" },
 ];
 
-export default function AttendanceClient({ dict, lang, institutionName, classes, allowed }: {
+export default function AttendanceClient({ dict, lang, institution, classes, allowed }: {
   dict: Dictionary;
   lang: Lang;
-  institutionName: string;
+  institution: PrintHeader;
   classes: ClassOption[];
   allowed: { classId: string; sectionId: string | null }[] | null;
 }) {
@@ -150,16 +151,16 @@ export default function AttendanceClient({ dict, lang, institutionName, classes,
     const sec = sectionOptions.find((s) => s.id === sectionId)?.name ?? "";
     const ok = printTable({
       title: `${t(dict, "att.summaryTitle")} — ${month}`,
-      institution: institutionName,
+      header: institution, lang, orientation: "portrait",
       subtitle: [cls, sec].filter(Boolean).join(" · "),
       columns: [
-        { header: t(dict, "att.colName"), key: "name" },
-        { header: t(dict, "att.colRoll"), key: "roll" },
-        { header: t(dict, "att.colPresent"), key: "present" },
-        { header: t(dict, "att.colAbsent"), key: "absent" },
-        { header: t(dict, "att.colLeave"), key: "leave" },
-        { header: t(dict, "att.colTotal"), key: "total" },
-        { header: t(dict, "att.colPercent"), key: "percent" },
+        { header: t(dict, "att.colName"), key: "name", width: "34%" },
+        { header: t(dict, "att.colRoll"), key: "roll", width: "10%", align: "center" },
+        { header: t(dict, "att.colPresent"), key: "present", width: "11%", align: "center" },
+        { header: t(dict, "att.colAbsent"), key: "absent", width: "11%", align: "center" },
+        { header: t(dict, "att.colLeave"), key: "leave", width: "11%", align: "center" },
+        { header: t(dict, "att.colTotal"), key: "total", width: "11%", align: "center" },
+        { header: t(dict, "att.colPercent"), key: "percent", width: "11%", align: "center" },
       ],
       rows: summary.map((r) => ({
         name: r.name, roll: r.roll ?? "—", present: r.present, absent: r.absent,

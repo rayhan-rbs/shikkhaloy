@@ -1,13 +1,13 @@
 // 📁 app/dashboard/students/students-client.tsx
 // ২.৪: সমৃদ্ধ ভর্তি + ছবি + পেজিনেশন | ২.৭: প্রমোশন + স্ট্যাটাস-ফিল্টার
-// ২.৮: ⬇️⬆️ Excel | ২.৯: 🖨️ প্রিন্ট/PDF
+// ২.৮: ⬇️⬆️ Excel | ২.৯: 🖨️ প্রিন্ট/PDF | ৩.১.১: institution-অবজেক্ট কন্ট্রাক্ট
 // ক্রেডেনশিয়াল-প্রিন্ট নিয়ম: বাটন শুধু ব্যানারের ভেতরে (state ক্ষণস্থায়ী —
 // সার্ভারে পাসওয়ার্ড নেই, তাই "পরে প্রিন্ট" অসম্ভব; স্থায়ী কপি = এক্সেল-ফাইল)
 
 "use client";
 import { exportExcel } from "@/lib/export";
 import * as XLSX from "xlsx";
-import { printTable } from "@/lib/print";
+import { printTable, type PrintHeader } from "@/lib/print";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -74,12 +74,14 @@ const EMPTY_ADM: AdmForm = {
   guardianRelation: "", guardianOccupation: "", guardianNid: "", notes: "",
 };
 
-export default function StudentsClient({ dict, lang, students, classes, stats, institutionName }: {
+// ৩.১.১: prop = institution (PrintHeader অবজেক্ট — page.tsx থেকে InstitutionSetting
+// পূর্ণ-রেকর্ড; institutionName-স্ট্রিং প্যাটার্ন বাদ — হ্যান্ডশেক এক নামে)
+export default function StudentsClient({ dict, lang, students, classes, stats, institution }: {
   dict: Dictionary;
   lang: Lang;
   students: StudentRow[];
   classes: ClassOption[];
-  institutionName: string;
+  institution: PrintHeader;
   stats: { total: number; active: number };
 }) {
   const router = useRouter();
@@ -211,7 +213,7 @@ export default function StudentsClient({ dict, lang, students, classes, stats, i
 
     const ok = printTable({
       title: t(dict, "students.title"),
-      institution: institutionName,
+      header: institution, lang,
       subtitle: parts.join(" · "),
       columns: [
         { header: t(dict, "students.colName"), key: "name" },
@@ -234,7 +236,7 @@ export default function StudentsClient({ dict, lang, students, classes, stats, i
     if (!impCreds) return;
     const ok = printTable({
       title: `${t(dict, "xlsx.importTitle")} — ${t(dict, "students.credsTitle")}`,
-      institution: institutionName,
+      header: institution, lang,
       subtitle: `${impCreds.count} ${t(dict, "xlsx.done")}`,
       columns: [
         { header: t(dict, "students.colName"), key: "name" },
@@ -251,7 +253,7 @@ export default function StudentsClient({ dict, lang, students, classes, stats, i
     if (!creds) return;
     const ok = printTable({
       title: t(dict, "students.credsTitle"),
-      institution: institutionName,
+      header: institution, lang,
       subtitle: creds.name,
       columns: [
         { header: t(dict, "students.colName"), key: "name" },

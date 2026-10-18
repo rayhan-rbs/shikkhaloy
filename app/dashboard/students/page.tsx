@@ -45,7 +45,7 @@ export default async function StudentsPage() {
       include: { sections: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } } },
       orderBy: [{ numericLevel: "asc" }, { name: "asc" }],
     }),
-    prisma.institutionSetting.findUnique({ where: { key: "global" }, select: { name: true } }),
+    prisma.institutionSetting.findUnique({ where: { key: "global" } }),
     prisma.user.count({ where: { branchId: user.branchId, role: "STUDENT", deletedAt: null } }),
     prisma.enrollment.count({ where: { branchId: user.branchId, deletedAt: null, status: "ACTIVE" } }),
   ]);
@@ -71,7 +71,13 @@ export default async function StudentsPage() {
           dict={dict}
           lang={lang}
           stats={{ total: studentCount, active: activeCount }}
-          institutionName={settings?.name || "শিক্ষালয়"}
+          institution={{
+            name: settings?.name || "শিক্ষালয়", nameEn: settings?.nameEn || null,
+            tagline: settings?.tagline || null, taglineEn: settings?.taglineEn || null,
+            address: settings?.address || null, phone: settings?.phone || null,
+            email: settings?.email || null, eiin: settings?.eiin || null,
+            logoUrl: settings?.logoUrl || null,
+          }}
           students={enrollments.map((e) => ({
             id: e.id,
             name: e.student.fullName,

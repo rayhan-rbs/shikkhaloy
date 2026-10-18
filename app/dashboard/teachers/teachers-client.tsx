@@ -1,7 +1,6 @@
 // 📁 app/dashboard/teachers/teachers-client.tsx
 // ২.৬: তালিকা + যোগ/এডিট + 🔑 রিসেট + 🗑️ নিষ্ক্রিয় + বিষয়-অ্যাসাইনমেন্ট ম্যানেজার
-// ২.৮: ⬇️ এক্সেল-এক্সপোর্ট | ২.৯: 🖨️ প্রিন্ট/PDF (institutionName হেডারে)
-// ছবি-ফিল্ডের লেবেল শিক্ষার্থী-সেকশন থেকেই রিইউজ (students.changePhoto ইত্যাদি)
+// ২.৮: ⬇️ এক্সেল-এক্সপোর্ট | ২.৯: 🖨️ প্রিন্ট/PDF | ৩.১.১: institution-অবজেক্ট কন্ট্রাক্ট
 
 "use client";
 
@@ -16,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { t, type Lang } from "@/lib/i18n";
 import type { Dictionary } from "@/messages/bn";
 import { exportExcel } from "@/lib/export";
-import { printTable } from "@/lib/print";
+import { printTable, type PrintHeader } from "@/lib/print";
 
 interface AssignRow { id: string; subjectName: string; subjectNameEn: string; className: string; classNameEn: string; sectionName: string | null; }
 interface TeacherRow { id: string; name: string; email: string; role: string; status: string; photoUrl: string | null; designation: string | null; qualification: string | null; phone: string | null; joiningDate: string | null; address: string | null; assignments: AssignRow[]; }
@@ -39,8 +38,9 @@ function Avatar({ url, name }: { url: string | null; name: string }) {
 interface TForm { open: boolean; id: string | null; fullName: string; email: string; password: string; role: string; designation: string; qualification: string; phone: string; joiningDate: string; address: string; photoUrl: string; }
 const EMPTY_T: TForm = { open: false, id: null, fullName: "", email: "", password: "", role: "TEACHER", designation: "", qualification: "", phone: "", joiningDate: "", address: "", photoUrl: "" };
 
-export default function TeachersClient({ dict, lang, institutionName, teachers, classes }: {
-  dict: Dictionary; lang: Lang; institutionName: string; teachers: TeacherRow[]; classes: ClassOption[];
+// ৩.১.১: prop = institution (PrintHeader অবজেক্ট — page.tsx থেকে InstitutionSetting পূর্ণ-রেকর্ড)
+export default function TeachersClient({ dict, lang, institution, teachers, classes }: {
+  dict: Dictionary; lang: Lang; institution: PrintHeader; teachers: TeacherRow[]; classes: ClassOption[];
 }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -204,15 +204,15 @@ export default function TeachersClient({ dict, lang, institutionName, teachers, 
     if (search.trim()) parts.push(`"${search.trim()}"`);
     const ok = printTable({
       title: t(dict, "teachers.title"),
-      institution: institutionName,
+      header: institution, lang,
       subtitle: parts.join(" · "),
       columns: [
-        { header: t(dict, "teachers.colName"), key: "name" },
-        { header: t(dict, "teachers.colDesignation"), key: "desig" },
-        { header: t(dict, "teachers.colRole"), key: "role" },
-        { header: t(dict, "teachers.phone"), key: "phone" },
-        { header: t(dict, "teachers.joiningDate"), key: "joining" },
-        { header: t(dict, "teachers.colAssign"), key: "assign" },
+        { header: t(dict, "teachers.colName"), key: "name", width: "24%" },
+        { header: t(dict, "teachers.colDesignation"), key: "desig", width: "14%" },
+        { header: t(dict, "teachers.colRole"), key: "role", width: "10%" },
+        { header: t(dict, "teachers.phone"), key: "phone", width: "12%" },
+        { header: t(dict, "teachers.joiningDate"), key: "joining", width: "12%" },
+        { header: t(dict, "teachers.colAssign"), key: "assign", width: "28%" },
       ],
       rows: filtered.map((s) => ({
         name: `${s.name} (${s.email})`, desig: s.designation || "—",

@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════
 //  SHIKKHALOY — Database Schema (ক্যানোনিকাল)
-//  Phase 1-2 ✅ | Phase 3.1: Attendance 🆕
+//  Phase 1-2 ✅ | 3.1 Attendance ✅ | 3.2 LeaveApplication 🆕
 //  Source of Truth: এই ফাইলটাই (নীতি ১৩)
 // ═══════════════════════════════════════════════════════
 
@@ -35,6 +35,7 @@ model Branch {
   enrollments        Enrollment[]
   teacherAssignments TeacherAssignment[]
   attendances        Attendance[]
+  leaveApplications  LeaveApplication[]
 }
 
 // ─── 👤 ইউজার (নীতি ১) ───
@@ -60,6 +61,8 @@ model User {
   teacherAssignments TeacherAssignment[]
   attendances        Attendance[]       @relation("AttendanceStudent")
   markedAttendances  Attendance[]       @relation("AttendanceMarker")
+  leaveApplications  LeaveApplication[] @relation("LeaveStudent")
+  decidedLeaves      LeaveApplication[] @relation("LeaveDecider")
 
   @@index([branchId])
   @@index([role])
@@ -204,6 +207,7 @@ model AcademicClass {
   enrollments    Enrollment[]
   teacherAssignments TeacherAssignment[]
   attendances    Attendance[]
+  leaveApplications LeaveApplication[]
 
   @@index([branchId])
   @@index([departmentId])
@@ -221,6 +225,7 @@ model Section {
   enrollments        Enrollment[]
   teacherAssignments TeacherAssignment[]
   attendances        Attendance[]
+  leaveApplications  LeaveApplication[]
 
   @@index([classId])
 }
@@ -355,4 +360,30 @@ model Attendance {
   @@unique([studentId, date]) // এক শিক্ষার্থী = দিনে এক রেকর্ড; upsert = পুনঃসংরক্ষণ নিরাপদ
   @@index([branchId, date])
   @@index([classId, date])
+}
+
+// ─── 📝 ছুটির আবেদন (৩.২ — অনুমোদনে অটো Attendance-LEAVE; নীতি ৫: decidedBy=অডিট) ───
+model LeaveApplication {
+  id          String        @id @default(cuid())
+  branchId    String
+  branch      Branch        @relation(fields: [branchId], references: [id])
+  studentId   String
+  student     User          @relation("LeaveStudent", fields: [studentId], references: [id])
+  classId     String
+  klass       AcademicClass @relation(fields: [classId], references: [id])
+  sectionId   String?       // স্ন্যাপশট — আবেদনের মুহূর্তের সেকশন
+  section     Section?      @relation(fields: [sectionId], references: [id])
+  fromDate    DateTime      @db.Date
+  toDate      DateTime      @db.Date
+  reason      String
+  status      String        @default("PENDING") // PENDING/APPROVED/REJECTED
+  decidedById String?
+  decidedBy   User?         @relation("LeaveDecider", fields: [decidedById], references: [id])
+  decidedAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+
+  @@index([branchId, status])
+  @@index([studentId])
 }

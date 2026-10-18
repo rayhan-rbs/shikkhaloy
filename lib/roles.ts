@@ -29,6 +29,7 @@ export const ROUTE_ROLES: { prefix: string; roles: Role[] }[] = [
   // যাচাই API/পেজের canAccess-এ; proxy শুধু বর্ণা-লেভেল। STAFF যুক্ত হবে
   // স্টাফ-হাজিরা এলে ৩.২+)
   { prefix: "/dashboard/attendance", roles: [...ADMINS, "TEACHER"] },
+  { prefix: "/dashboard/leave", roles: [...ADMINS, "TEACHER"] },
 
   // উদাহরণ (ভবিষ্যৎ): অ্যাকাউন্ট্স-প্যানেল
   // { prefix: "/dashboard/finance", roles: [...ADMINS, "ACCOUNTANT"] },

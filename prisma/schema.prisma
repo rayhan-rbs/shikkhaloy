@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════
 //  SHIKKHALOY — Database Schema (ক্যানোনিকাল)
-//  Phase 1-2 ✅ | 3.1 Attendance ✅ | 3.2 LeaveApplication 🆕
+//  Phase 1-2 ✅ | 3.1 Attendance ✅ | 3.2 Leave ✅ | 3.3 RoutineSlot 🆕
 //  Source of Truth: এই ফাইলটাই (নীতি ১৩)
 // ═══════════════════════════════════════════════════════
 
@@ -36,6 +36,7 @@ model Branch {
   teacherAssignments TeacherAssignment[]
   attendances        Attendance[]
   leaveApplications  LeaveApplication[]
+  routineSlots       RoutineSlot[]
 }
 
 // ─── 👤 ইউজার (নীতি ১) ───
@@ -63,6 +64,7 @@ model User {
   markedAttendances  Attendance[]       @relation("AttendanceMarker")
   leaveApplications  LeaveApplication[] @relation("LeaveStudent")
   decidedLeaves      LeaveApplication[] @relation("LeaveDecider")
+  routineSlots       RoutineSlot[]      @relation("RoutineTeacher")
 
   @@index([branchId])
   @@index([role])
@@ -208,6 +210,7 @@ model AcademicClass {
   teacherAssignments TeacherAssignment[]
   attendances    Attendance[]
   leaveApplications LeaveApplication[]
+  routineSlots   RoutineSlot[]
 
   @@index([branchId])
   @@index([departmentId])
@@ -226,6 +229,7 @@ model Section {
   teacherAssignments TeacherAssignment[]
   attendances        Attendance[]
   leaveApplications  LeaveApplication[]
+  routineSlots       RoutineSlot[]
 
   @@index([classId])
 }
@@ -243,6 +247,7 @@ model Subject {
   updatedAt   DateTime      @updatedAt
   deletedAt   DateTime?
   teacherAssignments TeacherAssignment[]
+  routineSlots       RoutineSlot[] @relation("RoutineSubject")
 
   @@index([classId])
 }
@@ -331,12 +336,13 @@ model TeacherAssignment {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   deletedAt DateTime?
+  routineSlots RoutineSlot[]
 
   @@index([branchId])
   @@index([teacherId])
 }
 
-// ─── ✅ অ্যাটেনডেন্স (৩.১ — দৈনিক; নীতি ৪: method; নীতি ৫: markedBy=অডিট) ───
+// ─── ✅ অ্যাটেনডেন্স (৩.১) ───
 model Attendance {
   id         String        @id @default(cuid())
   branchId   String
@@ -345,7 +351,7 @@ model Attendance {
   student    User          @relation("AttendanceStudent", fields: [studentId], references: [id])
   classId    String
   klass      AcademicClass @relation(fields: [classId], references: [id])
-  sectionId  String?       // স্ন্যাপশট — কোন মোডে (সেকশন/পুরো-ক্লাস) নেওয়া হয়েছিল
+  sectionId  String?
   section    Section?      @relation(fields: [sectionId], references: [id])
   date       DateTime      @db.Date
   status     String        // PRESENT/ABSENT/LEAVE
@@ -357,12 +363,12 @@ model Attendance {
   updatedAt  DateTime      @updatedAt
   deletedAt  DateTime?
 
-  @@unique([studentId, date]) // এক শিক্ষার্থী = দিনে এক রেকর্ড; upsert = পুনঃসংরক্ষণ নিরাপদ
+  @@unique([studentId, date])
   @@index([branchId, date])
   @@index([classId, date])
 }
 
-// ─── 📝 ছুটির আবেদন (৩.২ — অনুমোদনে অটো Attendance-LEAVE; নীতি ৫: decidedBy=অডিট) ───
+// ─── 📝 ছুটির আবেদন (৩.২) ───
 model LeaveApplication {
   id          String        @id @default(cuid())
   branchId    String
@@ -371,7 +377,7 @@ model LeaveApplication {
   student     User          @relation("LeaveStudent", fields: [studentId], references: [id])
   classId     String
   klass       AcademicClass @relation(fields: [classId], references: [id])
-  sectionId   String?       // স্ন্যাপশট — আবেদনের মুহূর্তের সেকশন
+  sectionId   String?
   section     Section?      @relation(fields: [sectionId], references: [id])
   fromDate    DateTime      @db.Date
   toDate      DateTime      @db.Date
@@ -386,4 +392,32 @@ model LeaveApplication {
 
   @@index([branchId, status])
   @@index([studentId])
+}
+
+// ─── 🗓️ রুটিন-স্লট (৩.৩ — assignment-ভিত্তিক + স্ন্যাপশট-কলাম) ───
+model RoutineSlot {
+  id           String            @id @default(cuid())
+  branchId     String
+  branch       Branch            @relation(fields: [branchId], references: [id])
+  assignmentId String
+  assignment   TeacherAssignment @relation(fields: [assignmentId], references: [id])
+  teacherId    String            // স্ন্যাপশট — টিচার-কনফ্লিক্ট কুয়েরির জন্য
+  teacher      User              @relation("RoutineTeacher", fields: [teacherId], references: [id])
+  subjectId    String            // স্ন্যাপশট
+  subject      Subject           @relation("RoutineSubject", fields: [subjectId], references: [id])
+  classId      String            // স্ন্যাপশট
+  klass        AcademicClass     @relation(fields: [classId], references: [id])
+  sectionId    String?           // null = পুরো ক্লাস দখল করে
+  section      Section?          @relation(fields: [sectionId], references: [id])
+  day          Int               // ০=শনি … ৬=শুক্র
+  period       Int               // ১..৮ (MVP fixed)
+  room         String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  deletedAt    DateTime?
+
+  @@unique([assignmentId, day, period]) // exact-dup DB-লেভেলে বন্ধ
+  @@index([branchId])
+  @@index([classId, day, period])
+  @@index([teacherId, day, period])
 }

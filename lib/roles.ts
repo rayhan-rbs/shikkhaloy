@@ -30,6 +30,8 @@ export const ROUTE_ROLES: { prefix: string; roles: Role[] }[] = [
   // স্টাফ-হাজিরা এলে ৩.২+)
   { prefix: "/dashboard/attendance", roles: [...ADMINS, "TEACHER"] },
   { prefix: "/dashboard/leave", roles: [...ADMINS, "TEACHER"] },
+  { prefix: "/dashboard/routine", roles: [...ADMINS, "TEACHER"] },
+
 
   // উদাহরণ (ভবিষ্যৎ): অ্যাকাউন্ট্স-প্যানেল
   // { prefix: "/dashboard/finance", roles: [...ADMINS, "ACCOUNTANT"] },

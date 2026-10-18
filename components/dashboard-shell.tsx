@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, UserCog, CalendarCheck, Calendar, Users, BookOpen, Wallet, Settings, Search, Menu, X,
+  LayoutDashboard, UserCog, CalendarCheck, CalendarOff, CalendarRange, Calendar, Users, BookOpen, Wallet, Settings, Search, Menu, X,
   GraduationCap, Sun, Moon, LogOut, Languages, Award, type LucideIcon,
 } from "lucide-react";
 
@@ -76,9 +76,11 @@ export default function DashboardShell({
       items: [
         { href: "/dashboard", label: t(dict, "nav.dashboard"), icon: LayoutDashboard, active: pathname === "/dashboard", soon: false },
         { href: "/dashboard/academics", label: t(dict, "nav.academics"), icon: BookOpen, active: pathname.startsWith("/dashboard/academics"), soon: false },
+        { href: "/dashboard/routine", label: t(dict, "nav.routine"), icon: CalendarRange, active: pathname.startsWith("/dashboard/routine"), soon: false },
         { href: "/dashboard/students", label: t(dict, "nav.students"), icon: Users, active: pathname.startsWith("/dashboard/students"), soon: false },
         { href: "/dashboard/teachers", label: t(dict, "nav.teachers"), icon: UserCog, active: pathname.startsWith("/dashboard/teachers"), soon: false },
         { href: "/dashboard/attendance", label: t(dict, "nav.attendance"), icon: CalendarCheck, active: pathname.startsWith("/dashboard/attendance"), soon: false },
+        { href: "/dashboard/leave", label: t(dict, "nav.leave"), icon: CalendarOff, active: pathname.startsWith("/dashboard/leave"), soon: false },
 
         { href: "#", label: t(dict, "nav.finance"), icon: Wallet, active: false, soon: true },
       ],

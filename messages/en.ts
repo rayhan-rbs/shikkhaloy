@@ -44,6 +44,7 @@ export const en: Dictionary = {
     teachers: "Teacher & Staff",
     academics: "Academics",
     academicCal: "Academic calendar",
+    attendance: "Attendance",
     finance: "Finance",
     settings: "Settings",
     grading: "Grading",
@@ -381,6 +382,25 @@ export const en: Dictionary = {
     popupBlocked: "Print popup was blocked — allow popups in the address bar",
 
   },
+  att: {
+    title: "Attendance",
+    subtitle: "Pick class/section & date, then load the roster",
+    pickClass: "Pick class", allSections: "Whole class",
+    load: "Load roster",
+    rosterEmpty: "No active students in this class/section",
+    alreadyMarked: "Attendance already taken for this date — you can change & re-save",
+    markAll: "Mark all present",
+    needAll: "Select a status for every student",
+    save: "Save attendance",
+    saved: "students saved ✅",
+    present: "Present", absent: "Absent", leave: "Leave",
+    summaryTitle: "Monthly summary", loadSummary: "Load summary",
+    summaryEmpty: "No attendance data for this month",
+    colName: "Name", colRoll: "Roll", colPresent: "Present", colAbsent: "Absent",
+    colLeave: "Leave", colTotal: "Total", colPercent: "%",
+    networkError: "Cannot reach the server — try again",
+  },
+
 
   lang: {
     bn: "বাংলা",

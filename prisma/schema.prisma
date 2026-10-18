@@ -1,7 +1,6 @@
 // ═══════════════════════════════════════════════════════
 //  SHIKKHALOY — Database Schema (ক্যানোনিকাল)
-//  Phase 1 ✅ | Phase 2: Enrollment + StudentProfile + Shift
-//                  + StaffProfile + TeacherAssignment
+//  Phase 1-2 ✅ | Phase 3.1: Attendance 🆕
 //  Source of Truth: এই ফাইলটাই (নীতি ১৩)
 // ═══════════════════════════════════════════════════════
 
@@ -14,7 +13,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── 🏬 ব্রাঞ্চ (মাল্টি-ব্রাঞ্চ সাপোর্টের ভিত্তি) ───
+// ─── 🏬 ব্রাঞ্চ ───
 model Branch {
   id        String   @id @default(cuid())
   name      String
@@ -35,9 +34,10 @@ model Branch {
   classes            AcademicClass[]
   enrollments        Enrollment[]
   teacherAssignments TeacherAssignment[]
+  attendances        Attendance[]
 }
 
-// ─── 👤 ইউজার (নীতি ১: কখনো DELETE না — status বদলাবে) ───
+// ─── 👤 ইউজার (নীতি ১) ───
 model User {
   id           String     @id @default(cuid())
   email        String     @unique
@@ -58,13 +58,15 @@ model User {
   studentProfile     StudentProfile?
   staffProfile       StaffProfile?
   teacherAssignments TeacherAssignment[]
+  attendances        Attendance[]       @relation("AttendanceStudent")
+  markedAttendances  Attendance[]       @relation("AttendanceMarker")
 
   @@index([branchId])
   @@index([role])
   @@index([status])
 }
 
-// ─── 📅 একাডেমিক সেশন (২.৫: একাধিক, ১টি সক্রিয়; ডুপ-চেক অ্যাপ-লেভেলে) ───
+// ─── 📅 একাডেমিক সেশন ───
 model AcademicSession {
   id        String    @id @default(cuid())
   branchId  String
@@ -83,15 +85,15 @@ model AcademicSession {
   @@index([branchId])
 }
 
-// ─── ⏰ শিফট (২.৫ — সমান্তরাল তালিকা; শুধু ব্রাঞ্চের সাথে যুক্ত) ───
+// ─── ⏰ শিফট ───
 model Shift {
   id        String    @id @default(cuid())
   branchId  String
   branch    Branch    @relation(fields: [branchId], references: [id])
   name      String
   nameEn    String?
-  startTime String?   // HH:MM
-  endTime   String?   // HH:MM (end > start)
+  startTime String?
+  endTime   String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -118,7 +120,7 @@ enum UserStatus {
   ALUMNI
 }
 
-// ─── ⚙️ প্রতিষ্ঠান সেটিংস (সিঙ্গলটন — key="global") ───
+// ─── ⚙️ প্রতিষ্ঠান সেটিংস ───
 model InstitutionSetting {
   id         String    @id @default(cuid())
   key        String    @unique
@@ -136,7 +138,7 @@ model InstitutionSetting {
   deletedAt  DateTime?
 }
 
-// ─── 🎯 গ্রেডিং (নীতি ৯: branchId প্রথম দিন থেকেই) ───
+// ─── 🎯 গ্রেডিং ───
 model GradingScale {
   id        String    @id @default(cuid())
   branchId  String
@@ -201,6 +203,7 @@ model AcademicClass {
   subjects       Subject[]
   enrollments    Enrollment[]
   teacherAssignments TeacherAssignment[]
+  attendances    Attendance[]
 
   @@index([branchId])
   @@index([departmentId])
@@ -217,6 +220,7 @@ model Section {
   deletedAt DateTime?
   enrollments        Enrollment[]
   teacherAssignments TeacherAssignment[]
+  attendances        Attendance[]
 
   @@index([classId])
 }
@@ -238,7 +242,7 @@ model Subject {
   @@index([classId])
 }
 
-// ─── 🎓 ভর্তি (নীতি ২: অ্যাকাউন্ট ≠ ভর্তি-রেকর্ড) ───
+// ─── 🎓 ভর্তি (নীতি ২) ───
 model Enrollment {
   id            String           @id @default(cuid())
   branchId      String
@@ -246,13 +250,13 @@ model Enrollment {
   studentId     String
   student       User             @relation(fields: [studentId], references: [id])
   classId       String
-  klass         AcademicClass    @relation(fields: [classId], references: [id]) // 'class' সংরক্ষিত শব্দ — তাই klass
+  klass         AcademicClass    @relation(fields: [classId], references: [id])
   sectionId     String?
   section       Section?         @relation(fields: [sectionId], references: [id])
   sessionId     String?
   session       AcademicSession? @relation(fields: [sessionId], references: [id])
   rollNumber    Int?
-  status        String           @default("ACTIVE") // ACTIVE/COMPLETED/TRANSFERRED/DROPPED
+  status        String           @default("ACTIVE")
   admissionDate DateTime         @default(now())
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
@@ -263,7 +267,7 @@ model Enrollment {
   @@index([studentId])
 }
 
-// ─── 🧑‍🎓 শিক্ষার্থী-প্রোফাইল (২.৪ — User ১:১, ১৮ ফিল্ড) ───
+// ─── 🧑‍🎓 শিক্ষার্থী-প্রোফাইল ───
 model StudentProfile {
   id                    String    @id @default(cuid())
   userId                String    @unique
@@ -291,7 +295,7 @@ model StudentProfile {
   deletedAt             DateTime?
 }
 
-// ─── 👩‍🏫 স্টাফ-প্রোফাইল (২.৬ — User ১:১) ───
+// ─── 👩‍🏫 স্টাফ-প্রোফাইল ───
 model StaffProfile {
   id            String    @id @default(cuid())
   userId        String    @unique
@@ -306,7 +310,7 @@ model StaffProfile {
   updatedAt     DateTime  @updatedAt
 }
 
-// ─── 📚 শিক্ষক-অ্যাসাইনমেন্ট (২.৬ — রুটিন/অ্যাটেনডেন্স/মার্কসের ভিত) ───
+// ─── 📚 শিক্ষক-অ্যাসাইনমেন্ট ───
 model TeacherAssignment {
   id        String        @id @default(cuid())
   branchId  String
@@ -325,4 +329,30 @@ model TeacherAssignment {
 
   @@index([branchId])
   @@index([teacherId])
+}
+
+// ─── ✅ অ্যাটেনডেন্স (৩.১ — দৈনিক; নীতি ৪: method; নীতি ৫: markedBy=অডিট) ───
+model Attendance {
+  id         String        @id @default(cuid())
+  branchId   String
+  branch     Branch        @relation(fields: [branchId], references: [id])
+  studentId  String
+  student    User          @relation("AttendanceStudent", fields: [studentId], references: [id])
+  classId    String
+  klass      AcademicClass @relation(fields: [classId], references: [id])
+  sectionId  String?       // স্ন্যাপশট — কোন মোডে (সেকশন/পুরো-ক্লাস) নেওয়া হয়েছিল
+  section    Section?      @relation(fields: [sectionId], references: [id])
+  date       DateTime      @db.Date
+  status     String        // PRESENT/ABSENT/LEAVE
+  method     String        @default("manual") // manual/qr/rfid/face — নীতি ৪
+  note       String?
+  markedById String
+  markedBy   User          @relation("AttendanceMarker", fields: [markedById], references: [id])
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  deletedAt  DateTime?
+
+  @@unique([studentId, date]) // এক শিক্ষার্থী = দিনে এক রেকর্ড; upsert = পুনঃসংরক্ষণ নিরাপদ
+  @@index([branchId, date])
+  @@index([classId, date])
 }

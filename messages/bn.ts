@@ -42,6 +42,7 @@ export const bn = {
     teachers: "শিক্ষক ও স্টাফ",
     academics: "একাডেমিক",
     academicCal: "শিক্ষা ক্যালেন্ডার",
+    attendance: "অ্যাটেনডেন্স",
     finance: "অর্থ",
     settings: "সেটিংস",
     grading: "গ্রেডিং",
@@ -401,6 +402,25 @@ export const bn = {
     popupBlocked: "প্রিন্ট-পপআপ ব্লক হয়েছে — ব্রাউজারের অ্যাড্রেসবারে পপআপ অনুমতি দিন",
 
   },
+  att: {
+    title: "অ্যাটেনডেন্স",
+    subtitle: "ক্লাস/সেকশন ও তারিখ বাছাই করে রোস্টার লোড করো",
+    pickClass: "ক্লাস বাছুন", allSections: "পুরো ক্লাস",
+    load: "রোস্টার লোড",
+    rosterEmpty: "এই ক্লাস/সেকশনে সক্রিয় কোনো শিক্ষার্থী নেই",
+    alreadyMarked: "এই তারিখে আগে হাজিরা নেওয়া হয়েছে — বদলে আবার সেভ করতে পারো",
+    markAll: "সবাইকে উপস্থিত করো",
+    needAll: "সব শিক্ষার্থীর স্ট্যাটাস বাছাই করো",
+    save: "হাজিরা সংরক্ষণ",
+    saved: "জনের হাজিরা সংরক্ষিত ✅",
+    present: "উপস্থিত", absent: "অনুপস্থিত", leave: "ছুটি",
+    summaryTitle: "মাসিক সারাংশ", loadSummary: "সারাংশ লোড",
+    summaryEmpty: "এই মাসে কোনো হাজিরা-ডেটা নেই",
+    colName: "নাম", colRoll: "রোল", colPresent: "উপস্থিত", colAbsent: "অনুপ",
+    colLeave: "ছুটি", colTotal: "মোট", colPercent: "%",
+    networkError: "সার্ভারে পৌঁছানো যায়নি — আবার চেষ্টা করো",
+  },
+
 
   lang: {
     bn: "বাংলা",

@@ -37,7 +37,10 @@ model Branch {
   attendances        Attendance[]
   leaveApplications  LeaveApplication[]
   routineSlots       RoutineSlot[]
+  exams              Exam[]
   classrooms         Classroom[]
+  routineBreaks      RoutineBreak[]
+
 }
 
 // ─── 👤 ইউজার (নীতি ১) ───
@@ -249,6 +252,7 @@ model Subject {
   deletedAt   DateTime?
   teacherAssignments TeacherAssignment[]
   routineSlots       RoutineSlot[] @relation("RoutineSubject")
+  examSubjects       ExamSubject[]
 
   @@index([classId])
 }
@@ -442,4 +446,55 @@ model Classroom {
 
   @@index([branchId])
 }
+
+// ─── 📝 এক্সাম (৩.৫ — অফলাইন; রুটিন=ExamSubject; মার্কস ৩.৬-এ যুক্ত হবে) ───
+model Exam {
+  id        String    @id @default(cuid())
+  branchId  String
+  branch    Branch    @relation(fields: [branchId], references: [id])
+  name      String
+  nameEn    String?
+  examType  String    @default("FINAL") // FIRST_TERM/HALF_YEARLY/FINAL/TEST/MODEL/OTHER
+  startDate DateTime  @db.Date
+  endDate   DateTime  @db.Date
+  status    String    @default("UPCOMING") // UPCOMING/ONGOING/COMPLETED
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  subjects  ExamSubject[]
+
+  @@index([branchId])
+}
+
+model ExamSubject {
+  id        String   @id @default(cuid())
+  examId    String
+  exam      Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  subjectId String
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  examDate  DateTime @db.Date
+  startTime String?
+  endTime   String?
+  fullMarks Float    @default(100)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([examId])
+}
+
+// ─── 🍚 রুটিন-বিরতি (৩.৩.২ — কনফিগ-সাব-আইটেম: hard-delete, নোট ৪-ব্যতিক্রম) ───
+model RoutineBreak {
+  id        String   @id @default(cuid())
+  branchId  String
+  branch    Branch   @relation(fields: [branchId], references: [id])
+  period    Int      // ১..৮
+  label     String   // যেমন: টিফিন / নামাজ
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([branchId, period])
+  @@index([branchId])
+}
+
 

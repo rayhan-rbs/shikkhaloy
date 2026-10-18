@@ -358,7 +358,7 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
                     <div className="space-y-1.5">
                       <Label>{t(dict, "routine.room")}</Label>
                       <select value={fRoomId} className={sel} onChange={(e) => setFRoomId(e.target.value)}>
-                        <option value="">{t(dict, "routine.roomNone")}</option>
+                        <option value="">{t(dict, "classroom.roomNone")}</option>
                         {classrooms.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                       </select>
                     </div>

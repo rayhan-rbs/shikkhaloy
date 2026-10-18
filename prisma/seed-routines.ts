@@ -1,52 +1,115 @@
-// 📁 prisma/seed-routines.ts
-// ডেমো রুটিন — বিদ্যমান TeacherAssignment (seed-teachers) থেকে স্লট বসায়
-// প্রতি অ্যাসাইনমেন্টে ৩টা স্লট; গ্লোবাল-ইউনিক (দিন,পিরিয়ড) পুল = কোনো টিচার/
-// ক্লাস-কনফ্লিক্টই অসম্ভব (নোট ৩৫-সামঞ্জস্য) | চালানো: npx tsx prisma/seed-routines.ts
+// 📁 prisma/seed-routines.ts (v4 — ghost-proof)
+// রহস্য: soft-delete-হওয়া স্লট (ভূত-রো) @@unique (assignmentId,day,period) এখনো
+// দখলে রাখে → create P2002। ওষুধ: ① --reset = hard-delete (ডেমো-ডেটা)
+// ② সব লেখা upsert-এ — ভূত একই জায়গায় পড়লে পুনরুজ্জীবিত হয়, এরর নয়
+// চালানো: npx tsx prisma/seed-routines.ts [--reset]
 
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
+const RESET = process.argv.includes("--reset");
+
+const ASG_INCLUDE = {
+  teacher: { select: { fullName: true } },
+  subject: { select: { name: true } },
+  klass: { select: { name: true } },
+  section: { select: { name: true } },
+} as const;
 
 async function main() {
-  const branch = await prisma.branch.findFirst({ where: { code: "MAIN" } });
-  if (!branch) throw new Error("মেইন ব্রাঞ্চ নেই — আগে seed.ts চালাও");
+  const branch =
+    (await prisma.branch.findFirst({ where: { code: "MAIN" } })) ??
+    (await prisma.branch.findFirst());
+  if (!branch) throw new Error("কোনো ব্রাঞ্চ নেই — আগে seed.ts চালাও");
+  console.log(`📍 ব্রাঞ্চ: ${branch.name} (${branch.code})`);
 
-  const existing = await prisma.routineSlot.count({ where: { branchId: branch.id } });
-  if (existing > 0) {
-    console.log("ℹ️ রুটিন-ডেমো আগেই আছে — স্কিপ (idempotent)");
-    return;
-  }
-
-  const assignments = await prisma.teacherAssignment.findMany({
-    where: { branchId: branch.id, deletedAt: null },
-    include: {
-      teacher: { select: { fullName: true } },
-      subject: { select: { name: true } },
-      klass: { select: { name: true } },
-      section: { select: { name: true } },
-    },
-    orderBy: { createdAt: "asc" },
-    take: 6, // পুল ২০ কম্বো; প্রতি অ্যাসাইনমেন্ট ৩টা = সর্বোচ্চ ৬টি নিরাপদ
+  const ghosts = await prisma.routineSlot.count({
+    where: { branchId: branch.id, deletedAt: { not: null } },
   });
-  if (assignments.length === 0) {
-    throw new Error("শিক্ষক-অ্যাসাইনমেন্ট নেই — আগে seed-teachers.ts চালাও");
+  if (ghosts > 0) console.log(`👻 ভূত-স্লট (soft-deleted, unique-key দখলে): ${ghosts}টি`);
+
+  if (RESET) {
+    const r = await prisma.routineSlot.deleteMany({ where: { branchId: branch.id } });
+    console.log(`🧹 --reset: ${r.count}টি স্লট hard-delete (ডেমো-ডেটা — ভূতসহ পুরো পরিষ্কার)`);
   }
 
-  // পুল: দিন ০-৪ (শনি-বুধ; শুক্র/৬ বাদ) × পিরিয়ড ১-৪ = ২০ কম্বো — সব ইউনিক
+  // অ্যাসাইনমেন্ট — খালি হলে অটো-তৈরি
+  let assignments = await prisma.teacherAssignment.findMany({
+    where: { branchId: branch.id, deletedAt: null },
+    include: ASG_INCLUDE,
+    orderBy: { createdAt: "asc" },
+  });
+
+  if (assignments.length === 0) {
+    console.log("🔧 অ্যাসাইনমেন্ট নেই — অটো-তৈরি হচ্ছে (শিক্ষক×বিষয় রাউন্ড-রবিন)…");
+    const teachers = await prisma.user.findMany({
+      where: { branchId: branch.id, role: "TEACHER", status: "ACTIVE", deletedAt: null },
+      orderBy: { createdAt: "asc" },
+    });
+    const subjects = await prisma.subject.findMany({
+      where: { deletedAt: null, class: { branchId: branch.id, deletedAt: null } },
+      orderBy: { createdAt: "asc" },
+    });
+    if (teachers.length === 0) throw new Error("শিক্ষক নেই — আগে seed-teachers.ts চালাও");
+    if (subjects.length === 0) throw new Error("বিষয় নেই — আগে seed-subjects.ts চালাও");
+    console.log(`   শিক্ষক ${teachers.length} জন × বিষয় ${subjects.length}টি`);
+
+    for (let i = 0; i < subjects.length && i < 12; i++) {
+      const s = subjects[i];
+      const t = teachers[i % teachers.length];
+      await prisma.teacherAssignment.create({
+        data: { branchId: branch.id, teacherId: t.id, classId: s.classId, subjectId: s.id },
+      });
+    }
+    console.log(`   ✅ ${Math.min(subjects.length, 12)}টি অ্যাসাইনমেন্ট তৈরি`);
+
+    assignments = await prisma.teacherAssignment.findMany({
+      where: { branchId: branch.id, deletedAt: null },
+      include: ASG_INCLUDE,
+      orderBy: { createdAt: "asc" },
+    });
+  } else {
+    console.log(`📚 অ্যাসাইনমেন্ট: ${assignments.length}টি`);
+  }
+
+  // active স্লট-মানচিত্র: কোন অ্যাসাইনমেন্টে কত, কোন (দিন,পিরিয়ড) দখলে
+  const slots = await prisma.routineSlot.findMany({
+    where: { branchId: branch.id, deletedAt: null },
+    select: { assignmentId: true, day: true, period: true },
+  });
+  const slotsByAsg = new Map<string, number>();
+  const usedCombos = new Set<string>();
+  for (const s of slots) {
+    slotsByAsg.set(s.assignmentId, (slotsByAsg.get(s.assignmentId) ?? 0) + 1);
+    usedCombos.add(`${s.day}-${s.period}`);
+  }
+  console.log(`🗂️ active স্লট: ${slots.length}টি`);
+
+  // পুল: দিন ০-৪ (শনি-বুধ) × পিরিয়ড ১-৪ = ২০ ইউনিক কম্বো
   const combos: { day: number; period: number }[] = [];
   for (let period = 1; period <= 4; period++) {
     for (let day = 0; day <= 4; day++) combos.push({ day, period });
   }
-
   const rooms = ["২০১", "২০২", "২০৩", "ল্যাব-১", "লাইব্রেরি"];
-  let n = 0;
+  const target = assignments.slice(0, 6);
 
-  for (let i = 0; i < assignments.length; i++) {
-    const a = assignments[i];
-    for (let k = 0; k < 3; k++) {
-      const c = combos[i * 3 + k];
-      await prisma.routineSlot.create({
-        data: {
+  let n = 0, skipped = 0, ci = 0;
+
+  for (const a of target) {
+    if ((slotsByAsg.get(a.id) ?? 0) > 0) {
+      skipped += 1;
+      console.log(`   ↷ স্কিপ (আগেই স্লট আছে): ${a.subject.name} — ${a.teacher.fullName}`);
+      continue;
+    }
+    let made = 0;
+    while (made < 3 && ci < combos.length) {
+      const c = combos[ci]; ci += 1;
+      if (usedCombos.has(`${c.day}-${c.period}`)) continue;
+
+      // upsert = ghost-proof: এই কম্বোতে ভূত থাকলে পুনরুজ্জীবিত, নইলে নতুন
+      const slot = await prisma.routineSlot.upsert({
+        where: { assignmentId_day_period: { assignmentId: a.id, day: c.day, period: c.period } },
+        create: {
           branchId: branch.id,
           assignmentId: a.id,
           teacherId: a.teacherId,
@@ -55,15 +118,27 @@ async function main() {
           sectionId: a.sectionId,
           day: c.day,
           period: c.period,
-          room: rooms[(i * 3 + k) % rooms.length], // classroomId null — লেগেসি-টেক্সট
+          room: rooms[n % rooms.length],
+        },
+        update: {
+          teacherId: a.teacherId, subjectId: a.subjectId,
+          classId: a.classId, sectionId: a.sectionId,
+          room: rooms[n % rooms.length], deletedAt: null,
         },
       });
-      n += 1;
+      void slot;
+      usedCombos.add(`${c.day}-${c.period}`);
+      made += 1; n += 1;
     }
-    console.log(`   • ${a.subject.name} — ${a.teacher.fullName} (${a.klass.name}${a.section ? `-${a.section.name}` : ""}) → ৩ স্লট`);
+    console.log(`   • ${a.subject.name} — ${a.teacher.fullName} (${a.klass.name}${a.section ? `-${a.section.name}` : ""}) → ${made} স্লট`);
   }
 
-  console.log(`✅ রুটিন-ডেমো সম্পন্ন: ${n} স্লট (${assignments.length} অ্যাসাইনমেন্ট × ৩)`);
+  if (n === 0 && skipped > 0) {
+    console.log("ℹ️ টার্গেটগুলোতেই স্লট আগেই আছে — পুরো নতুন চাইলে: npx tsx prisma/seed-routines.ts --reset");
+  } else {
+    console.log(`✅ সম্পন্ন: নতুন/পুনরুজ্জীবিত ${n} স্লট${skipped > 0 ? ` · স্কিপ ${skipped}` : ""}`);
+  }
+  console.log("   👀 দেখো: /dashboard/routine → ক্লাস বাছাই → লোড");
 }
 
 main()

@@ -376,6 +376,10 @@ export const en: Dictionary = {
     credsNote: "Everyone shares the same temporary password — a credentials Excel (name+email+password) was auto-downloaded; print & distribute!",
     credsAgain: "Re-download credentials",
     validating: "Validating...",
+    printBtn: "Print / PDF 🖨",
+    printCreds: "Print credentials",
+    popupBlocked: "Print popup was blocked — allow popups in the address bar",
+
   },
 
   lang: {

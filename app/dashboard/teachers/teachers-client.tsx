@@ -1,13 +1,13 @@
 // 📁 app/dashboard/teachers/teachers-client.tsx
-// তালিকা + যোগ/এডিট-ডায়লগ + 🔑 রিসেট + 🗑️ নিষ্ক্রিয় + বিষয়-অ্যাসাইনমেন্ট ম্যানেজার
+// ২.৬: তালিকা + যোগ/এডিট + 🔑 রিসেট + 🗑️ নিষ্ক্রিয় + বিষয়-অ্যাসাইনমেন্ট ম্যানেজার
+// ২.৮: ⬇️ এক্সেল-এক্সপোর্ট | ২.৯: 🖨️ প্রিন্ট/PDF (institutionName হেডারে)
 // ছবি-ফিল্ডের লেবেল শিক্ষার্থী-সেকশন থেকেই রিইউজ (students.changePhoto ইত্যাদি)
 
 "use client";
-import { exportExcel } from "@/lib/export";
-import * as XLSX from "xlsx";
+
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Copy, X, FileSpreadsheet, Download, Upload, Camera, Pencil, KeyRound } from "lucide-react";
+import { Plus, Trash2, Copy, X, Camera, Pencil, KeyRound, Download, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { t, type Lang } from "@/lib/i18n";
 import type { Dictionary } from "@/messages/bn";
+import { exportExcel } from "@/lib/export";
+import { printTable } from "@/lib/print";
 
 interface AssignRow { id: string; subjectName: string; subjectNameEn: string; className: string; classNameEn: string; sectionName: string | null; }
 interface TeacherRow { id: string; name: string; email: string; role: string; status: string; photoUrl: string | null; designation: string | null; qualification: string | null; phone: string | null; joiningDate: string | null; address: string | null; assignments: AssignRow[]; }
@@ -37,8 +39,8 @@ function Avatar({ url, name }: { url: string | null; name: string }) {
 interface TForm { open: boolean; id: string | null; fullName: string; email: string; password: string; role: string; designation: string; qualification: string; phone: string; joiningDate: string; address: string; photoUrl: string; }
 const EMPTY_T: TForm = { open: false, id: null, fullName: "", email: "", password: "", role: "TEACHER", designation: "", qualification: "", phone: "", joiningDate: "", address: "", photoUrl: "" };
 
-export default function TeachersClient({ dict, lang, teachers, classes }: {
-  dict: Dictionary; lang: Lang; teachers: TeacherRow[]; classes: ClassOption[];
+export default function TeachersClient({ dict, lang, institutionName, teachers, classes }: {
+  dict: Dictionary; lang: Lang; institutionName: string; teachers: TeacherRow[]; classes: ClassOption[];
 }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -62,7 +64,7 @@ export default function TeachersClient({ dict, lang, teachers, classes }: {
       if (!q) return true;
       return `${s.name} ${s.email} ${s.designation ?? ""}`.toLowerCase().includes(q);
     });
-  }, [teachers, search, roleFilter]);   // ← deps-এ সব state (২.৫.১-এর পাঠ!)
+  }, [teachers, search, roleFilter]);
 
   const teacherOptions = teachers.filter((s) => s.role === "TEACHER");
   const selected = teacherOptions.find((s) => s.id === aTeacherId) || null;
@@ -133,18 +135,6 @@ export default function TeachersClient({ dict, lang, teachers, classes }: {
     }
   }
 
-  function exportTeachers() {
-    exportExcel(teachers.map((s) => ({
-      "নাম": s.name, "ইমেইল": s.email,
-      "পদ": s.role === "TEACHER" ? t(dict, "teachers.roleTeacher") : t(dict, "teachers.roleStaff"),
-      "পদবি": s.designation || "", "যোগ্যতা": s.qualification || "", "ফোন": s.phone || "",
-      "যোগদানের তারিখ": s.joiningDate || "",
-      "অ্যাসাইনমেন্ট": s.assignments.map((a) => `${pick(lang, a.subjectName, a.subjectNameEn)} (${pick(lang, a.className, a.classNameEn)}${a.sectionName ? `-${a.sectionName}` : ""})`).join("; "),
-      "স্ট্যাটাস": s.status,
-    })), "teachers.xlsx", "শিক্ষক");
-  }
-
-
   async function resetPassword(s: TeacherRow) {
     if (!confirm(`${s.name} — ${t(dict, "teachers.resetConfirm")}`)) return;
     setError(""); setBusy(true);
@@ -197,6 +187,43 @@ export default function TeachersClient({ dict, lang, teachers, classes }: {
     } catch { setError(t(dict, "teachers.networkError")); } finally { setBusy(false); }
   }
 
+  function exportTeachers() {
+    exportExcel(teachers.map((s) => ({
+      "নাম": s.name, "ইমেইল": s.email,
+      "পদ": s.role === "TEACHER" ? t(dict, "teachers.roleTeacher") : t(dict, "teachers.roleStaff"),
+      "পদবি": s.designation || "", "যোগ্যতা": s.qualification || "", "ফোন": s.phone || "",
+      "যোগদানের তারিখ": s.joiningDate || "",
+      "অ্যাসাইনমেন্ট": s.assignments.map((a) => `${pick(lang, a.subjectName, a.subjectNameEn)} (${pick(lang, a.className, a.classNameEn)}${a.sectionName ? `-${a.sectionName}` : ""})`).join("; "),
+      "স্ট্যাটাস": s.status,
+    })), "teachers.xlsx", "শিক্ষক");
+  }
+
+  function printTeachers() {
+    const parts: string[] = [];
+    if (roleFilter) parts.push(roleFilter === "TEACHER" ? t(dict, "teachers.roleTeacher") : t(dict, "teachers.roleStaff"));
+    if (search.trim()) parts.push(`"${search.trim()}"`);
+    const ok = printTable({
+      title: t(dict, "teachers.title"),
+      institution: institutionName,
+      subtitle: parts.join(" · "),
+      columns: [
+        { header: t(dict, "teachers.colName"), key: "name" },
+        { header: t(dict, "teachers.colDesignation"), key: "desig" },
+        { header: t(dict, "teachers.colRole"), key: "role" },
+        { header: t(dict, "teachers.phone"), key: "phone" },
+        { header: t(dict, "teachers.joiningDate"), key: "joining" },
+        { header: t(dict, "teachers.colAssign"), key: "assign" },
+      ],
+      rows: filtered.map((s) => ({
+        name: `${s.name} (${s.email})`, desig: s.designation || "—",
+        role: s.role === "TEACHER" ? t(dict, "teachers.roleTeacher") : t(dict, "teachers.roleStaff"),
+        phone: s.phone || "—", joining: s.joiningDate || "—",
+        assign: s.assignments.map((a) => `${pick(lang, a.subjectName, a.subjectNameEn)} · ${pick(lang, a.className, a.classNameEn)}${a.sectionName ? `-${a.sectionName}` : ""}`).join("; ") || "—",
+      })),
+    });
+    if (!ok) setError(t(dict, "xlsx.popupBlocked"));
+  }
+
   function roleBadge(role: string) {
     return role === "TEACHER" ? (
       <span className="rounded-full bg-blue-500/15 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-300">{t(dict, "teachers.roleTeacher")}</span>
@@ -214,11 +241,6 @@ export default function TeachersClient({ dict, lang, teachers, classes }: {
         <Card><CardContent className="p-5"><p className="text-sm text-muted-foreground">{t(dict, "teachers.totalStaff")}</p><p className="mt-1 text-2xl font-bold">{stats.staff}</p></CardContent></Card>
         <Card><CardContent className="p-5"><p className="text-sm text-muted-foreground">{t(dict, "teachers.totalAssign")}</p><p className="mt-1 text-2xl font-bold">{stats.assignments}</p></CardContent></Card>
       </div>
-
-            <Button className="mb-4 mr-2" size="sm" variant="outline" onClick={exportTeachers} title={t(dict, "xlsx.exportBtn")}>
-              <Download size={14} />
-            </Button>
-
 
       {creds && (
         <div className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5">
@@ -265,6 +287,12 @@ export default function TeachersClient({ dict, lang, teachers, classes }: {
               <option value="TEACHER">{t(dict, "teachers.roleTeacher")}</option>
               <option value="STAFF">{t(dict, "teachers.roleStaff")}</option>
             </select>
+            <Button size="sm" variant="outline" onClick={exportTeachers} title={t(dict, "xlsx.exportBtn")}>
+              <Download size={14} />
+            </Button>
+            <Button size="sm" variant="outline" onClick={printTeachers} title={t(dict, "xlsx.printBtn")}>
+              <Printer size={14} />
+            </Button>
             <Button size="sm" className="bg-primary text-primary-foreground" onClick={() => { setError(""); setTForm({ ...EMPTY_T, open: true }); }}>
               <Plus size={14} className="mr-1" />{t(dict, "teachers.addBtn")}
             </Button>
@@ -441,7 +469,7 @@ export default function TeachersClient({ dict, lang, teachers, classes }: {
             </div>
             <div className="flex gap-2">
               <Button type="submit" disabled={busy || uploading} className="bg-primary text-primary-foreground">
-                {busy ? t(dict, "teachers.saving") : tForm.id ? t(dict, "teachers.submit").replace("যোগ", "সেভ") : t(dict, "teachers.submit")}
+                {busy ? t(dict, "teachers.saving") : (tForm.id ? "💾" : t(dict, "teachers.submit"))}
               </Button>
               <Button type="button" variant="ghost" onClick={() => setTForm(EMPTY_T)}>{t(dict, "teachers.close")}</Button>
             </div>

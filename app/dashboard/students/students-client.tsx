@@ -1,14 +1,17 @@
 // 📁 app/dashboard/students/students-client.tsx
-// ২.৪ পর্ব ১: অ্যাভাটার-কলাম + সমৃদ্ধ ভর্তি-ফর্ম (১৩ ফিল্ড + ছবি-আপলোড) +
-// পেজিনেশন (ক্লায়েন্ট-সাইড — ৫ হাজার+ হলে সার্ভার-সাইডে যাবে)
+// ২.৪: সমৃদ্ধ ভর্তি + ছবি + পেজিনেশন | ২.৭: প্রমোশন + স্ট্যাটাস-ফিল্টার
+// ২.৮: ⬇️⬆️ Excel | ২.৯: 🖨️ প্রিন্ট/PDF
+// ক্রেডেনশিয়াল-প্রিন্ট নিয়ম: বাটন শুধু ব্যানারের ভেতরে (state ক্ষণস্থায়ী —
+// সার্ভারে পাসওয়ার্ড নেই, তাই "পরে প্রিন্ট" অসম্ভব; স্থায়ী কপি = এক্সেল-ফাইল)
 
 "use client";
 import { exportExcel } from "@/lib/export";
 import * as XLSX from "xlsx";
+import { printTable } from "@/lib/print";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, KeyRound, ArrowUpRight, Trash2, Copy, X, FileSpreadsheet, Download, Upload, Camera, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, KeyRound, ArrowUpRight, Printer, Trash2, Copy, X, FileSpreadsheet, Download, Upload, Camera, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -24,7 +27,7 @@ interface StudentRow {
   status: string; admissionDate: string;
 }
 interface ClassOption { id: string; name: string; nameEn: string; sections: { id: string; name: string }[]; }
-interface Creds { email: string; password: string; }
+interface Creds { name: string; email: string; password: string; }
 
 function pick(lang: Lang, name: string, nameEn: string): string {
   if (lang === "en" && nameEn.trim()) return nameEn;
@@ -71,12 +74,12 @@ const EMPTY_ADM: AdmForm = {
   guardianRelation: "", guardianOccupation: "", guardianNid: "", notes: "",
 };
 
-
-export default function StudentsClient({ dict, lang, students, classes, stats }: {
+export default function StudentsClient({ dict, lang, students, classes, stats, institutionName }: {
   dict: Dictionary;
   lang: Lang;
   students: StudentRow[];
   classes: ClassOption[];
+  institutionName: string;
   stats: { total: number; active: number };
 }) {
   const router = useRouter();
@@ -105,8 +108,6 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
   const [impResults, setImpResults] = useState<{ row: number; name: string; ok: boolean; message: string }[]>([]);
   const [impCreds, setImpCreds] = useState<{ count: number; list: { name: string; email: string; password: string }[] } | null>(null);
 
-
-  
   useEffect(() => { setPage(1); }, [search, classFilter, sectionFilter, statusFilter]);
 
   const filtered = useMemo(() => {
@@ -154,11 +155,11 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
           guardianOccupation: adm.guardianOccupation || null,
           guardianNid: adm.guardianNid || null, notes: adm.notes || null,
         }),
-
       });
       const json = await res.json();
       if (!json.success) { setError(json.error || t(dict, "students.networkError")); return; }
-      setCreds(json.data.credentials);
+      // নামসহ ক্যাপচার — প্রিন্ট-স্লিপে দেখাবে (state পরে মুছে গেলেও ব্যানার-মুহূর্তে থাকে)
+      setCreds({ name: adm.fullName, email: json.data.credentials.email, password: json.data.credentials.password });
       setAdm(EMPTY_ADM);
       router.refresh();
     } catch {
@@ -192,6 +193,74 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
       "সেকশন": s.sectionName || "", "রোল": s.rollNumber ?? "", "স্ট্যাটাস": s.status,
       "ভর্তির তারিখ": s.admissionDate,
     })), "students.xlsx", "শিক্ষার্থী");
+  }
+
+  function printStudents() {
+    const stLabels: Record<string, string> = {
+      ACTIVE: t(dict, "students.stActive"),
+      COMPLETED: t(dict, "students.stCompleted"),
+      TRANSFERRED: t(dict, "students.stTransferred"),
+      DROPPED: t(dict, "students.stDropped"),
+    };
+    const cls = classes.find((c) => c.id === classFilter);
+    const sec = cls?.sections.find((s) => s.id === sectionFilter);
+    const parts: string[] = [];
+    if (cls) parts.push(`${t(dict, "students.colClass")}: ${pick(lang, cls.name, cls.nameEn)}`);
+    if (sec) parts.push(`${t(dict, "students.colSection")}: ${sec.name}`);
+    if (statusFilter) parts.push(stLabels[statusFilter] ?? statusFilter);
+
+    const ok = printTable({
+      title: t(dict, "students.title"),
+      institution: institutionName,
+      subtitle: parts.join(" · "),
+      columns: [
+        { header: t(dict, "students.colName"), key: "name" },
+        { header: t(dict, "students.credsEmail"), key: "email" },
+        { header: t(dict, "students.colClass"), key: "klass" },
+        { header: t(dict, "students.colSection"), key: "sec" },
+        { header: t(dict, "students.colRoll"), key: "roll" },
+        { header: t(dict, "students.colStatus"), key: "st" },
+      ],
+      rows: filtered.map((s) => ({
+        name: s.name, email: s.email, klass: pick(lang, s.className, s.classNameEn),
+        sec: s.sectionName || "—", roll: s.rollNumber ?? "—", st: stLabels[s.status] ?? s.status,
+      })),
+    });
+    if (!ok) setError(t(dict, "xlsx.popupBlocked"));
+  }
+
+  // ইমপোর্ট-ক্রেডেনশিয়াল প্রিন্ট — শুধু impCreds-ব্যানার থেকেই ডাকা হয়
+  function printCreds() {
+    if (!impCreds) return;
+    const ok = printTable({
+      title: `${t(dict, "xlsx.importTitle")} — ${t(dict, "students.credsTitle")}`,
+      institution: institutionName,
+      subtitle: `${impCreds.count} ${t(dict, "xlsx.done")}`,
+      columns: [
+        { header: t(dict, "students.colName"), key: "name" },
+        { header: t(dict, "students.credsEmail"), key: "email" },
+        { header: t(dict, "students.credsPass"), key: "password" },
+      ],
+      rows: impCreds.list,
+    });
+    if (!ok) setError(t(dict, "xlsx.popupBlocked"));
+  }
+
+  // একক ক্রেডেনশিয়াল-স্লিপ (ভর্তি/রিসেট-ব্যানার) — নামসহ
+  function printCredSlip() {
+    if (!creds) return;
+    const ok = printTable({
+      title: t(dict, "students.credsTitle"),
+      institution: institutionName,
+      subtitle: creds.name,
+      columns: [
+        { header: t(dict, "students.colName"), key: "name" },
+        { header: t(dict, "students.credsEmail"), key: "email" },
+        { header: t(dict, "students.credsPass"), key: "password" },
+      ],
+      rows: [creds],
+    });
+    if (!ok) setError(t(dict, "xlsx.popupBlocked"));
   }
 
   function downloadTemplate() {
@@ -246,7 +315,6 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
     } catch { setError(t(dict, "students.networkError")); } finally { setBusy(false); }
   }
 
-
   async function resetPassword(s: StudentRow) {
     if (!confirm(`${s.name} — ${t(dict, "students.resetConfirm")}`)) return;
     setError("");
@@ -255,7 +323,7 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
       const res = await fetch(`/api/students/${s.id}`, { method: "PATCH" });
       const json = await res.json();
       if (!json.success) { setError(json.error || t(dict, "students.networkError")); return; }
-      setCreds(json.data.credentials); // একই সবুজ ব্যানার — নতুন সাময়িক পাসওয়ার্ড
+      setCreds({ name: s.name, email: json.data.credentials.email, password: json.data.credentials.password });
       router.refresh();
     } catch {
       setError(t(dict, "students.networkError"));
@@ -284,7 +352,6 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
       router.refresh();
     } catch { setError(t(dict, "students.networkError")); } finally { setBusy(false); }
   }
-
 
   async function removeStudent(s: StudentRow) {
     if (!confirm(`${s.name} — ${t(dict, "students.confirmDelete")}`)) return;
@@ -322,14 +389,12 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
   }
 
   const sectionHead = "text-xs font-semibold uppercase tracking-wide text-muted-foreground";
-
   const sel = "h-9 w-full rounded-lg border border-border bg-background px-3 text-sm";
 
   const promoCandidates = useMemo(() => {
     if (!pFrom) return [];
     return students.filter((s) => s.status === "ACTIVE" && s.classId === pFrom && (!pFromSec || s.sectionId === pFromSec));
   }, [students, pFrom, pFromSec]);
-
 
   return (
     <>
@@ -348,6 +413,7 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
         </CardContent></Card>
       </div>
 
+      {/* একক-ক্রেডেনশিয়াল ব্যানার (ভর্তি/রিসেট) — প্রিন্ট-স্লিপ এখানেই */}
       {creds && (
         <div className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5">
           <div className="flex items-start justify-between gap-2">
@@ -378,17 +444,26 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
             </div>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">{t(dict, "students.credsNote2")}</p>
+          <div className="mt-3">
+            <Button size="sm" variant="outline" onClick={printCredSlip}>
+              <Printer size={14} className="mr-1" />{t(dict, "xlsx.printCreds")}
+            </Button>
+          </div>
         </div>
       )}
+
       {promoOk && (
         <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">🎉 {promoOk}</div>
       )}
+
+      {/* ইমপোর্ট-ক্রেডেনশিয়াল ব্যানার — ডাউনলোড + প্রিন্ট দুটোই এখানেই */}
       {impCreds && (
         <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
           🎉 {impCreds.count} {t(dict, "xlsx.done")}
           <p className="mt-1 text-xs">{t(dict, "xlsx.credsNote")}</p>
-          <div className="mt-2 flex items-center gap-2">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
             <Button size="sm" variant="outline" onClick={downloadCredsAgain}><FileSpreadsheet size={14} className="mr-1" />{t(dict, "xlsx.credsAgain")}</Button>
+            <Button size="sm" variant="outline" onClick={printCreds}><Printer size={14} className="mr-1" />{t(dict, "xlsx.printCreds")}</Button>
             <Button size="sm" variant="ghost" onClick={() => setImpCreds(null)}>{t(dict, "students.close")}</Button>
           </div>
         </div>
@@ -398,20 +473,10 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
         <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-300">⚠️ {error}</div>
       )}
 
-            <Button className="mb-4 mr-2" size="sm" variant="outline" onClick={exportStudents} title={t(dict, "xlsx.exportBtn")}>
-              <Download size={14} />
-            </Button>
-            <Button className="mb-4" size="sm" variant="outline" onClick={() => { setError(""); setImpCreds(null); setImpOpen(true); }}>
-              <Upload size={14} className="mr-1" />{t(dict, "xlsx.importBtn")}
-            </Button>
-
-
       <Card>
         <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>{t(dict, "students.title")}</CardTitle>
           <div className="flex flex-wrap items-center gap-2">
-
-
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-9 rounded-lg border border-border bg-background px-3 text-sm">
               <option value="ACTIVE">{t(dict, "students.stActive")}</option>
               <option value="COMPLETED">{t(dict, "students.stCompleted")}</option>
@@ -422,8 +487,6 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
             <Button size="sm" variant="outline" onClick={() => { setError(""); setPromoOk(""); setExcluded([]); setPromoOpen(true); }}>
               <ArrowUpRight size={14} className="mr-1" />{t(dict, "promo.btn")}
             </Button>
-
-
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t(dict, "students.search")} className="w-44" />
             <select value={classFilter} onChange={(e) => { setClassFilter(e.target.value); setSectionFilter(""); }}
               className="h-9 rounded-lg border border-border bg-background px-3 text-sm">
@@ -438,7 +501,15 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
-
+            <Button size="sm" variant="outline" onClick={exportStudents} title={t(dict, "xlsx.exportBtn")}>
+              <Download size={14} />
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => { setError(""); setImpCreds(null); setImpOpen(true); }}>
+              <Upload size={14} className="mr-1" />{t(dict, "xlsx.importBtn")}
+            </Button>
+            <Button size="sm" variant="outline" onClick={printStudents} title={t(dict, "xlsx.printBtn")}>
+              <Printer size={14} />
+            </Button>
             <Button size="sm" className="bg-primary text-primary-foreground"
               onClick={() => { setError(""); setAdm({ ...EMPTY_ADM, open: true, admissionDate: todayStr() }); }}>
               <Plus size={14} className="mr-1" />{t(dict, "students.addBtn")}
@@ -474,7 +545,6 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
                             <p className="truncate text-xs text-muted-foreground">{s.email}</p>
                           </div>
                         </button>
-
                       </td>
                       <td className="py-2.5 pr-3">{pick(lang, s.className, s.classNameEn)}</td>
                       <td className="py-2.5 pr-3">{s.sectionName || "—"}</td>
@@ -491,13 +561,11 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
                           title={t(dict, "students.resetPass")}>
                           <KeyRound size={14} />
                         </button>
-
                         <button onClick={() => removeStudent(s)} disabled={busy}
                           className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-600"
                           aria-label={t(dict, "students.confirmDelete")}>
                           <Trash2 size={14} />
                         </button>
-
                       </td>
                     </tr>
                   ))}
@@ -595,7 +663,6 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
                   onChange={(e) => setAdm((f) => ({ ...f, password: e.target.value }))} />
                 <p className="text-xs text-muted-foreground">{t(dict, "students.passwordHint")}</p>
               </div>
-
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="stDob">{t(dict, "students.dob")}</Label>
@@ -630,7 +697,6 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
                     onChange={(e) => setAdm((f) => ({ ...f, bcNo: e.target.value }))} />
                 </div>
               </div>
-
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="stPhoneS">{t(dict, "students.studentPhone")}</Label>
@@ -668,8 +734,6 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
                 <Input id="stPrevQ" value={adm.previousQualification}
                   onChange={(e) => setAdm((f) => ({ ...f, previousQualification: e.target.value }))} />
               </div>
-
-
             </div>
 
             {/* ভর্তি */}
@@ -735,8 +799,6 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
                 <Input id="stAddress" value={adm.address}
                   onChange={(e) => setAdm((f) => ({ ...f, address: e.target.value }))} />
               </div>
-            </div>
-
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="stGRel">{t(dict, "students.gRelation")}</Label>
@@ -771,7 +833,7 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
                     onChange={(e) => setAdm((f) => ({ ...f, notes: e.target.value }))} />
                 </div>
               </div>
-
+            </div>
 
             <div className="flex gap-2">
               <Button type="submit" disabled={busy || uploading} className="bg-primary text-primary-foreground">
@@ -784,7 +846,8 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
           </form>
         </DialogContent>
       </Dialog>
-            {/* বাল্ক প্রমোশন ডায়লগ */}
+
+      {/* বাল্ক প্রমোশন ডায়লগ */}
       <Dialog open={promoOpen} onOpenChange={setPromoOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader><DialogTitle>{t(dict, "promo.title")}</DialogTitle></DialogHeader>
@@ -853,7 +916,7 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
         </DialogContent>
       </Dialog>
 
-            {/* বাল্ক ইমপোর্ট ডায়লগ */}
+      {/* বাল্ক ইমপোর্ট ডায়লগ */}
       <Dialog open={impOpen} onOpenChange={(v) => { setImpOpen(v); if (!v) { setImpRows([]); setImpSummary(null); setImpResults([]); } }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle>{t(dict, "xlsx.importTitle")}</DialogTitle></DialogHeader>
@@ -896,8 +959,6 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
           </div>
         </DialogContent>
       </Dialog>
-
-
     </>
   );
 }

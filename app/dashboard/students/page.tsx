@@ -24,7 +24,7 @@ export default async function StudentsPage() {
   if (!user || user.status !== "ACTIVE") redirect("/login");
   if (user.isFirstLogin) redirect("/change-password");
 
-  const [lang, enrollments, classes, studentCount, activeCount] = await Promise.all([
+  const [lang, enrollments, classes, settings, studentCount, activeCount] = await Promise.all([
     getLang(),
     prisma.enrollment.findMany({
       where: { branchId: user.branchId, deletedAt: null },
@@ -45,6 +45,7 @@ export default async function StudentsPage() {
       include: { sections: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } } },
       orderBy: [{ numericLevel: "asc" }, { name: "asc" }],
     }),
+    prisma.institutionSetting.findUnique({ where: { key: "global" }, select: { name: true } }),
     prisma.user.count({ where: { branchId: user.branchId, role: "STUDENT", deletedAt: null } }),
     prisma.enrollment.count({ where: { branchId: user.branchId, deletedAt: null, status: "ACTIVE" } }),
   ]);
@@ -70,6 +71,7 @@ export default async function StudentsPage() {
           dict={dict}
           lang={lang}
           stats={{ total: studentCount, active: activeCount }}
+          institutionName={settings?.name || "শিক্ষালয়"}
           students={enrollments.map((e) => ({
             id: e.id,
             name: e.student.fullName,

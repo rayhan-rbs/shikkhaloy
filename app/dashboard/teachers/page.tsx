@@ -22,7 +22,7 @@ export default async function TeachersPage() {
   if (!user || user.status !== "ACTIVE") redirect("/login");
   if (user.isFirstLogin) redirect("/change-password");
 
-  const [lang, teachers, classes] = await Promise.all([
+  const [lang, teachers, classes, settings] = await Promise.all([
     getLang(),
     prisma.user.findMany({
       where: { branchId: user.branchId, role: { in: ["TEACHER", "STAFF"] } },
@@ -40,6 +40,8 @@ export default async function TeachersPage() {
       },
       orderBy: [{ numericLevel: "asc" }, { name: "asc" }],
     }),
+    // ২.৯: প্রিন্ট-হেডারের জন্য প্রতিষ্ঠানের নাম
+    prisma.institutionSetting.findUnique({ where: { key: "global" }, select: { name: true } }),
   ]);
 
   if (!ADMIN_ROLES.includes(user.role)) redirect("/dashboard");
@@ -49,6 +51,7 @@ export default async function TeachersPage() {
     <TeachersClient
       dict={dict}
       lang={lang}
+      institutionName={settings?.name || "শিক্ষালয়"}
       teachers={teachers.map((t) => ({
         id: t.id, name: t.fullName, email: t.email, role: t.role, status: t.status,
         photoUrl: t.staffProfile?.photoUrl || null,

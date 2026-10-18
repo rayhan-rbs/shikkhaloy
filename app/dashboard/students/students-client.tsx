@@ -3,10 +3,12 @@
 // পেজিনেশন (ক্লায়েন্ট-সাইড — ৫ হাজার+ হলে সার্ভার-সাইডে যাবে)
 
 "use client";
+import { exportExcel } from "@/lib/export";
+import * as XLSX from "xlsx";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, KeyRound, ArrowUpRight, Trash2, Copy, X, Camera, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, KeyRound, ArrowUpRight, Trash2, Copy, X, FileSpreadsheet, Download, Upload, Camera, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -97,6 +99,13 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
   const [excluded, setExcluded] = useState<string[]>([]);
   const [promoOk, setPromoOk] = useState("");
 
+  const [impOpen, setImpOpen] = useState(false);
+  const [impRows, setImpRows] = useState<Record<string, unknown>[]>([]);
+  const [impSummary, setImpSummary] = useState<{ total: number; valid: number; invalid: number } | null>(null);
+  const [impResults, setImpResults] = useState<{ row: number; name: string; ok: boolean; message: string }[]>([]);
+  const [impCreds, setImpCreds] = useState<{ count: number; list: { name: string; email: string; password: string }[] } | null>(null);
+
+
   
   useEffect(() => { setPage(1); }, [search, classFilter, sectionFilter, statusFilter]);
 
@@ -177,7 +186,68 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
     }
   }
 
-    async function resetPassword(s: StudentRow) {
+  function exportStudents() {
+    exportExcel(filtered.map((s) => ({
+      "নাম": s.name, "ইমেইল": s.email, "ক্লাস": pick(lang, s.className, s.classNameEn),
+      "সেকশন": s.sectionName || "", "রোল": s.rollNumber ?? "", "স্ট্যাটাস": s.status,
+      "ভর্তির তারিখ": s.admissionDate,
+    })), "students.xlsx", "শিক্ষার্থী");
+  }
+
+  function downloadTemplate() {
+    exportExcel([{ "নাম": "উদাহরণ শিক্ষার্থী", "ইমেইল": "", "ক্লাস": "ষষ্ঠ শ্রেণী", "সেকশন": "ক", "রোল": "",
+      "জন্মতারিখ": "2012-05-14", "লিঙ্গ": "ছেলে", "রক্তের গ্রুপ": "B+", "পিতার নাম": "", "মাতার নাম": "",
+      "অভিভাবকের ফোন": "017xxxxxxxx", "ঠিকানা": "" }], "student-import-template.xlsx", "টেমপ্লেট");
+  }
+
+  function downloadCredsAgain() {
+    if (!impCreds) return;
+    exportExcel(impCreds.list.map((c) => ({ "নাম": c.name, "ইমেইল": c.email, "সাময়িক পাসওয়ার্ড": c.password })), "import-credentials.xlsx", "Credentials");
+  }
+
+  async function readImportFile(file: File) {
+    setError(""); setImpCreds(null); setImpSummary(null); setImpResults([]); setImpRows([]);
+    let json: Record<string, unknown>[] = [];
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { cellDates: true });
+      json = XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+    } catch { setError(t(dict, "students.networkError")); return; }
+    if (json.length === 0) { setError(t(dict, "xlsx.noRows")); return; }
+    setImpRows(json);
+    setBusy(true);
+    try {
+      const res = await fetch("/api/students/import", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows: json, commit: false }),
+      });
+      const j = await res.json();
+      if (!j.success) { setError(j.error || t(dict, "students.networkError")); return; }
+      setImpSummary({ total: j.data.total, valid: j.data.valid, invalid: j.data.invalid });
+      setImpResults(j.data.results.slice(0, 100));
+    } catch { setError(t(dict, "students.networkError")); } finally { setBusy(false); }
+  }
+
+  async function commitImport() {
+    if (!impSummary || impSummary.valid === 0) return;
+    if (!confirm(t(dict, "xlsx.confirm"))) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/students/import", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows: impRows, commit: true }),
+      });
+      const j = await res.json();
+      if (!j.success) { setError(j.error || t(dict, "students.networkError")); return; }
+      setImpCreds({ count: j.data.created, list: j.data.credentials });
+      downloadCredsAgain();
+      setImpOpen(false); setImpRows([]); setImpSummary(null); setImpResults([]);
+      router.refresh();
+    } catch { setError(t(dict, "students.networkError")); } finally { setBusy(false); }
+  }
+
+
+  async function resetPassword(s: StudentRow) {
     if (!confirm(`${s.name} — ${t(dict, "students.resetConfirm")}`)) return;
     setError("");
     setBusy(true);
@@ -313,9 +383,28 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
       {promoOk && (
         <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">🎉 {promoOk}</div>
       )}
+      {impCreds && (
+        <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
+          🎉 {impCreds.count} {t(dict, "xlsx.done")}
+          <p className="mt-1 text-xs">{t(dict, "xlsx.credsNote")}</p>
+          <div className="mt-2 flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={downloadCredsAgain}><FileSpreadsheet size={14} className="mr-1" />{t(dict, "xlsx.credsAgain")}</Button>
+            <Button size="sm" variant="ghost" onClick={() => setImpCreds(null)}>{t(dict, "students.close")}</Button>
+          </div>
+        </div>
+      )}
+
       {error && (
         <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-300">⚠️ {error}</div>
       )}
+
+            <Button className="mb-4 mr-2" size="sm" variant="outline" onClick={exportStudents} title={t(dict, "xlsx.exportBtn")}>
+              <Download size={14} />
+            </Button>
+            <Button className="mb-4" size="sm" variant="outline" onClick={() => { setError(""); setImpCreds(null); setImpOpen(true); }}>
+              <Upload size={14} className="mr-1" />{t(dict, "xlsx.importBtn")}
+            </Button>
+
 
       <Card>
         <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
@@ -763,6 +852,51 @@ export default function StudentsClient({ dict, lang, students, classes, stats }:
           </form>
         </DialogContent>
       </Dialog>
+
+            {/* বাল্ক ইমপোর্ট ডায়লগ */}
+      <Dialog open={impOpen} onOpenChange={(v) => { setImpOpen(v); if (!v) { setImpRows([]); setImpSummary(null); setImpResults([]); } }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader><DialogTitle>{t(dict, "xlsx.importTitle")}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <Button type="button" size="sm" variant="outline" onClick={downloadTemplate}>
+              <FileSpreadsheet size={14} className="mr-1" />{t(dict, "xlsx.templateBtn")}
+            </Button>
+            <p className="text-xs text-muted-foreground">{t(dict, "xlsx.templateHint")}</p>
+            <label className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-border p-6 text-sm text-muted-foreground transition-colors hover:bg-muted/50">
+              <Upload size={16} className="mr-2" />{t(dict, "xlsx.pickFile")}
+              <input type="file" accept=".xlsx,.xls,.csv" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) readImportFile(f); e.target.value = ""; }} />
+            </label>
+            {impSummary && (
+              <>
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium">{t(dict, "xlsx.total")}: {impSummary.total}</span>
+                  <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">{t(dict, "xlsx.valid")}: {impSummary.valid}</span>
+                  {impSummary.invalid > 0 && (
+                    <span className="rounded-full bg-red-500/15 px-2.5 py-1 text-xs font-medium text-red-700 dark:text-red-300">{t(dict, "xlsx.invalid")}: {impSummary.invalid}</span>
+                  )}
+                </div>
+                {impResults.length > 0 && (
+                  <div className="max-h-40 overflow-y-auto rounded-lg border border-border text-xs">
+                    {impResults.map((r) => (
+                      <div key={r.row} className={`flex items-center gap-2 border-b border-border/60 px-2.5 py-1.5 last:border-0 ${r.ok ? "" : "bg-red-500/5"}`}>
+                        <span className="w-10 shrink-0 text-muted-foreground">#{r.row}</span>
+                        <span className="min-w-0 flex-1 truncate">{r.name}</span>
+                        <span className={r.ok ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>{r.ok ? "✓" : r.message}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <Button disabled={busy || impSummary.valid === 0} onClick={commitImport} className="w-full bg-primary text-primary-foreground">
+                  {busy ? t(dict, "xlsx.validating") : `${t(dict, "xlsx.commit")} (${impSummary.valid})`}
+                </Button>
+              </>
+            )}
+            <Button type="button" variant="ghost" className="w-full" onClick={() => setImpOpen(false)}>{t(dict, "students.close")}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
     </>
   );

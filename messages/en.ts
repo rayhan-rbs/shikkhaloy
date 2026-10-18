@@ -362,6 +362,21 @@ export const en: Dictionary = {
     noCandidates: "No students selected for promotion",
   },
 
+  xlsx: {
+    exportBtn: "Excel ⬇", importBtn: "Import ⬆",
+    importTitle: "Bulk admission from Excel",
+    templateBtn: "Download template",
+    templateHint: "Column headers must match the template exactly — name & class are required; email/roll left blank will be auto-generated. If you provide an email, that becomes the login.",
+    pickFile: "Pick a file (.xlsx / .xls / .csv)",
+    noRows: "No rows found in the file",
+    total: "Total", valid: "Valid", invalid: "Issues",
+    commit: "Import",
+    confirm: "Valid rows will be admitted — everyone gets a temporary password (forced change on first login). Continue?",
+    done: "students admitted!",
+    credsNote: "Everyone shares the same temporary password — a credentials Excel (name+email+password) was auto-downloaded; print & distribute!",
+    credsAgain: "Re-download credentials",
+    validating: "Validating...",
+  },
 
   lang: {
     bn: "বাংলা",

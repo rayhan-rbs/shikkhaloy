@@ -3,10 +3,11 @@
 // ছবি-ফিল্ডের লেবেল শিক্ষার্থী-সেকশন থেকেই রিইউজ (students.changePhoto ইত্যাদি)
 
 "use client";
-
+import { exportExcel } from "@/lib/export";
+import * as XLSX from "xlsx";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Copy, X, Camera, Pencil, KeyRound } from "lucide-react";
+import { Plus, Trash2, Copy, X, FileSpreadsheet, Download, Upload, Camera, Pencil, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -132,6 +133,18 @@ export default function TeachersClient({ dict, lang, teachers, classes }: {
     }
   }
 
+  function exportTeachers() {
+    exportExcel(teachers.map((s) => ({
+      "নাম": s.name, "ইমেইল": s.email,
+      "পদ": s.role === "TEACHER" ? t(dict, "teachers.roleTeacher") : t(dict, "teachers.roleStaff"),
+      "পদবি": s.designation || "", "যোগ্যতা": s.qualification || "", "ফোন": s.phone || "",
+      "যোগদানের তারিখ": s.joiningDate || "",
+      "অ্যাসাইনমেন্ট": s.assignments.map((a) => `${pick(lang, a.subjectName, a.subjectNameEn)} (${pick(lang, a.className, a.classNameEn)}${a.sectionName ? `-${a.sectionName}` : ""})`).join("; "),
+      "স্ট্যাটাস": s.status,
+    })), "teachers.xlsx", "শিক্ষক");
+  }
+
+
   async function resetPassword(s: TeacherRow) {
     if (!confirm(`${s.name} — ${t(dict, "teachers.resetConfirm")}`)) return;
     setError(""); setBusy(true);
@@ -201,6 +214,11 @@ export default function TeachersClient({ dict, lang, teachers, classes }: {
         <Card><CardContent className="p-5"><p className="text-sm text-muted-foreground">{t(dict, "teachers.totalStaff")}</p><p className="mt-1 text-2xl font-bold">{stats.staff}</p></CardContent></Card>
         <Card><CardContent className="p-5"><p className="text-sm text-muted-foreground">{t(dict, "teachers.totalAssign")}</p><p className="mt-1 text-2xl font-bold">{stats.assignments}</p></CardContent></Card>
       </div>
+
+            <Button className="mb-4 mr-2" size="sm" variant="outline" onClick={exportTeachers} title={t(dict, "xlsx.exportBtn")}>
+              <Download size={14} />
+            </Button>
+
 
       {creds && (
         <div className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5">

@@ -1,11 +1,14 @@
 // 📁 app/dashboard/routine/routine-client.tsx
-// ৩.৩ গ্রিড + ৩.৪: room-টেক্সটের বদলে ক্লাসরুম-সিলেক্ট; চিপে কক্ষ-নাম দেখায়
+// ৩.৩.৩: ① গ্রিড/প্রিন্ট/এক্সেলে শুধু ১..সর্বোচ্চ-ব্যবহৃত পিরিয়ড (খালি=৮-টেমপ্লেট)
+// ② বিরতি দুই-সুযোগ: সাধারণ(পুরো ব্রাঞ্চ) + ক্লাস-নিজস্ব (পূর্ণ-ওভাররাইড);
+// ক্লাস-গ্রিড=effective (নিজস্ব>সাধারণ), টিচার-গ্রিড=সাধারণ (মাল্টি-ক্লাস সীমাবদ্ধতা)
 
 "use client";
-import { useMemo, useState } from "react";
-import { CalendarRange, Download, Plus, Printer, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { CalendarRange, Coffee, Download, Plus, Printer, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { t, type Lang } from "@/lib/i18n";
 import type { Dictionary } from "@/messages/bn";
@@ -16,6 +19,8 @@ interface ClassOption { id: string; name: string; nameEn: string; sections: { id
 interface AssignmentOpt { id: string; classId: string; sectionId: string | null; sectionName: string | null; subjectName: string; subjectNameEn: string; teacherId: string; teacherName: string; }
 interface TeacherOpt { id: string; name: string; }
 interface RoomOpt { id: string; name: string; capacity: number | null; }
+interface BreakRow { period: number; label: string; }
+interface ClassBreakRow { classId: string; period: number; label: string; }
 interface SlotRow {
   id: string; assignmentId: string; teacherId: string; teacherName: string;
   subjectName: string; subjectNameEn: string;
@@ -34,6 +39,21 @@ function dayLabels(lang: Lang): string[] {
   return lang === "en"
     ? ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"]
     : ["শনি", "রবি", "সোম", "মঙ্গল", "বুধ", "বৃহস্পতি", "শুক্র"];
+}
+
+// ক্লাসের নিজস্ব বিরতি থাকলে সাধারণ বাদ — পূর্ণ-ওভাররাইড (নোট ৩৯)
+function effectiveBreaks(defs: BreakRow[], classId: string, classBreaks: ClassBreakRow[]): BreakRow[] {
+  const own = classBreaks.filter((b) => b.classId === classId);
+  return own.length > 0 ? own.map(({ classId: _c, period, label }) => ({ period, label })) : defs;
+}
+
+// ১..সর্বোচ্চ-ব্যবহৃত (স্লট বা বিরতি); কিছুই না থাকলে ৮ = খালি-টেমপ্লেট (নোট ৩৯)
+function visiblePeriods(slots: SlotRow[], brks: BreakRow[]): number[] {
+  let maxP = 0;
+  for (const s of slots) maxP = Math.max(maxP, s.period);
+  for (const b of brks) maxP = Math.max(maxP, b.period);
+  const top = maxP > 0 ? maxP : PERIODS;
+  return Array.from({ length: top }, (_, i) => i + 1);
 }
 
 function computeConflicts(slots: SlotRow[]): Set<string> {
@@ -60,12 +80,14 @@ function computeConflicts(slots: SlotRow[]): Set<string> {
   return bad;
 }
 
-function GridBlock({ slots, lang, dict, isAdmin, onDelete, busy }: {
-  slots: SlotRow[]; lang: Lang; dict: Dictionary; isAdmin: boolean;
+function GridBlock({ slots, breaks, lang, dict, isAdmin, onDelete, busy }: {
+  slots: SlotRow[]; breaks: BreakRow[]; lang: Lang; dict: Dictionary; isAdmin: boolean;
   onDelete: (s: SlotRow) => void; busy: boolean;
 }) {
   const conflicts = useMemo(() => computeConflicts(slots), [slots]);
   const days = dayLabels(lang);
+  const breakMap = useMemo(() => new Map(breaks.map((b) => [b.period, b.label])), [breaks]);
+  const periods = useMemo(() => visiblePeriods(slots, breaks), [slots, breaks]);
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-xs">
@@ -78,51 +100,64 @@ function GridBlock({ slots, lang, dict, isAdmin, onDelete, busy }: {
           </tr>
         </thead>
         <tbody>
-          {Array.from({ length: PERIODS }, (_, pi) => pi + 1).map((p) => (
-            <tr key={p}>
-              <td className="border border-border bg-muted/30 p-1.5 text-center font-semibold">{p}</td>
-              {days.map((_, d) => {
-                const cell = slots.filter((s) => s.day === d && s.period === p);
-                return (
-                  <td key={d} className="min-w-28 border border-border p-1 align-top">
-                    {cell.length === 0 ? (
-                      <span className="text-muted-foreground/40">—</span>
-                    ) : (
-                      <div className="space-y-1">
-                        {cell.map((s) => {
-                          const bad = conflicts.has(s.id);
-                          const roomTxt = s.classroomName || s.room;
-                          return (
-                            <div key={s.id}
-                              className={`rounded-md border px-1.5 py-1 leading-snug ${
-                                bad
-                                  ? "border-red-500 bg-red-500/15 text-red-700 dark:text-red-300"
-                                  : "border-blue-500/40 bg-blue-500/10 text-blue-800 dark:text-blue-200"
-                              }`}>
-                              <p className="font-semibold">{pick(lang, s.subjectName, s.subjectNameEn)}</p>
-                              <p className="text-[10px] opacity-80">
-                                {s.teacherName}
-                                {s.sectionName ? ` · ${s.sectionName}` : ""}
-                                {roomTxt ? ` · ${roomTxt}` : ""}
-                              </p>
-                              {bad && <p className="text-[10px] font-semibold">⚠️ {t(dict, "routine.conflict")}</p>}
-                              {isAdmin && (
-                                <button onClick={() => onDelete(s)} disabled={busy}
-                                  className="mt-0.5 text-muted-foreground transition-colors hover:text-red-600"
-                                  title={t(dict, "routine.delConfirm")}>
-                                  <Trash2 size={11} />
-                                </button>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
+          {periods.map((p) => {
+            const brk = breakMap.get(p);
+            if (brk) {
+              return (
+                <tr key={p}>
+                  <td className="border border-border bg-muted/30 p-1.5 text-center font-semibold">{p}</td>
+                  <td colSpan={days.length} className="border border-border bg-amber-500/10 p-1.5 text-center font-medium text-amber-700 dark:text-amber-300">
+                    🍚 {brk} — {t(dict, "routine.breakRow")}
                   </td>
-                );
-              })}
-            </tr>
-          ))}
+                </tr>
+              );
+            }
+            return (
+              <tr key={p}>
+                <td className="border border-border bg-muted/30 p-1.5 text-center font-semibold">{p}</td>
+                {days.map((_, d) => {
+                  const cell = slots.filter((s) => s.day === d && s.period === p);
+                  return (
+                    <td key={d} className="min-w-28 border border-border p-1 align-top">
+                      {cell.length === 0 ? (
+                        <span className="text-muted-foreground/40">—</span>
+                      ) : (
+                        <div className="space-y-1">
+                          {cell.map((s) => {
+                            const bad = conflicts.has(s.id);
+                            const roomTxt = s.classroomName || s.room;
+                            return (
+                              <div key={s.id}
+                                className={`rounded-md border px-1.5 py-1 leading-snug ${
+                                  bad
+                                    ? "border-red-500 bg-red-500/15 text-red-700 dark:text-red-300"
+                                    : "border-blue-500/40 bg-blue-500/10 text-blue-800 dark:text-blue-200"
+                                }`}>
+                                <p className="font-semibold">{pick(lang, s.subjectName, s.subjectNameEn)}</p>
+                                <p className="text-[10px] opacity-80">
+                                  {s.teacherName}
+                                  {s.sectionName ? ` · ${s.sectionName}` : ""}
+                                  {roomTxt ? ` · ${roomTxt}` : ""}
+                                </p>
+                                {bad && <p className="text-[10px] font-semibold">⚠️ {t(dict, "routine.conflict")}</p>}
+                                {isAdmin && (
+                                  <button onClick={() => onDelete(s)} disabled={busy}
+                                    className="mt-0.5 text-muted-foreground transition-colors hover:text-red-600"
+                                    title={t(dict, "routine.delConfirm")}>
+                                    <Trash2 size={11} />
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -147,10 +182,17 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
   const [fDay, setFDay] = useState("");
   const [fPeriod, setFPeriod] = useState("");
   const [fAssignId, setFAssignId] = useState("");
-  const [fRoomId, setFRoomId] = useState(""); // ৩.৪: কক্ষ-সিলেক্ট
+  const [fRoomId, setFRoomId] = useState("");
   const [tTeacherId, setTTeacherId] = useState(isAdmin ? "" : meId);
   const [tSlots, setTSlots] = useState<SlotRow[] | null>(null);
   const [tTeacherName, setTTeacherName] = useState(isAdmin ? "" : meName);
+
+  // ৩.৩.৩ বিরতি — দুই-সুযোগ
+  const [defaults, setDefaults] = useState<BreakRow[]>([]);
+  const [classBreaks, setClassBreaks] = useState<ClassBreakRow[]>([]);
+  const [bScope, setBScope] = useState(""); // "" = সাধারণ, নইলে classId
+  const [bPeriod, setBPeriod] = useState("");
+  const [bLabel, setBLabel] = useState("");
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -159,6 +201,17 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
   const sel = "h-9 w-full rounded-lg border border-border bg-background px-3 text-sm";
   const selClass = classes.find((c) => c.id === classId) || null;
   const days = dayLabels(lang);
+
+  useEffect(() => { loadBreaks(); /* eslint-disable-line react-hooks/exhaustive-deps */ }, []);
+
+  const effBreaks = useMemo(
+    () => (classId ? effectiveBreaks(defaults, classId, classBreaks) : []),
+    [defaults, classBreaks, classId]
+  );
+  const freePeriods = useMemo(() => {
+    const bm = new Map(effBreaks.map((b) => [b.period, b.label]));
+    return Array.from({ length: PERIODS }, (_, i) => i + 1).filter((p) => !bm.has(p));
+  }, [effBreaks]);
 
   const assignOptions = useMemo(() => {
     if (!classId) return [];
@@ -176,6 +229,49 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
       (s.teacherId === fAssign.teacherId || fAssign.sectionId === null || s.sectionId === null || s.sectionId === fAssign.sectionId)
     );
   }, [fAssign, fDay, fPeriod, clsSlots]);
+
+  async function loadBreaks() {
+    try {
+      const res = await fetch("/api/routine/breaks");
+      const j = await res.json();
+      if (j.success) {
+        setDefaults(j.data.defaults as BreakRow[]);
+        setClassBreaks(j.data.classBreaks as ClassBreakRow[]);
+      }
+    } catch { /* নীরব — বিরতি ঐচ্ছিক */ }
+  }
+
+  async function addBreak(e: React.FormEvent) {
+    e.preventDefault();
+    setError(""); setOkMsg("");
+    if (!bPeriod || !bLabel.trim()) { setError(t(dict, "routine.needBreak")); return; }
+    setBusy(true);
+    try {
+      const res = await fetch("/api/routine/breaks", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ period: Number(bPeriod), label: bLabel, classId: bScope || null }),
+      });
+      const j = await res.json();
+      if (!j.success) { setError(j.error || t(dict, "routine.networkError")); return; }
+      setBPeriod(""); setBLabel("");
+      await loadBreaks();
+      setClsSlots(null);
+    } catch { setError(t(dict, "routine.networkError")); } finally { setBusy(false); }
+  }
+
+  async function removeBreak(p: number) {
+    if (!confirm(`${t(dict, "routine.breakRow")} ${p} — ${t(dict, "routine.breakDelConfirm")}`)) return;
+    setError(""); setBusy(true);
+    try {
+      const qs = new URLSearchParams({ period: String(p) });
+      if (bScope) qs.set("classId", bScope);
+      const res = await fetch(`/api/routine/breaks?${qs.toString()}`, { method: "DELETE" });
+      const j = await res.json();
+      if (!j.success) { setError(j.error || t(dict, "routine.networkError")); return; }
+      await loadBreaks();
+      setClsSlots(null);
+    } catch { setError(t(dict, "routine.networkError")); } finally { setBusy(false); }
+  }
 
   async function loadClass() {
     setError(""); setOkMsg("");
@@ -237,19 +333,25 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
     return s.classroomName || s.room || "";
   }
 
-  function gridRows(slots: SlotRow[]): { key: string; vals: string[] }[] {
-    return Array.from({ length: PERIODS }, (_, pi) => {
-      const vals = days.map((_, d) => {
-        const cell = slots.filter((s) => s.day === d && s.period === pi + 1);
-        return cell.length === 0 ? "—" : cell
-          .map((s) => `${pick(lang, s.subjectName, s.subjectNameEn)} · ${s.teacherName}${s.sectionName ? ` (${s.sectionName})` : ""}${roomTxt(s) ? ` · ${roomTxt(s)}` : ""}`)
-          .join(" | ");
-      });
-      return { key: String(pi + 1), vals };
+  // প্রিন্ট/এক্সেল-সারিও visiblePeriods-অনুগামী — ফিক্সড-৮ নয়
+  function gridRows(slots: SlotRow[], brks: BreakRow[]): { key: string; vals: string[] }[] {
+    const breakMap = new Map(brks.map((b) => [b.period, b.label]));
+    return visiblePeriods(slots, brks).map((p) => {
+      const brk = breakMap.get(p);
+      const vals = days.map(() => "—");
+      if (!brk) {
+        days.forEach((_, d) => {
+          const cell = slots.filter((s) => s.day === d && s.period === p);
+          vals[d] = cell.length === 0 ? "—" : cell
+            .map((s) => `${pick(lang, s.subjectName, s.subjectNameEn)} · ${s.teacherName}${s.sectionName ? ` (${s.sectionName})` : ""}${roomTxt(s) ? ` · ${roomTxt(s)}` : ""}`)
+            .join(" | ");
+        });
+      }
+      return { key: brk ? `${p} 🍚 ${brk}` : String(p), vals };
     });
   }
 
-  function printGrid(slots: SlotRow[], title: string, subtitle: string) {
+  function printGrid(slots: SlotRow[], brks: BreakRow[], title: string, subtitle: string) {
     const ok = printTable({
       title, header: institution, lang, orientation: "landscape",
       subtitle,
@@ -257,7 +359,7 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
         { header: t(dict, "routine.colPeriod"), key: "p", width: "8%", align: "center" },
         ...days.map((d, i) => ({ header: d, key: `d${i}`, width: "13%" })),
       ],
-      rows: gridRows(slots).map((r) => {
+      rows: gridRows(slots, brks).map((r) => {
         const row: Record<string, string | number> = { p: r.key };
         r.vals.forEach((v, i) => { row[`d${i}`] = v; });
         return row;
@@ -266,8 +368,8 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
     if (!ok) setError(t(dict, "xlsx.popupBlocked"));
   }
 
-  function exportGrid(slots: SlotRow[], fileName: string) {
-    const rows = gridRows(slots).map((r) => {
+  function exportGrid(slots: SlotRow[], brks: BreakRow[], fileName: string) {
+    const rows = gridRows(slots, brks).map((r) => {
       const o: Record<string, string | number> = { "পিরিয়ড": r.key };
       days.forEach((d, i) => { o[d] = r.vals[i]; });
       return o;
@@ -278,6 +380,8 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
   const clsTitle = selClass
     ? `${pick(lang, selClass.name, selClass.nameEn)}${sectionId ? `-${selClass.sections.find((s) => s.id === sectionId)?.name ?? ""}` : ""}`
     : "";
+
+  const scopeRows = bScope ? classBreaks.filter((b) => b.classId === bScope) : defaults;
 
   return (
     <>
@@ -307,8 +411,8 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
             </Button>
             {clsSlots && clsSlots.length > 0 && (
               <>
-                <Button size="sm" variant="outline" onClick={() => exportGrid(clsSlots, `routine-${clsTitle}.xlsx`)} title={t(dict, "xlsx.exportBtn")}><Download size={14} /></Button>
-                <Button size="sm" variant="outline" onClick={() => printGrid(clsSlots, t(dict, "routine.classTab"), clsTitle)} title={t(dict, "xlsx.printBtn")}><Printer size={14} /></Button>
+                <Button size="sm" variant="outline" onClick={() => exportGrid(clsSlots, effBreaks, `routine-${clsTitle}.xlsx`)} title={t(dict, "xlsx.exportBtn")}><Download size={14} /></Button>
+                <Button size="sm" variant="outline" onClick={() => printGrid(clsSlots, effBreaks, t(dict, "routine.classTab"), clsTitle)} title={t(dict, "xlsx.printBtn")}><Printer size={14} /></Button>
               </>
             )}
           </div>
@@ -319,14 +423,65 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
           ) : clsSlots.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">{t(dict, "routine.noSlots")}</p>
           ) : (
-            <GridBlock slots={clsSlots} lang={lang} dict={dict} isAdmin={isAdmin} onDelete={deleteSlot} busy={busy} />
+            <GridBlock slots={clsSlots} breaks={effBreaks} lang={lang} dict={dict} isAdmin={isAdmin} onDelete={deleteSlot} busy={busy} />
           )}
 
+          {/* বিরতি-ম্যানেজার — শুধু admin */}
+          {isAdmin && (
+            <div className="mt-5 space-y-3 rounded-xl border border-border p-4">
+              <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <Coffee size={13} />{t(dict, "routine.breakMgr")}
+              </p>
+              <p className="text-xs text-muted-foreground">{t(dict, "routine.breakOverrideHint")}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Label className="text-xs">{t(dict, "routine.breakScope")}</Label>
+                <select value={bScope} className={`${sel} w-52`} onChange={(e) => { setBScope(e.target.value); setBPeriod(""); }}>
+                  <option value="">{t(dict, "routine.breakDefaultScope")}</option>
+                  {classes.map((c) => <option key={c.id} value={c.id}>{pick(lang, c.name, c.nameEn)}</option>)}
+                </select>
+              </div>
+              {scopeRows.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {scopeRows.map((b) => (
+                    <span key={b.period} className="flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs text-amber-700 dark:text-amber-300">
+                      {t(dict, "routine.colPeriod")} {b.period} · {b.label}
+                      <button onClick={() => removeBreak(b.period)} disabled={busy}
+                        className="text-muted-foreground transition-colors hover:text-red-600" aria-label={t(dict, "routine.breakDelConfirm")}>
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <form onSubmit={addBreak} className="flex flex-wrap items-end gap-2">
+                <div className="w-28 space-y-1.5">
+                  <Label>{t(dict, "routine.pickPeriod")}</Label>
+                  <select value={bPeriod} className={sel} onChange={(e) => setBPeriod(e.target.value)}>
+                    <option value="">—</option>
+                    {Array.from({ length: PERIODS }, (_, i) => i + 1).map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="w-44 space-y-1.5">
+                  <Label>{t(dict, "routine.breakLabel")}</Label>
+                  <Input value={bLabel} placeholder={t(dict, "routine.breakPh")} onChange={(e) => setBLabel(e.target.value)} />
+                </div>
+                <Button type="submit" size="sm" variant="outline" disabled={busy}>
+                  <Plus size={14} className="mr-1" />{t(dict, "routine.add")}
+                </Button>
+              </form>
+            </div>
+          )}
+
+          {/* স্লট যোগ — শুধু admin */}
           {isAdmin && clsSlots != null && (
             <form onSubmit={addSlot} className="mt-5 space-y-3 rounded-xl border border-border p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t(dict, "routine.addSlot")}</p>
               {assignOptions.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t(dict, "routine.noAssignments")}</p>
+              ) : freePeriods.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t(dict, "routine.allBreaks")}</p>
               ) : (
                 <>
                   <div className="grid gap-3 sm:grid-cols-5">
@@ -341,7 +496,7 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
                       <Label>{t(dict, "routine.pickPeriod")}</Label>
                       <select value={fPeriod} className={sel} onChange={(e) => setFPeriod(e.target.value)}>
                         <option value="">—</option>
-                        {Array.from({ length: PERIODS }, (_, i) => i + 1).map((p) => <option key={p} value={p}>{p}</option>)}
+                        {freePeriods.map((p) => <option key={p} value={p}>{p}</option>)}
                       </select>
                     </div>
                     <div className="space-y-1.5 sm:col-span-2">
@@ -358,7 +513,7 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
                     <div className="space-y-1.5">
                       <Label>{t(dict, "routine.room")}</Label>
                       <select value={fRoomId} className={sel} onChange={(e) => setFRoomId(e.target.value)}>
-                        <option value="">{t(dict, "classroom.roomNone")}</option>
+                        <option value="">{t(dict, "routine.roomNone")}</option>
                         {classrooms.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                       </select>
                     </div>
@@ -390,8 +545,8 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
             </Button>
             {tSlots && tSlots.length > 0 && (
               <>
-                <Button size="sm" variant="outline" onClick={() => exportGrid(tSlots, `routine-${tTeacherName}.xlsx`)} title={t(dict, "xlsx.exportBtn")}><Download size={14} /></Button>
-                <Button size="sm" variant="outline" onClick={() => printGrid(tSlots, t(dict, "routine.teacherTab"), tTeacherName)} title={t(dict, "xlsx.printBtn")}><Printer size={14} /></Button>
+                <Button size="sm" variant="outline" onClick={() => exportGrid(tSlots, defaults, `routine-${tTeacherName}.xlsx`)} title={t(dict, "xlsx.exportBtn")}><Download size={14} /></Button>
+                <Button size="sm" variant="outline" onClick={() => printGrid(tSlots, defaults, t(dict, "routine.teacherTab"), tTeacherName)} title={t(dict, "xlsx.printBtn")}><Printer size={14} /></Button>
               </>
             )}
           </div>
@@ -402,7 +557,7 @@ export default function RoutineClient({ dict, lang, institution, isAdmin, meId, 
           ) : tSlots.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">{t(dict, "routine.noSlots")}</p>
           ) : (
-            <GridBlock slots={tSlots} lang={lang} dict={dict} isAdmin={false} onDelete={() => {}} busy={busy} />
+            <GridBlock slots={tSlots} breaks={defaults} lang={lang} dict={dict} isAdmin={false} onDelete={() => {}} busy={busy} />
           )}
         </CardContent>
       </Card>

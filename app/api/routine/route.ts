@@ -138,6 +138,12 @@ export async function POST(request: NextRequest) {
     });
     if (!asg) return err("অ্যাসাইনমেন্ট পাওয়া যায়নি", 404);
     if (asg.teacher.status !== "ACTIVE") return err("শিক্ষক নিষ্ক্রিয় — রুটিনে বসানো যাবে না");
+    
+    const clsBrk = await prisma.routineBreak.findFirst({ where: { branchId, classId: asg.classId, period } });
+    const defBrk = clsBrk ? null : await prisma.routineBreak.findFirst({ where: { branchId, classId: null, period } });
+    const brk = clsBrk ?? defBrk;
+    if (brk) return err(`পিরিয়ড ${period} বিরতির সময় (${brk.label}) — ক্লাস বসানো যাবে না`);
+
 
 
     // ③ কক্ষ-কনফ্লিক্ট (৩.৪): একই কক্ষ একই দিন-পিরিয়ডে দুই ক্লাস = ব্লক

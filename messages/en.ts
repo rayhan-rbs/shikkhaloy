@@ -433,6 +433,7 @@ export const en: Dictionary = {
     title: "Routine", classTab: "Class routine", teacherTab: "Teacher routine",
     pickClass: "Pick class", allSections: "Whole class", load: "Load",
     colPeriod: "Period",
+    roomNone: "— No room —",
     addSlot: "Add slot", pickDay: "Day", pickPeriod: "Period",
     pickSubject: "Subject (teacher)", room: "Room (optional)", roomPh: "e.g. 201",
     add: "Add", needAll: "Pick day, period & subject",
@@ -445,6 +446,8 @@ export const en: Dictionary = {
     saved: "Slot added ✅",
     subtitle: "Pick a class/teacher and load the routine",
     networkError: "Cannot reach the server — try again",
+    breakMgr: "Break management", breakLabel: "Break label", breakPh: "e.g. Tiffin", breakRow: "Break", needBreak: "Pick period & write a label", breakDelConfirm: "Remove this break?", allBreaks: "All periods are breaks — no room for classes",
+    breakScope: "Break scope", breakDefaultScope: "Default (whole branch)", breakOverrideHint: "If a class has its own breaks, the default ones don't apply to it — set class-specific breaks for different period structures (e.g. school + university)",
   },
   classroom: {
     title: "Classrooms", addBtn: "Add room", dialogTitle: "New classroom",

@@ -40,7 +40,6 @@ model Branch {
   exams              Exam[]
   classrooms         Classroom[]
   routineBreaks      RoutineBreak[]
-
 }
 
 // ─── 👤 ইউজার (নীতি ১) ───
@@ -59,16 +58,16 @@ model User {
   updatedAt    DateTime   @updatedAt
   deletedAt    DateTime?
 
-  branch             Branch             @relation(fields: [branchId], references: [id])
+  branch             Branch              @relation(fields: [branchId], references: [id])
   enrollments        Enrollment[]
   studentProfile     StudentProfile?
   staffProfile       StaffProfile?
   teacherAssignments TeacherAssignment[]
-  attendances        Attendance[]       @relation("AttendanceStudent")
-  markedAttendances  Attendance[]       @relation("AttendanceMarker")
-  leaveApplications  LeaveApplication[] @relation("LeaveStudent")
-  decidedLeaves      LeaveApplication[] @relation("LeaveDecider")
-  routineSlots       RoutineSlot[]      @relation("RoutineTeacher")
+  attendances        Attendance[]        @relation("AttendanceStudent")
+  markedAttendances  Attendance[]        @relation("AttendanceMarker")
+  leaveApplications  LeaveApplication[]  @relation("LeaveStudent")
+  decidedLeaves      LeaveApplication[]  @relation("LeaveDecider")
+  routineSlots       RoutineSlot[]       @relation("RoutineTeacher")
 
   @@index([branchId])
   @@index([role])
@@ -149,14 +148,14 @@ model InstitutionSetting {
 
 // ─── 🎯 গ্রেডিং ───
 model GradingScale {
-  id        String    @id @default(cuid())
+  id        String          @id @default(cuid())
   branchId  String
-  branch    Branch    @relation(fields: [branchId], references: [id])
+  branch    Branch          @relation(fields: [branchId], references: [id])
   name      String
   nameEn    String?
-  isActive  Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  isActive  Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
   deletedAt DateTime?
   rules     GradeRule[]
   classes   AcademicClass[]
@@ -195,40 +194,41 @@ model Department {
 }
 
 model AcademicClass {
-  id             String        @id @default(cuid())
-  branchId       String
-  branch         Branch        @relation(fields: [branchId], references: [id])
-  departmentId   String?
-  department     Department?   @relation(fields: [departmentId], references: [id])
-  gradingScaleId String?
-  gradingScale   GradingScale? @relation(fields: [gradingScaleId], references: [id])
-  name           String
-  nameEn         String?
-  numericLevel   Int?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  deletedAt      DateTime?
-  sections       Section[]
-  subjects       Subject[]
-  enrollments    Enrollment[]
+  id                 String              @id @default(cuid())
+  branchId           String
+  branch             Branch              @relation(fields: [branchId], references: [id])
+  departmentId       String?
+  department         Department?         @relation(fields: [departmentId], references: [id])
+  gradingScaleId     String?
+  gradingScale       GradingScale?       @relation(fields: [gradingScaleId], references: [id])
+  name               String
+  nameEn             String?
+  numericLevel       Int?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  deletedAt          DateTime?
+  sections           Section[]
+  subjects           Subject[]
+  enrollments        Enrollment[]
   teacherAssignments TeacherAssignment[]
-  attendances    Attendance[]
-  leaveApplications LeaveApplication[]
-  routineSlots   RoutineSlot[]
+  attendances        Attendance[]
+  leaveApplications  LeaveApplication[]
+  routineSlots       RoutineSlot[]
+  routineBreaks      RoutineBreak[]
 
   @@index([branchId])
   @@index([departmentId])
 }
 
 model Section {
-  id        String        @id @default(cuid())
-  classId   String
-  class     AcademicClass @relation(fields: [classId], references: [id])
-  name      String
-  capacity  Int?
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  deletedAt DateTime?
+  id                 String              @id @default(cuid())
+  classId            String
+  class              AcademicClass       @relation(fields: [classId], references: [id])
+  name               String
+  capacity           Int?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  deletedAt          DateTime?
   enrollments        Enrollment[]
   teacherAssignments TeacherAssignment[]
   attendances        Attendance[]
@@ -239,19 +239,19 @@ model Section {
 }
 
 model Subject {
-  id          String        @id @default(cuid())
-  classId     String
-  class       AcademicClass @relation(fields: [classId], references: [id])
-  name        String
-  nameEn      String?
-  code        String?
-  creditHours Float         @default(1)
-  isElective  Boolean       @default(false)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  deletedAt   DateTime?
+  id                 String              @id @default(cuid())
+  classId            String
+  class              AcademicClass       @relation(fields: [classId], references: [id])
+  name               String
+  nameEn             String?
+  code               String?
+  creditHours        Float               @default(1)
+  isElective         Boolean             @default(false)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  deletedAt          DateTime?
   teacherAssignments TeacherAssignment[]
-  routineSlots       RoutineSlot[] @relation("RoutineSubject")
+  routineSlots       RoutineSlot[]       @relation("RoutineSubject")
   examSubjects       ExamSubject[]
 
   @@index([classId])
@@ -327,20 +327,20 @@ model StaffProfile {
 
 // ─── 📚 শিক্ষক-অ্যাসাইনমেন্ট ───
 model TeacherAssignment {
-  id        String        @id @default(cuid())
-  branchId  String
-  branch    Branch        @relation(fields: [branchId], references: [id])
-  teacherId String
-  teacher   User          @relation(fields: [teacherId], references: [id])
-  classId   String
-  klass     AcademicClass @relation(fields: [classId], references: [id])
-  sectionId String?
-  section   Section?      @relation(fields: [sectionId], references: [id])
-  subjectId String
-  subject   Subject       @relation(fields: [subjectId], references: [id])
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  deletedAt DateTime?
+  id           String        @id @default(cuid())
+  branchId     String
+  branch       Branch        @relation(fields: [branchId], references: [id])
+  teacherId    String
+  teacher      User          @relation(fields: [teacherId], references: [id])
+  classId      String
+  klass        AcademicClass @relation(fields: [classId], references: [id])
+  sectionId    String?
+  section      Section?      @relation(fields: [sectionId], references: [id])
+  subjectId    String
+  subject      Subject       @relation(fields: [subjectId], references: [id])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
   routineSlots RoutineSlot[]
 
   @@index([branchId])
@@ -359,7 +359,7 @@ model Attendance {
   sectionId  String?
   section    Section?      @relation(fields: [sectionId], references: [id])
   date       DateTime      @db.Date
-  status     String        // PRESENT/ABSENT/LEAVE
+  status     String // PRESENT/ABSENT/LEAVE
   method     String        @default("manual") // manual/qr/rfid/face — নীতি ৪
   note       String?
   markedById String
@@ -406,42 +406,41 @@ model RoutineSlot {
   branch       Branch            @relation(fields: [branchId], references: [id])
   assignmentId String
   assignment   TeacherAssignment @relation(fields: [assignmentId], references: [id])
-  teacherId    String            // স্ন্যাপশট — টিচার-কনফ্লিক্ট কুয়েরির জন্য
+  teacherId    String // স্ন্যাপশট — টিচার-কনফ্লিক্ট কুয়েরির জন্য
   teacher      User              @relation("RoutineTeacher", fields: [teacherId], references: [id])
-  subjectId    String            // স্ন্যাপশট
+  subjectId    String // স্ন্যাপশট
   subject      Subject           @relation("RoutineSubject", fields: [subjectId], references: [id])
-  classId      String            // স্ন্যাপশট
+  classId      String // স্ন্যাপশট
   klass        AcademicClass     @relation(fields: [classId], references: [id])
-  sectionId    String?           // null = পুরো ক্লাস দখল করে
+  sectionId    String? // null = পুরো ক্লাস দখল করে
   section      Section?          @relation(fields: [sectionId], references: [id])
-  classroomId  String?           // ৩.৪ — কক্ষ-কনফ্লিক্টের চাবি (ঐচ্ছিক)
+  classroomId  String? // ৩.৪ — কক্ষ-কনফ্লিক্টের চাবি (ঐচ্ছিক)
   classroom    Classroom?        @relation(fields: [classroomId], references: [id])
 
-  day          Int               // ০=শনি … ৬=শুক্র
-  period       Int               // ১..৮ (MVP fixed)
-  room         String?
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  deletedAt    DateTime?
+  day       Int // ০=শনি … ৬=শুক্র
+  period    Int // ১..৮ (MVP fixed)
+  room      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@unique([assignmentId, day, period]) // exact-dup DB-লেভেলে বন্ধ
   @@index([branchId])
   @@index([classId, day, period])
   @@index([teacherId, day, period])
   @@index([classroomId, day, period])
-
 }
 
 // ─── 🏫 ক্লাসরুম (৩.৪ — রুটিনের কক্ষ-কনফ্লিক্টের উৎস) ───
 model Classroom {
-  id        String    @id @default(cuid())
-  branchId  String
-  branch    Branch    @relation(fields: [branchId], references: [id])
-  name      String
-  capacity  Int?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  id           String        @id @default(cuid())
+  branchId     String
+  branch       Branch        @relation(fields: [branchId], references: [id])
+  name         String
+  capacity     Int?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
   routineSlots RoutineSlot[]
 
   @@index([branchId])
@@ -449,17 +448,17 @@ model Classroom {
 
 // ─── 📝 এক্সাম (৩.৫ — অফলাইন; রুটিন=ExamSubject; মার্কস ৩.৬-এ যুক্ত হবে) ───
 model Exam {
-  id        String    @id @default(cuid())
+  id        String        @id @default(cuid())
   branchId  String
-  branch    Branch    @relation(fields: [branchId], references: [id])
+  branch    Branch        @relation(fields: [branchId], references: [id])
   name      String
   nameEn    String?
-  examType  String    @default("FINAL") // FIRST_TERM/HALF_YEARLY/FINAL/TEST/MODEL/OTHER
-  startDate DateTime  @db.Date
-  endDate   DateTime  @db.Date
-  status    String    @default("UPCOMING") // UPCOMING/ONGOING/COMPLETED
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  examType  String        @default("FINAL") // FIRST_TERM/HALF_YEARLY/FINAL/TEST/MODEL/OTHER
+  startDate DateTime      @db.Date
+  endDate   DateTime      @db.Date
+  status    String        @default("UPCOMING") // UPCOMING/ONGOING/COMPLETED
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
   deletedAt DateTime?
   subjects  ExamSubject[]
 
@@ -467,34 +466,34 @@ model Exam {
 }
 
 model ExamSubject {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   examId    String
-  exam      Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  exam      Exam      @relation(fields: [examId], references: [id], onDelete: Cascade)
   subjectId String
-  subject   Subject  @relation(fields: [subjectId], references: [id])
-  examDate  DateTime @db.Date
+  subject   Subject   @relation(fields: [subjectId], references: [id])
+  examDate  DateTime  @db.Date
   startTime String?
   endTime   String?
-  fullMarks Float    @default(100)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  fullMarks Float     @default(100)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   @@index([examId])
 }
 
-// ─── 🍚 রুটিন-বিরতি (৩.৩.২ — কনফিগ-সাব-আইটেম: hard-delete, নোট ৪-ব্যতিক্রম) ───
+// ─── 🍚 রুটিন-বিরতি (৩.৩.৩ — classId: null=ব্রাঞ্চ-সাধারণ; সেট=ক্লাস-নিজস্ব পূর্ণ-ওভাররাইড) ───
 model RoutineBreak {
-  id        String   @id @default(cuid())
+  id        String         @id @default(cuid())
   branchId  String
-  branch    Branch   @relation(fields: [branchId], references: [id])
-  period    Int      // ১..৮
-  label     String   // যেমন: টিফিন / নামাজ
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  branch    Branch         @relation(fields: [branchId], references: [id])
+  classId   String?
+  class     AcademicClass? @relation(fields: [classId], references: [id])
+  period    Int // ১..৮
+  label     String
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
 
-  @@unique([branchId, period])
+  @@unique([branchId, classId, period]) // classId=null ডুপ DB-রোগ নয় — API findFirst দিয়ে আটকায়
   @@index([branchId])
 }
-
-

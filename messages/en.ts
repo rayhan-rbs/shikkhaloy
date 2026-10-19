@@ -47,6 +47,7 @@ export const en: Dictionary = {
     routine: "Routine",
     classroom: "Classrooms",
     exam: "Exams",
+    seats: "Seat Plan",
     marks: "Marks",
     academicCal: "Academic calendar",
     attendance: "Attendance",
@@ -490,6 +491,19 @@ export const en: Dictionary = {
   marks:{
     entryTitle:"Marks entry", entryHint:"Pick exam → Load → pick subject → load roster", pickExam:"Pick exam", pickSubject:"Subject", load:"Load", save:"Save marks", saved:"Marks saved ✅", needEntry:"Enter at least one mark", locked:"Exam completed — marks locked (change status to unlock)", full:"Full", colMarks:"Marks", colGrade:"Grade", colPoint:"Point", colSubject:"Subject", colDate:"Date", meritTitle:"Merit list", meritHint:"Pick exam+class → Load", needMerit:"Pick exam & class", position:"Merit", gpa:"GPA", total:"Obtained/Full", reportTitle:"Report card", reportBtn:"Report", noMarksYet:"No marks yet", networkError:"Cannot reach the server — try again",
   },
+
+  seats: {
+    title: "Seat Plan", hint: "Exam → Load → pick subject → load roster → tick rooms — plan builds itself",
+    pickExam: "Pick exam", pickSubject: "Exam subject",
+    pickRooms: "Pick rooms (filled in order)",
+    room: "Room", seat: "Seat", capacity: "Capacity", assigned: "Seated",
+    totalStudents: "Total students", roomsUsed: "Rooms",
+    leftOutWarn: "Not enough capacity — no seats for:",
+    needSubject: "Pick a subject first",
+    empty: "No students", printAll: "Full plan",
+    networkError: "Cannot reach the server — try again",
+  },
+
   lang: {
     bn: "বাংলা",
     en: "English",

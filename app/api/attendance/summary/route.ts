@@ -6,6 +6,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 
+function err(msg: string, status = 400) {
+  return NextResponse.json({ success: false, error: msg }, { status });
+}
+
 const ADMIN_ROLES = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"];
 const MONTH_RE = /^\d{4}-\d{2}$/;
 

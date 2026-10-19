@@ -42,6 +42,7 @@ export function printTable(opts: {
   header?: PrintHeader;   // v2: পূর্ণ লেটারহেড (নতুন কল-কন্ট্রাক্ট)
   institution?: string;   // v1 legacy: শুধু নাম-স্ট্রিং (এখনো চলে — ক্র্যাশ নয়)
   subtitle?: string;
+  footer?: string;
   orientation?: "landscape" | "portrait";
   lang?: string;
   columns: PrintColumn[];

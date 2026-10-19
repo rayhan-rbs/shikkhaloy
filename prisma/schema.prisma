@@ -141,6 +141,7 @@ model InstitutionSetting {
   tagline    String?
   taglineEn  String?
   brandColor String    @default("#4f46e5")
+  logoUrl    String?
   eiin       String?
   address    String?
   phone      String?

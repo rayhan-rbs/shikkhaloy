@@ -1,5 +1,6 @@
 // 📁 app/api/teachers/[id]/route.ts
 // PUT = এডিট (নাম+রোল+প্রোফাইল) | PATCH = পাসওয়ার্ড রিসেট | DELETE = নিষ্ক্রিয় (নীতি ১)
+import { type Role } from "@prisma/client";
 
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
@@ -39,7 +40,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ success: false, error: "অনুমতি আপনার নেই" }, { status: 403 });
     }
     const { id } = await params;
-    const teacher = await prisma.user.findFirst({ where: { id, branchId: guard.session.branchId, role: { in: STAFF_ROLES } } });
+    const teacher = await prisma.user.findFirst({ where: { id, branchId: guard.session.branchId, role: { in: (STAFF_ROLES) as Role[] } } });
     if (!teacher) return NextResponse.json({ success: false, error: "শিক্ষক/স্টাফ পাওয়া যায়নি" }, { status: 404 });
 
     const body = await request.json();
@@ -64,7 +65,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     };
 
     await prisma.$transaction([
-      prisma.user.update({ where: { id }, data: { fullName, role } }),
+      prisma.user.update({ where: { id }, data: { fullName, role: role as Role } }),
       prisma.staffProfile.upsert({
         where: { userId: id },
         create: { userId: id, ...profileData },
@@ -86,7 +87,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ success: false, error: "রিসেটের অনুমতি আপনার নেই" }, { status: 403 });
     }
     const { id } = await params;
-    const teacher = await prisma.user.findFirst({ where: { id, branchId: guard.session.branchId, role: { in: STAFF_ROLES } } });
+    const teacher = await prisma.user.findFirst({ where: { id, branchId: guard.session.branchId, role: { in: (STAFF_ROLES) as Role[] } } });
     if (!teacher) return NextResponse.json({ success: false, error: "শিক্ষক/স্টাফ পাওয়া যায়নি" }, { status: 404 });
 
     const tempPassword = genPassword();
@@ -108,7 +109,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ success: false, error: "অনুমতি আপনার নেই" }, { status: 403 });
     }
     const { id } = await params;
-    const teacher = await prisma.user.findFirst({ where: { id, branchId: guard.session.branchId, role: { in: STAFF_ROLES } } });
+    const teacher = await prisma.user.findFirst({ where: { id, branchId: guard.session.branchId, role: { in: (STAFF_ROLES) as Role[] } } });
     if (!teacher) return NextResponse.json({ success: false, error: "শিক্ষক/স্টাফ পাওয়া যায়নি" }, { status: 404 });
 
     // নীতি ১: কখনো DELETE না — Status বদলাবে; অ্যাসাইনমেন্টগুলো থেকে যায় (ঐতিহাসিক)

@@ -1,7 +1,7 @@
 // 📁 app/api/teachers/route.ts
 // GET = তালিকা | POST = tx: User[TEACHER/STAFF]+StaffProfile; অটো-ইমেইল+ক্রেডেনশিয়াল
 // (একবার); DEACTIVATED-পুনরুজ্জীবন — শিক্ষার্থী-প্যাটার্নই
-
+import { type Role } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     const guard = await requireSession(request);
     if ("error" in guard) return guard.error;
     const teachers = await prisma.user.findMany({
-      where: { branchId: guard.session.branchId, role: { in: STAFF_ROLES } },
+      where: { branchId: guard.session.branchId, role: { in: (STAFF_ROLES) as Role[] } },
       include: {
         staffProfile: true,
         teacherAssignments: { where: { deletedAt: null }, include: { klass: true, section: true, subject: true } },
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       await prisma.$transaction([
         prisma.user.update({
           where: { id: revive.id },
-          data: { fullName, role, password: hashed, isFirstLogin: true, status: "ACTIVE" },
+          data: { fullName, role: role as Role, password: hashed, isFirstLogin: true, status: "ACTIVE" },
         }),
         prisma.staffProfile.upsert({
           where: { userId: revive.id },
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
 
     const user = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
-        data: { branchId: guard.session.branchId, email, fullName, role, password: hashed, isFirstLogin: true, status: "ACTIVE" },
+        data: { branchId: guard.session.branchId, email, fullName, role: role as Role, password: hashed, isFirstLogin: true, status: "ACTIVE" },
       });
       await tx.staffProfile.create({ data: { userId: user.id, ...profileData } });
       return user;

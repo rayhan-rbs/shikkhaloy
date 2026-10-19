@@ -1,5 +1,6 @@
 // 📁 prisma/seed-teachers.ts — ডেমো: ৩ শিক্ষক + ১ স্টাফ + ৩ অ্যাসাইনমেন্ট (idempotent)
 // চালাও: npx tsx prisma/seed-teachers.ts
+import { type Role } from "@prisma/client";
 
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
@@ -13,10 +14,10 @@ async function main() {
 
   const password = await bcrypt.hash("Teacher@123", 10);
   const PEOPLE = [
-    { email: "tch01@demo.local", fullName: "মোঃ আব্দুল করিম", role: "TEACHER", designation: "সিনিয়র শিক্ষক", qualification: "এম.এ (বাংলা)", phone: "01711000001" },
-    { email: "tch02@demo.local", fullName: "ফাতেমা বেগম", role: "TEACHER", designation: "সহকারী শিক্ষক", qualification: "বি.এসসি (গণিত)" },
-    { email: "tch03@demo.local", fullName: "রফিকুল ইসলাম", role: "TEACHER", designation: "সহকারী শিক্ষক", qualification: "বি.এসসি (পদার্থ)" },
-    { email: "tch04@demo.local", fullName: "নাসরিন সুলতানা", role: "STAFF", designation: "অফিস সহকারী" },
+    { email: "tch01@demo.local", fullName: "মোঃ আব্দুল করিম", role: "TEACHER" as Role, designation: "সিনিয়র শিক্ষক", qualification: "এম.এ (বাংলা)", phone: "01711000001" },
+    { email: "tch02@demo.local", fullName: "ফাতেমা বেগম", role: "TEACHER" as Role, designation: "সহকারী শিক্ষক", qualification: "বি.এসসি (গণিত)" },
+    { email: "tch03@demo.local", fullName: "রফিকুল ইসলাম", role: "TEACHER" as Role, designation: "সহকারী শিক্ষক", qualification: "বি.এসসি (পদার্থ)" },
+    { email: "tch04@demo.local", fullName: "নাসরিন সুলতানা", role: "STAFF" as Role, designation: "অফিস সহকারী" },
   ];
 
   const ids: Record<string, string> = {};
@@ -24,7 +25,7 @@ async function main() {
     let u = await prisma.user.findFirst({ where: { email: p.email } });
     if (!u) {
       u = await prisma.user.create({
-        data: { branchId: branch.id, email: p.email, fullName: p.fullName, role: p.role, password, isFirstLogin: false, status: "ACTIVE" },
+        data: { branchId: branch.id, email: p.email, fullName: p.fullName, role: p.role as Role, password, isFirstLogin: false, status: "ACTIVE" },
       });
       console.log("👩‍🏫 তৈরি:", p.fullName);
     } else {

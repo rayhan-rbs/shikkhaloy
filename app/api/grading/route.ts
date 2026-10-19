@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
         name,
         nameEn: opt(body.nameEn),
         isActive: false, // নতুন স্কেল নিষ্ক্রিয় — "সক্রিয় করুন" বাটনে চালু হবে
-        rules: { create: checked.rules.map((r, i) => ({ ...r, sortOrder: i })) },
+        rules: { create: (checked.rules ?? []).map((r, i) => ({ ...r, sortOrder: i })) },
       },
       include: { rules: { orderBy: { sortOrder: "asc" } } },
     });
@@ -189,7 +189,7 @@ export async function PUT(request: NextRequest) {
         data: { name, nameEn: opt(body.nameEn) },
       });
       await tx.gradeRule.createMany({
-        data: checked.rules.map((r, i) => ({ ...r, scaleId: existing.id, sortOrder: i })),
+        data: (checked.rules ?? []).map((r, i) => ({ ...r, scaleId: existing.id, sortOrder: i })),
       });
       return tx.gradingScale.findUnique({
         where: { id: existing.id },

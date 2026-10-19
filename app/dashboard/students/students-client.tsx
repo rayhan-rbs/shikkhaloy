@@ -27,7 +27,7 @@ interface StudentRow {
   status: string; admissionDate: string;
 }
 interface ClassOption { id: string; name: string; nameEn: string; sections: { id: string; name: string }[]; }
-interface Creds { name: string; email: string; password: string; }
+type Creds = { name: string; email: string; password: string; }
 
 function pick(lang: Lang, name: string, nameEn: string): string {
   if (lang === "en" && nameEn.trim()) return nameEn;

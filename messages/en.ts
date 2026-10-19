@@ -47,6 +47,7 @@ export const en: Dictionary = {
     routine: "Routine",
     classroom: "Classrooms",
     exam: "Exams",
+    marks: "Marks",
     academicCal: "Academic calendar",
     attendance: "Attendance",
     finance: "Finance",
@@ -400,7 +401,7 @@ export const en: Dictionary = {
     present: "Present", absent: "Absent", leave: "Leave",
     summaryTitle: "Monthly summary", loadSummary: "Load summary",
     summaryEmpty: "No attendance data for this month",
-    colName: "Name", colRoll: "Roll", colPresent: "Present", colAbsent: "Absent",
+    colName: "Name", colRoll: "Roll", roll: "Roll", colPresent: "Present", colAbsent: "Absent",
     colLeave: "Leave", colTotal: "Total", colPercent: "%",
     networkError: "Cannot reach the server — try again",
   },
@@ -486,7 +487,9 @@ export const en: Dictionary = {
     studentsCount: "students",
     networkError: "Cannot reach the server — try again",
   },
-
+  marks:{
+    entryTitle:"Marks entry", entryHint:"Pick exam → Load → pick subject → load roster", pickExam:"Pick exam", pickSubject:"Subject", load:"Load", save:"Save marks", saved:"Marks saved ✅", needEntry:"Enter at least one mark", locked:"Exam completed — marks locked (change status to unlock)", full:"Full", colMarks:"Marks", colGrade:"Grade", colPoint:"Point", colSubject:"Subject", colDate:"Date", meritTitle:"Merit list", meritHint:"Pick exam+class → Load", needMerit:"Pick exam & class", position:"Merit", gpa:"GPA", total:"Obtained/Full", reportTitle:"Report card", reportBtn:"Report", noMarksYet:"No marks yet", networkError:"Cannot reach the server — try again",
+  },
   lang: {
     bn: "বাংলা",
     en: "English",

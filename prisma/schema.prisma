@@ -40,6 +40,7 @@ model Branch {
   exams              Exam[]
   classrooms         Classroom[]
   routineBreaks      RoutineBreak[]
+  marks              Mark[]
 }
 
 // ─── 👤 ইউজার (নীতি ১) ───
@@ -68,6 +69,9 @@ model User {
   leaveApplications  LeaveApplication[]  @relation("LeaveStudent")
   decidedLeaves      LeaveApplication[]  @relation("LeaveDecider")
   routineSlots       RoutineSlot[]       @relation("RoutineTeacher")
+  marks              Mark[]
+  enteredMarks       Mark[]              @relation("MarkEnteredBy")
+
 
   @@index([branchId])
   @@index([role])
@@ -461,6 +465,7 @@ model Exam {
   updatedAt DateTime      @updatedAt
   deletedAt DateTime?
   subjects  ExamSubject[]
+  marks     Mark[]
 
   @@index([branchId])
 }
@@ -478,6 +483,7 @@ model ExamSubject {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
+  marks     Mark[]
 
   @@index([examId])
 }
@@ -497,3 +503,29 @@ model RoutineBreak {
   @@unique([branchId, classId, period]) // classId=null ডুপ DB-রোগ নয় — API findFirst দিয়ে আটকায়
   @@index([branchId])
 }
+
+// ─── 🖊️ মার্কস (৩.৬ — grade-স্ন্যাপশট; upsert=পুনঃএন্ট্রি-নিরাপদ; নোট ৪০) ───
+model Mark {
+  id            String      @id @default(cuid())
+  branchId      String
+  branch        Branch      @relation(fields: [branchId], references: [id])
+  examId        String
+  exam          Exam        @relation(fields: [examId], references: [id])
+  examSubjectId String
+  examSubject   ExamSubject @relation(fields: [examSubjectId], references: [id])
+  studentId     String
+  student       User        @relation(fields: [studentId], references: [id])
+  marksObtained Float
+  grade         String?
+  gradePoint    Float?
+  enteredById   String
+  enteredBy     User        @relation("MarkEnteredBy", fields: [enteredById], references: [id])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?
+
+  @@unique([examSubjectId, studentId])
+  @@index([branchId])
+  @@index([examId])
+}
+

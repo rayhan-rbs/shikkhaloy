@@ -33,7 +33,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
 
     const subs = await prisma.examSubject.findMany({
       where: { examId: id, deletedAt: null },
-      include: { subject: { select: { name: true, nameEn: true } } },
+      include: { subject: { select: { name: true, nameEn: true, classId: true } } },
       orderBy: [{ examDate: "asc" }, { startTime: "asc" }],
     });
 
@@ -48,6 +48,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
         },
         subjects: subs.map((s) => ({
           id: s.id, subjectName: s.subject.name, subjectNameEn: s.subject.nameEn || "",
+          subjectId: s.subjectId, classId: s.subject.classId,
           examDate: s.examDate.toISOString().slice(0, 10),
           startTime: s.startTime, endTime: s.endTime, fullMarks: s.fullMarks,
         })),

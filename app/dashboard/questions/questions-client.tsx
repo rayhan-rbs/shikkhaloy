@@ -1,7 +1,6 @@
 // 📁 app/dashboard/questions/questions-client.tsx
-// ৪.১: প্রশ্ন-ব্যাংক — ফর্ম (🖼️ আপলোড + হাতে-URL) | students-প্যারিটি (নোট ৫২):
-// 🔍 সার্চ + 📄 পেজিনেশন + ⬇️ Excel + 🖨️ প্রিন্ট + ⬆️ Excel-ইমপোর্ট (dry-run → commit)
-// স্টাইল = house: shadcn-টোকেন-only (নোট ৪৬/৪৮); টেক্সট t(dict,…) — students.*/xlsx.* রিইউজ
+// ৪.১: ব্যাংক (সার্চ/পেজ/⬇️🖨️⬆️/🖼️) | ৪.২: 🧾 পেপার-বিল্ডার ট্যাব (stateless → lib/paper.ts)
+// হাউস-স্টাইল (নোট ৪৬/৪৮); নোট ৫২: ট্যাব = পিকার — তালিকা-প্যারিটি শুধু ব্যাংক-ট্যাবে
 
 "use client";
 import { useCallback, useMemo, useEffect, useRef, useState } from "react";
@@ -10,11 +9,12 @@ import { ChevronLeft, ChevronRight, Download, FileQuestion, FileSpreadsheet, Pen
 import * as XLSX from "xlsx";
 import { exportExcel } from "@/lib/export";
 import { printTable, type PrintHeader } from "@/lib/print";
+import { printQuestionPaper, type PaperSection } from "@/lib/paper";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { t } from "@/lib/i18n";
+import { t, type Lang } from "@/lib/i18n";
 import type { Dictionary } from "@/messages/bn";
 
 interface Q {
@@ -27,15 +27,14 @@ interface Q {
 const TYPES = ["MCQ", "TRUE_FALSE", "SHORT", "LONG"] as const;
 const DIFFS = ["EASY", "MEDIUM", "HARD"] as const;
 
-// নোট ৪৮: native select/textarea → bg-background
 const boxCls = "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring";
+const selCls = "h-9 rounded-lg border border-border bg-background px-3 text-sm";
 const EMPTY = {
   id: "", subjectId: "", classId: "", type: "MCQ", text: "",
   optA: "", optB: "", optC: "", optD: "", answer: "",
   marks: "1", difficulty: "MEDIUM", chapter: "", tags: "", imageUrl: "",
 };
 
-// সর্বোচ্চ ৫টা পেজ-বাটনের উইন্ডো (students-প্যাটার্ন)
 function pageList(current: number, total: number): number[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
   const start = Math.max(1, Math.min(current - 2, total - 4));
@@ -47,11 +46,12 @@ function optionsStr(q: Q): string {
 }
 
 export default function QuestionsClient({ dict, lang, institution }: {
-  dict: Dictionary; lang: import("@/lib/i18n").Lang; institution: PrintHeader;
+  dict: Dictionary; lang: Lang; institution: PrintHeader;
 }) {
   const router = useRouter();
+  const [tab, setTab] = useState<"bank" | "paper">("bank");
   const [items, setItems] = useState<Q[]>([]);
-  const [subjects, setSubjects] = useState<{ id: string; name: string }[]>([]);
+  const [subjects, setSubjects] = useState<{ id: string; name: string; classId?: string }[]>([]);
   const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
   const [fType, setFType] = useState(""); const [fSubject, setFSubject] = useState(""); const [search, setSearch] = useState("");
   const [page, setPage] = useState(1); const [pageSize, setPageSize] = useState(10);
@@ -65,6 +65,15 @@ export default function QuestionsClient({ dict, lang, institution }: {
   const [impRows, setImpRows] = useState<Record<string, unknown>[]>([]);
   const [impSummary, setImpSummary] = useState<{ total: number; valid: number; invalid: number } | null>(null);
   const [impResults, setImpResults] = useState<{ row: number; name: string; ok: boolean; message: string }[]>([]);
+
+  // ৪.২ পেপার-বিল্ডার
+  const [pClassId, setPClassId] = useState(""); const [pSubjectId, setPSubjectId] = useState("");
+  const [pQs, setPQs] = useState<Q[] | null>(null);
+  const [pSel, setPSel] = useState<string[]>([]);
+  const [pType, setPType] = useState(""); const [pDiff, setPDiff] = useState("");
+  const [pTarget, setPTarget] = useState("");
+  const [pExamName, setPExamName] = useState(""); const [pTime, setPTime] = useState("");
+  const [pInstructions, setPInstructions] = useState(""); const [pAnswers, setPAnswers] = useState(false);
 
   useEffect(() => { setPage(1); }, [fType, fSubject, search]);
 
@@ -88,8 +97,8 @@ export default function QuestionsClient({ dict, lang, institution }: {
         fetch("/api/academics/subjects").then((r) => r.json()),
         fetch("/api/academics/classes").then((r) => r.json()),
       ]);
-      if (s.success) setSubjects((s.data ?? []).map((x: any) => ({ id: x.id, name: x.name ?? x.id })));
-      if (c.success) setClasses((c.data ?? []).map((x: any) => ({ id: x.id, name: x.name ?? x.id })));
+      if (s.success) setSubjects((s.data ?? []).map((x: { id: string; name?: string; classId?: string }) => ({ id: x.id, name: x.name ?? x.id, classId: x.classId })));
+      if (c.success) setClasses((c.data ?? []).map((x: { id: string; name?: string }) => ({ id: x.id, name: x.name ?? x.id })));
     })();
   }, []);
   useEffect(() => { void loadItems(); }, [loadItems]);
@@ -168,7 +177,6 @@ export default function QuestionsClient({ dict, lang, institution }: {
     } catch { setError("Network error"); } finally { setBusy(false); }
   }
 
-  // ⬇️ Excel — students-প্যাটার্ন (ফিল্টার-রেসপেক্টেড, হার্ডকোডেড-বাংলা-হেডার)
   function exportQuestions() {
     exportExcel(filtered.map((q) => ({
       "বিষয়": q.subject?.name ?? "", "ক্লাস": q.class?.name ?? "", "ধরন": typeLabel(q.type),
@@ -178,7 +186,6 @@ export default function QuestionsClient({ dict, lang, institution }: {
     })), "questions.xlsx", "প্রশ্ন-ব্যাংক");
   }
 
-  // 🖨️ প্রিন্ট — লেটারহেডসহ (print.ts)
   function printQuestions() {
     const parts: string[] = [];
     if (fType) parts.push(typeLabel(fType));
@@ -194,7 +201,7 @@ export default function QuestionsClient({ dict, lang, institution }: {
         { header: t(dict, "students.colClass"), key: "subj" },
         { header: t(dict, "questions.colType"), key: "ty" },
         { header: t(dict, "questions.colMarks"), key: "m" },
-        { header: "কাঠিন্য", key: "d" },
+        { header: t(dict, "questions.easy") + "/" + t(dict, "questions.hard"), key: "d" },
       ],
       rows: filtered.map((q) => ({
         text: q.text, subj: q.subject?.name ?? "—", ty: typeLabel(q.type),
@@ -204,7 +211,6 @@ export default function QuestionsClient({ dict, lang, institution }: {
     if (!ok) setError(t(dict, "xlsx.popupBlocked"));
   }
 
-  // ⬆️ Excel-ইমপোর্ট — students ২.৮-প্যাটার্ন (dry-run → commit)
   function downloadTemplate() {
     exportExcel([{ "বিষয়": "গণিত", "ক্লাস": "ষষ্ঠ শ্রেণী", "ধরন": "MCQ", "প্রশ্ন": "উদাহরণ প্রশ্ন?",
       "অপশন": "ক; খ; গ; ঘ", "উত্তর": "ক", "নম্বর": 1, "কাঠিন্য": "EASY", "অধ্যায়": "অধ্যায় ১", "ট্যাগ": "ডেমো" }],
@@ -251,13 +257,113 @@ export default function QuestionsClient({ dict, lang, institution }: {
     } catch { setError(t(dict, "students.networkError")); } finally { setBusy(false); }
   }
 
+  // ——— ৪.২ পেপার-বিল্ডার ———
+  const pSubjects = useMemo(
+    () => subjects.filter((s) => !pClassId || !s.classId || s.classId === pClassId),
+    [subjects, pClassId]);
+
+  async function loadPaperQs() {
+    if (!pSubjectId) return;
+    setError(""); setPQs(null); setPSel([]);
+    try {
+      const r = await fetch(`/api/questions?subjectId=${pSubjectId}`).then((r) => r.json());
+      if (!r.success) { setError(r.error || "Error"); setPQs([]); return; }
+      setPQs(r.data ?? []);
+    } catch { setError("Network error"); setPQs([]); }
+  }
+
+  const pool = useMemo(
+    () => (pQs ?? []).filter((q) => (!pType || q.type === pType) && (!pDiff || q.difficulty === pDiff)),
+    [pQs, pType, pDiff]);
+
+  function togglePick(id: string) {
+    setPSel((arr) => (arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]));
+  }
+  function movePick(id: string, dir: -1 | 1) {
+    setPSel((arr) => {
+      const i = arr.indexOf(id);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= arr.length) return arr;
+      const copy = [...arr];
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+      return copy;
+    });
+  }
+
+  function autoPick() {
+    // কাঠিন্য-রাউন্ড-রবিন (E→M→H) = মিশ্র-কঠিন পেপার; লক্ষ্য-নম্বর না-ছাড়িয়ে greedy-fill
+    const buckets: Record<string, Q[]> = { EASY: [], MEDIUM: [], HARD: [] };
+    for (const q of pool) (buckets[q.difficulty] ?? buckets.MEDIUM).push(q);
+    const order: Q[] = [];
+    let guard = pool.length + 4;
+    while (order.length < pool.length && guard-- > 0) {
+      for (const k of DIFFS) {
+        const q = buckets[k].shift();
+        if (q) order.push(q);
+      }
+    }
+    const target = Number(pTarget) || 0;
+    if (!target) { setPSel(order.map((q) => q.id)); return; }
+    const acc: string[] = []; let sum = 0;
+    for (const q of order) {
+      if (sum + q.marks <= target) { acc.push(q.id); sum += q.marks; }
+    }
+    setPSel(acc);
+  }
+
+  function printPaper() {
+    const picked = pSel.map((id) => pQs?.find((q) => q.id === id)).filter(Boolean) as Q[];
+    if (picked.length === 0) { setError(t(dict, "paper.needPick")); return; }
+    let no = 0;
+    const sections: PaperSection[] = [];
+    for (const tp of TYPES) {
+      const qs = picked.filter((q) => q.type === tp);
+      if (!qs.length) continue;
+      sections.push({
+        typeLabel: `${typeLabel(tp)} (${qs.reduce((a, q) => a + q.marks, 0)} ${t(dict, "questions.colMarks")})`,
+        questions: qs.map((q) => ({
+          no: ++no, text: q.text, marks: q.marks, imageUrl: q.imageUrl,
+          options: Array.isArray(q.options) ? (q.options as string[]) : null, answer: q.answer,
+        })),
+      });
+    }
+    const cls = classes.find((c) => c.id === pClassId);
+    const sbj = subjects.find((s) => s.id === pSubjectId);
+    const ok = printQuestionPaper({
+      header: institution, lang,
+      examName: pExamName.trim(),
+      className: cls?.name ?? "",
+      subjectName: sbj?.name ?? "",
+      fullMarks: String(picked.reduce((a, q) => a + q.marks, 0)),
+      timeText: pTime.trim() || "—",
+      instructions: pInstructions.trim() || null,
+      sections, includeAnswers: pAnswers,
+    });
+    if (!ok) setError(t(dict, "xlsx.popupBlocked"));
+  }
+
+  const tabBtn = (v: "bank" | "paper", label: string) => (
+    <button onClick={() => { setTab(v); setError(""); setOkMsg(""); }}
+      className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${tab === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+      {label}
+    </button>
+  );
+
   return (
     <div className="space-y-6">
-      <h1 className="flex items-center gap-2 text-2xl font-bold"><FileQuestion size={22} />{t(dict, "questions.title")}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="flex items-center gap-2 text-2xl font-bold"><FileQuestion size={22} />{t(dict, "questions.title")}</h1>
+        <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/40 p-1">
+          {tabBtn("bank", t(dict, "questions.title"))}
+          {tabBtn("paper", t(dict, "paper.tab"))}
+        </div>
+      </div>
 
       {error && <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-300">⚠️ {error}</div>}
       {okMsg && <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">🎉 {okMsg}</div>}
 
+      {tab === "bank" && (
+      <>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Plus size={18} />{form.id ? t(dict, "questions.editSave") : t(dict, "questions.addNew")}</CardTitle>
@@ -332,12 +438,12 @@ export default function QuestionsClient({ dict, lang, institution }: {
         <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="flex items-center gap-2"><FileQuestion size={18} />{t(dict, "questions.title")} ({filtered.length})</CardTitle>
           <div className="flex flex-wrap items-center gap-2">
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={` ${t(dict, "students.search")}`} className="w-44" />
-            <select className="h-9 rounded-lg border border-border bg-background px-3 text-sm" value={fType} onChange={(e) => setFType(e.target.value)}>
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={`🔍 ${t(dict, "students.search")}`} className="w-44" />
+            <select className={selCls} value={fType} onChange={(e) => setFType(e.target.value)}>
               <option value="">{t(dict, "questions.filterType")}</option>
               {TYPES.map((v) => <option key={v} value={v}>{typeLabel(v)}</option>)}
             </select>
-            <select className="h-9 rounded-lg border border-border bg-background px-3 text-sm" value={fSubject} onChange={(e) => setFSubject(e.target.value)}>
+            <select className={selCls} value={fSubject} onChange={(e) => setFSubject(e.target.value)}>
               <option value="">{t(dict, "questions.filterSubject")}</option>
               {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
@@ -400,7 +506,6 @@ export default function QuestionsClient({ dict, lang, institution }: {
             </div>
           )}
 
-          {/* পেজিনেশন — students-প্যাটার্ন */}
           {filtered.length > 0 && (
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs text-muted-foreground">{filtered.length} {t(dict, "students.found")}</p>
@@ -434,8 +539,135 @@ export default function QuestionsClient({ dict, lang, institution }: {
           )}
         </CardContent>
       </Card>
+      </>
+      )}
 
-      {/* বাল্ক ইমপোর্ট ডায়লগ — students ২.৮-প্যাটার্ন */}
+      {tab === "paper" && (
+      <>
+      <Card>
+        <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="space-y-1.5">
+              <label className="text-xs text-muted-foreground">{t(dict, "questions.classPh")}</label>
+              <select className={`${selCls} w-44`} value={pClassId}
+                onChange={(e) => { setPClassId(e.target.value); setPSubjectId(""); setPQs(null); setPSel([]); }}>
+                <option value="">—</option>
+                {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs text-muted-foreground">{t(dict, "questions.subjectPh")}</label>
+              <select className={`${selCls} w-52`} value={pSubjectId} disabled={!!pClassId && pSubjects.length === 0}
+                onChange={(e) => { setPSubjectId(e.target.value); setPQs(null); setPSel([]); }}>
+                <option value="">—</option>
+                {pSubjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+            <Button size="sm" disabled={!pSubjectId} onClick={loadPaperQs}>{t(dict, "paper.load")}</Button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select className={selCls} value={pType} onChange={(e) => setPType(e.target.value)}>
+              <option value="">{t(dict, "questions.filterType")}</option>
+              {TYPES.map((v) => <option key={v} value={v}>{typeLabel(v)}</option>)}
+            </select>
+            <select className={selCls} value={pDiff} onChange={(e) => setPDiff(e.target.value)}>
+              <option value="">{t(dict, "paper.diffAll")}</option>
+              {DIFFS.map((v) => <option key={v} value={v}>{diffLabel(v)}</option>)}
+            </select>
+            <Input className="w-28" type="number" min="1" placeholder={t(dict, "paper.target")}
+              value={pTarget} onChange={(e) => setPTarget(e.target.value)} />
+            <Button size="sm" variant="outline" disabled={!pQs || pQs.length === 0} onClick={autoPick}>{t(dict, "paper.autoPick")}</Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {pQs == null ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">{t(dict, "exam.pickExamFirst")}</p>
+          ) : pQs.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">{t(dict, "paper.empty")}</p>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {/* পুল */}
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t(dict, "paper.pool")} ({pool.length})</p>
+                <div className="max-h-96 overflow-y-auto rounded-lg border border-border">
+                  {pool.map((q) => (
+                    <label key={q.id} className="flex cursor-pointer items-start gap-2.5 border-b border-border/60 px-3 py-2 text-sm last:border-0 hover:bg-muted/50">
+                      <input type="checkbox" className="mt-1" checked={pSel.includes(q.id)} onChange={() => togglePick(q.id)} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate">{q.text}</span>
+                        <span className="text-xs text-muted-foreground">{typeLabel(q.type)} · {diffLabel(q.difficulty)} · {q.marks} {t(dict, "questions.colMarks")}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              {/* বাছাইকৃত ক্রম */}
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {t(dict, "paper.picked")} ({pSel.length}) · {t(dict, "paper.fullMarks")}: <b>{pSel.reduce((a, id) => a + (pQs.find((q) => q.id === id)?.marks ?? 0), 0)}</b>
+                  </p>
+                  {pSel.length > 0 && (
+                    <button onClick={() => setPSel([])} className="text-xs text-muted-foreground underline hover:text-foreground">{t(dict, "paper.clear")}</button>
+                  )}
+                </div>
+                {pSel.length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">{t(dict, "paper.needPick")}</p>
+                ) : (
+                  <div className="max-h-96 overflow-y-auto rounded-lg border border-border">
+                    {pSel.map((id, idx) => {
+                      const q = pQs.find((x) => x.id === id);
+                      if (!q) return null;
+                      return (
+                        <div key={id} className="flex items-center gap-2 border-b border-border/60 px-3 py-2 text-sm last:border-0">
+                          <span className="w-6 shrink-0 text-xs font-bold text-muted-foreground">{idx + 1}.</span>
+                          <span className="min-w-0 flex-1 truncate">{q.text}</span>
+                          <span className="shrink-0 text-xs text-muted-foreground">{q.marks}</span>
+                          <button onClick={() => movePick(id, -1)} disabled={idx === 0}
+                            className="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-30" aria-label="↑">↑</button>
+                          <button onClick={() => movePick(id, 1)} disabled={idx === pSel.length - 1}
+                            className="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-30" aria-label="↓">↓</button>
+                          <button onClick={() => togglePick(id)}
+                            className="rounded p-1 text-muted-foreground hover:bg-red-500/10 hover:text-red-600" aria-label={t(dict, "questions.delete")}>✕</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {pQs != null && pQs.length > 0 && (
+      <Card>
+        <CardHeader><CardTitle className="flex items-center gap-2"><Printer size={18} />{t(dict, "paper.print")}</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input placeholder={t(dict, "paper.examNamePh")} value={pExamName}
+              onChange={(e) => setPExamName(e.target.value)} aria-label={t(dict, "paper.examName")} />
+            <Input placeholder={t(dict, "paper.timePh")} value={pTime}
+              onChange={(e) => setPTime(e.target.value)} aria-label={t(dict, "paper.time")} />
+          </div>
+          <textarea className={`${boxCls} min-h-[60px]`} placeholder={t(dict, "paper.instructions")}
+            value={pInstructions} onChange={(e) => setPInstructions(e.target.value)} />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <input type="checkbox" checked={pAnswers} onChange={(e) => setPAnswers(e.target.checked)} />
+              {t(dict, "paper.includeAnswers")}
+            </label>
+            <Button onClick={printPaper} disabled={pSel.length === 0} className="bg-primary text-primary-foreground">
+              <Printer size={14} className="mr-1" />{t(dict, "paper.print")}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+      )}
+      </>
+      )}
+
+      {/* বাল্ক ইমপোর্ট ডায়লগ */}
       <Dialog open={impOpen} onOpenChange={(v) => { setImpOpen(v); if (!v) { setImpRows([]); setImpSummary(null); setImpResults([]); } }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle>{t(dict, "xlsx.importTitle")}</DialogTitle></DialogHeader>

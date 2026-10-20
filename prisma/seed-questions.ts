@@ -4,7 +4,7 @@
 // DB-ভ্যালু ভাষা-নিরপেক্ষ (TRUE/FALSE — নোট ৪৬)
 // চালাও: npx tsx prisma/seed-questions.ts   (আগে seed-academics চলা থাকতে হবে)
 
-import { PrismaClient, type QuestionType } from "@prisma/client";
+import { PrismaClient, Prisma, type QuestionType } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -71,7 +71,7 @@ async function main() {
       await prisma.question.create({
         data: {
           subjectId: s.id, classId: s.classId, type: tpl.type, text,
-          options: tpl.options ?? null, answer: tpl.answer ?? null,
+          options: tpl.options ? tpl.options : Prisma.DbNull, answer: tpl.answer ?? null,
           marks: tpl.marks, difficulty: tpl.difficulty,
           chapter: tpl.chapter ?? null, tags: tpl.tags,
         },

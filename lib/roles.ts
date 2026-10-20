@@ -26,8 +26,7 @@ export const ROUTE_ROLES: { prefix: string; roles: Role[] }[] = [
   { prefix: "/dashboard/teachers", roles: ADMINS },
 
   // অ্যাটেনডেন্স — অ্যাডমিন + শিক্ষক (শিক্ষক "নিজের অ্যাসাইন ক্লাস" — সূক্ষ্ম
-  // যাচাই API/পেজের canAccess-এ; proxy শুধু বর্ণা-লেভেল। STAFF যুক্ত হবে
-  // স্টাফ-হাজিরা এলে ৩.২+)
+  // যাচাই API/পেজের canAccess-এ; proxy শুধু বর্ণা-লেভেল)
   { prefix: "/dashboard/attendance", roles: [...ADMINS, "TEACHER"] },
   { prefix: "/dashboard/leave", roles: [...ADMINS, "TEACHER"] },
   { prefix: "/dashboard/routine", roles: [...ADMINS, "TEACHER"] },
@@ -36,6 +35,10 @@ export const ROUTE_ROLES: { prefix: string; roles: Role[] }[] = [
   { prefix: "/dashboard/marks", roles: [...ADMINS, "TEACHER"] },
   { prefix: "/dashboard/questions", roles: [...ADMINS, "TEACHER"] },
   { prefix: "/dashboard/seats", roles: ADMINS },
+
+  // ৪.৪ অনলাইন এক্সাম ইঞ্জিন — বিল্ডার = অ্যাডমিন+শিক্ষক; গ্রহণ = শুধু ছাত্র
+  { prefix: "/dashboard/online-exams", roles: [...ADMINS, "TEACHER"] },
+  { prefix: "/dashboard/my-exams", roles: ["STUDENT"] },
 
   // উদাহরণ (ভবিষ্যৎ): অ্যাকাউন্ট্স-প্যানেল
   // { prefix: "/dashboard/finance", roles: [...ADMINS, "ACCOUNTANT"] },

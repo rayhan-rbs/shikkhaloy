@@ -1,6 +1,7 @@
 // 📁 components/dashboard-shell.tsx
-// ড্যাশবোর্ড শেল: সাইডবার (গ্রুপ-ভিত্তিক) + টপবার + Command Palette (Ctrl+K)
+// ড্যাশবোর্ড শেল: সাইডবার (গ্রুপ-ভিত্তিক + role-ফিল্টার) + টপবার + Command Palette (Ctrl+K)
 // ব্র্যান্ডিং DB থেকে; রঙ সব shadcn টোকেন → ডার্ক মোড অটো
+// ৪.৪: online-exams (অ্যাডমিন/শিক্ষক) + my-exams (ছাত্র) — NavItem.roles = ঐচ্ছিক-ফিল্টার
 
 "use client";
 
@@ -8,7 +9,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, Settings, Search, Menu, X,
+  LayoutDashboard, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, Settings, Search, Menu, X,
   GraduationCap, Sun, Moon, LogOut, Languages, Award, type LucideIcon,
 } from "lucide-react";
 
@@ -36,6 +37,7 @@ interface NavItem {
   icon: LucideIcon;
   active: boolean;
   soon: boolean;
+  roles?: string[]; // সেট = শুধু এই-রোলরা দেখবে; undefined = সবাই (পুরনো-আচরণ)
 }
 
 export default function DashboardShell({
@@ -79,6 +81,8 @@ export default function DashboardShell({
         { href: "/dashboard/classrooms", label: t(dict, "nav.classroom"), icon: Building2, active: pathname.startsWith("/dashboard/classrooms"), soon: false },
         { href: "/dashboard/questions", label: t(dict, "questions.title"), icon: FileQuestion, active: pathname.startsWith("/dashboard/questions"), soon: false },
         { href: "/dashboard/exams", label: t(dict, "nav.exam"), icon: ClipboardList, active: pathname.startsWith("/dashboard/exams"), soon: false },
+        { href: "/dashboard/online-exams", label: t(dict, "onlineExams.title"), icon: MonitorCheck, active: pathname.startsWith("/dashboard/online-exams"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER"] },
+        { href: "/dashboard/my-exams", label: t(dict, "myExams.title"), icon: GraduationCap, active: pathname.startsWith("/dashboard/my-exams"), soon: false, roles: ["STUDENT"] },
         { href: "/dashboard/seats", label: t(dict, "nav.seats"), icon: Armchair, active: pathname.startsWith("/dashboard/seats"), soon: false },
         { href: "/dashboard/marks", label: t(dict, "nav.marks"), icon: PenLine, active: pathname.startsWith("/dashboard/marks"), soon: false },
         { href: "/dashboard/routine", label: t(dict, "nav.routine"), icon: CalendarRange, active: pathname.startsWith("/dashboard/routine"), soon: false },
@@ -101,6 +105,11 @@ export default function DashboardShell({
       ],
     },
   ];
+
+  // role-ফিল্টার: roles-সেট আইটেম শুধু মিলে-যাওয়া রোলে দেখাবে; খালি-গ্রুপ লুকানো
+  const visibleGroups = navGroups
+    .map((g) => ({ ...g, items: g.items.filter((i) => !i.roles || i.roles.includes(user.role)) }))
+    .filter((g) => g.items.length > 0);
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -130,9 +139,9 @@ export default function DashboardShell({
         </div>
       </div>
 
-      {/* নেভিগেশন — গ্রুপ-ভিত্তিক */}
+      {/* নেভিগেশন — গ্রুপ-ভিত্তিক + role-ফিল্টার */}
       <nav className="flex-1 overflow-y-auto p-3">
-        {navGroups.map((group, gi) => (
+        {visibleGroups.map((group, gi) => (
           <div key={gi} className={gi > 0 ? "mt-5" : ""}>
             {group.label && (
               <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
@@ -307,6 +316,18 @@ export default function DashboardShell({
                   <FileQuestion size={15} className="mr-2" />
                   {t(dict, "questions.title")}
                 </CommandItem>
+                {["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER"].includes(user.role) && (
+                  <CommandItem onSelect={() => { setPaletteOpen(false); router.push("/dashboard/online-exams"); }}>
+                    <MonitorCheck size={15} className="mr-2" />
+                    {t(dict, "onlineExams.title")}
+                  </CommandItem>
+                )}
+                {user.role === "STUDENT" && (
+                  <CommandItem onSelect={() => { setPaletteOpen(false); router.push("/dashboard/my-exams"); }}>
+                    <GraduationCap size={15} className="mr-2" />
+                    {t(dict, "myExams.title")}
+                  </CommandItem>
+                )}
               </CommandGroup>
               <CommandGroup heading={t(dict, "palette.actions")}>
                 <CommandItem

@@ -523,11 +523,11 @@ export const en: Dictionary = {
 
   },
   paper: {
-    tab: "🧾 Paper Builder",
+    tab: "Paper Builder",
     load: "Load",
     pool: "Question pool",
     picked: "Selected order",
-    autoPick: "🎯 Auto-pick",
+    autoPick: "Auto-pick",
     target: "Target marks",
     clear: "Clear selection",
     empty: "No questions for this subject — add to the bank first",
@@ -537,11 +537,15 @@ export const en: Dictionary = {
     timePh: "e.g. 3 hours",
     instructions: "Instructions (optional)",
     includeAnswers: "Print with answer key",
-    print: "🖨️ Print paper",
+    print: "Print paper",
     needPick: "Pick at least one question",
     diffAll: "All levels",
   },
-
+  onlineExams: {
+    title:"Online Exams", addNew:"➕ New Exam", dialogTitle:"New Online Exam", examTitlePh:"e.g. Weekly Quiz 1", classPh:"Pick class", subjectPh:"Pick subject", duration:"Duration (min)", durationUnit:"min", startAt:"Start", endAt:"End", randomize:"Shuffle question order (per student)", load:"Load questions", pool:"Selected", needAll:"Give title, class, subject, times and at least 1 question", colExam:"Exam", colWindow:"Window", colStatus:"Status", colAttempts:"Attempts", publish:"Publish", closeExam:"Close", published:"Published", draft:"Draft", closed:"Closed", confirmDelete:"Delete this exam?", attemptsExist:"Has attempts — cannot delete", empty:"No online exams", saved:"Created (draft) — publish now",
+  },
+  myExams: {title:"My Exams", empty:"No exams now", start:"Start", resume:"Resume", view:"Result", window:"Window", duration:"Duration", marks:"Total marks", loading:"Loading exam…", submit:"✅ Submit", submitting:"Submitting…", confirmSubmit:"Submit finally? You cannot change afterwards.", timeLeft:"Time left", answered:"Answered", result:"Result", obtained:"Score", pendingNote:"Short/long answers await teacher grading", ended:"Time over — auto-submitted", trueLabel:"True", falseLabel:"False"
+  },
   lang: {
     bn: "বাংলা",
     en: "English",

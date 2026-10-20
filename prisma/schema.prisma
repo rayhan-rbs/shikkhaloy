@@ -561,3 +561,76 @@ model Question {
   @@index([subjectId])
 }
 
+// ─── ৪.৪ অনলাইন এক্সাম ইঞ্জিন (নোট ৫৫: scalar-FK — পুরনো মডেল স্পর্শ নেই)
+enum OnlineExamStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+model OnlineExam {
+  id          String           @id @default(cuid())
+  branchId    String
+  classId     String
+  subjectId   String
+  createdById String
+  title       String
+  durationMin Int              @default(30)
+  startTime   DateTime
+  endTime     DateTime
+  randomize   Boolean          @default(true)
+  status      OnlineExamStatus @default(DRAFT)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  deletedAt   DateTime?
+
+  questions OnlineExamQuestion[]
+  attempts  ExamAttempt[]
+
+  @@index([branchId, status])
+}
+
+model OnlineExamQuestion {
+  id       String       @id @default(cuid())
+  examId   String
+  order    Int          @default(0)
+  type     QuestionType
+  text     String
+  options  Json?
+  answer   String?
+  marks    Float        @default(1)
+  imageUrl String?
+
+  exam OnlineExam @relation(fields: [examId], references: [id])
+}
+
+model ExamAttempt {
+  id            String    @id @default(cuid())
+  examId        String
+  studentId     String
+  questionOrder String    @default("[]")
+  startedAt     DateTime  @default(now())
+  submittedAt   DateTime?
+  status        String    @default("IN_PROGRESS")
+  totalMarks    Float     @default(0)
+  obtainedMarks Float     @default(0)
+
+  exam    OnlineExam   @relation(fields: [examId], references: [id]) // ← এই লাইনটাই ছিল না (P1012)
+  answers ExamAnswer[]
+
+  @@unique([examId, studentId])
+  @@index([studentId])
+}
+
+model ExamAnswer {
+  id             String  @id @default(cuid())
+  attemptId      String
+  examQuestionId String
+  response       String?
+  marksObtained  Float?
+
+  attempt ExamAttempt @relation(fields: [attemptId], references: [id])
+
+  @@unique([attemptId, examQuestionId])
+}
+

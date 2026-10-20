@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, PenLine, Armchair, UserCog, ClipboardList, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, Settings, Search, Menu, X,
+  LayoutDashboard, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, Settings, Search, Menu, X,
   GraduationCap, Sun, Moon, LogOut, Languages, Award, type LucideIcon,
 } from "lucide-react";
 
@@ -77,6 +77,7 @@ export default function DashboardShell({
         { href: "/dashboard", label: t(dict, "nav.dashboard"), icon: LayoutDashboard, active: pathname === "/dashboard", soon: false },
         { href: "/dashboard/academics", label: t(dict, "nav.academics"), icon: BookOpen, active: pathname.startsWith("/dashboard/academics"), soon: false },
         { href: "/dashboard/classrooms", label: t(dict, "nav.classroom"), icon: Building2, active: pathname.startsWith("/dashboard/classrooms"), soon: false },
+        { href: "/dashboard/questions", label: t(dict, "questions.title"), icon: FileQuestion, active: pathname.startsWith("/dashboard/questions"), soon: false },
         { href: "/dashboard/exams", label: t(dict, "nav.exam"), icon: ClipboardList, active: pathname.startsWith("/dashboard/exams"), soon: false },
         { href: "/dashboard/seats", label: t(dict, "nav.seats"), icon: Armchair, active: pathname.startsWith("/dashboard/seats"), soon: false },
         { href: "/dashboard/marks", label: t(dict, "nav.marks"), icon: PenLine, active: pathname.startsWith("/dashboard/marks"), soon: false },
@@ -302,7 +303,10 @@ export default function DashboardShell({
                   <UserCog size={15} className="mr-2" />
                   {t(dict, "nav.teachers")}
                 </CommandItem>
-
+                <CommandItem onSelect={() => { setPaletteOpen(false); router.push("/dashboard/questions"); }}>
+                  <FileQuestion size={15} className="mr-2" />
+                  {t(dict, "questions.title")}
+                </CommandItem>
               </CommandGroup>
               <CommandGroup heading={t(dict, "palette.actions")}>
                 <CommandItem

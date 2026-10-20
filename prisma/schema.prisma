@@ -72,7 +72,6 @@ model User {
   marks              Mark[]
   enteredMarks       Mark[]              @relation("MarkEnteredBy")
 
-
   @@index([branchId])
   @@index([role])
   @@index([status])
@@ -220,6 +219,7 @@ model AcademicClass {
   leaveApplications  LeaveApplication[]
   routineSlots       RoutineSlot[]
   routineBreaks      RoutineBreak[]
+  questions          Question[]
 
   @@index([branchId])
   @@index([departmentId])
@@ -258,6 +258,7 @@ model Subject {
   teacherAssignments TeacherAssignment[]
   routineSlots       RoutineSlot[]       @relation("RoutineSubject")
   examSubjects       ExamSubject[]
+  questions          Question[]
 
   @@index([classId])
 }
@@ -528,5 +529,35 @@ model Mark {
   @@unique([examSubjectId, studentId])
   @@index([branchId])
   @@index([examId])
+}
+
+enum QuestionType {
+  MCQ
+  TRUE_FALSE
+  SHORT
+  LONG
+}
+
+model Question {
+  id         String       @id @default(cuid())
+  subjectId  String
+  classId    String?
+  type       QuestionType @default(MCQ)
+  text       String
+  options    Json?
+  answer     String?
+  marks      Float        @default(1)
+  difficulty String       @default("MEDIUM")
+  chapter    String?
+  imageUrl   String?
+  tags       String[]     @default([])
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  deletedAt  DateTime?
+
+  subject Subject        @relation(fields: [subjectId], references: [id])
+  class   AcademicClass? @relation(fields: [classId], references: [id])
+
+  @@index([subjectId])
 }
 

@@ -46,6 +46,7 @@ export const en: Dictionary = {
     academics: "Academics",
     routine: "Routine",
     classroom: "Classrooms",
+    questions: "Question",
     exam: "Exams",
     seats: "Seat Plan",
     marks: "Marks",
@@ -502,6 +503,24 @@ export const en: Dictionary = {
     needSubject: "Pick a subject first",
     empty: "No students", printAll: "Full plan",
     networkError: "Cannot reach the server — try again",
+  },
+  questions: {
+    title: "Question Bank", addNew: "Add Question", editSave: "Save Changes", cancel: "Cancel",
+    subject: "Subject", subjectPh: "— Subject —", classPh: "— Class (optional) —",
+    mcq: "MCQ", trueFalse: "True/False", short: "Short Answer", long: "Essay",
+    easy: "Easy", medium: "Medium", hard: "Hard",
+    questionText: "Write the question…", option: "Option", correctAnswer: "Correct answer",
+    trueLabel: "True", falseLabel: "False", sampleAnswer: "Sample answer (optional)",
+    marks: "Marks", chapter: "Chapter (optional)", tags: "Tags (comma separated)", imageUrl: "Image URL (optional)",
+    filterType: "All types", filterSubject: "All subjects", search: "Search…",
+    colQuestion: "Question", colType: "Type", colMarks: "Marks", colActions: "Actions",
+    edit: "Edit", delete: "Delete", empty: "No questions yet — add from the form above",
+    saved: "✅ Saved", updated: "✅ Updated", confirmDelete: "Delete this question?",
+    needSubjectText: "Subject and question text are required",
+    imgUpload: "🖼️ Upload image",
+    imgUploading: "Uploading…",
+    imgRemove: "Remove image",
+
   },
 
   lang: {

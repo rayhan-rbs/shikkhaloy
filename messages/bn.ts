@@ -44,6 +44,7 @@ export const bn = {
     academics: "একাডেমিক",
     routine: "রুটিন",
     classroom: "ক্লাসরুম",
+    questions: "প্রশ্ন",
     exam: "এক্সাম",
     seats: "সিট প্ল্যান",
     marks: "মার্কস",
@@ -531,6 +532,24 @@ export const bn = {
     empty: "শিক্ষার্থী নেই", printAll: "পুরো প্ল্যান",
     networkError: "সার্ভারে পৌঁছানো যায়নি — আবার চেষ্টা করো",
   },
+questions: {
+  title: "প্রশ্ন ব্যাংক", addNew: "প্রশ্ন যোগ করুন", editSave: "সম্পাদনা সংরক্ষণ", cancel: "বাতিল",
+  subject: "বিষয়", subjectPh: "— বিষয় —", classPh: "— শ্রেণি (ঐচ্ছিক) —",
+  mcq: "নৈর্ব্যক্তিক (MCQ)", trueFalse: "সত্য/মিথ্যা", short: "সংক্ষিপ্ত", long: "রচনাধর্মী",
+  easy: "সহজ", medium: "মাঝারি", hard: "কঠিন",
+  questionText: "প্রশ্ন লিখুন…", option: "অপশন", correctAnswer: "সঠিক উত্তর",
+  trueLabel: "সত্য", falseLabel: "মিথ্যা", sampleAnswer: "নমুনা উত্তর (ঐচ্ছিক)",
+  marks: "নম্বর", chapter: "অধ্যায় (ঐচ্ছিক)", tags: "ট্যাগ (কমা-দিয়ে)", imageUrl: "ছবি-URL (ঐচ্ছিক)",
+  filterType: "সব ধরন", filterSubject: "সব বিষয়", search: "খুঁজুন…",
+  colQuestion: "প্রশ্ন", colType: "ধরন", colMarks: "নম্বর", colActions: "কার্য",
+  edit: "সম্পাদনা", delete: "মুছুন", empty: "কোনো প্রশ্ন নেই — উপরের ফর্ম থেকে যোগ করুন",
+  saved: "✅ সংরক্ষিত", updated: "✅ সম্পাদিত", confirmDelete: "এই প্রশ্নটি মুছে ফেলবেন?",
+  needSubjectText: "বিষয় ও প্রশ্ন-টেক্সট আবশ্যক",
+  imgUpload: "🖼️ ছবি আপলোড",
+  imgUploading: "আপলোড হচ্ছে…",
+  imgRemove: "ছবি সরাও",
+
+},
 
   lang: {
     bn: "বাংলা",

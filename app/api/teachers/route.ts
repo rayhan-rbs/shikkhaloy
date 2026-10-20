@@ -5,8 +5,8 @@ import { type Role } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
-import { verifyToken } from "@/lib/auth";
+import { verifyToken } from "@/lib/auth";   // ⚠️ teachers/route.ts-এর import দিয়ে বদলাও
+import { prisma } from "@/lib/prisma";      // ⚠️ একইভাবে
 
 const ADMIN_ROLES = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"];
 const STAFF_ROLES = ["TEACHER", "STAFF"];

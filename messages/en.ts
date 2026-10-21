@@ -546,6 +546,27 @@ export const en: Dictionary = {
   },
   myExams: {title:"My Exams", empty:"No exams now", start:"Start", resume:"Resume", view:"Result", window:"Window", duration:"Duration", marks:"Total marks", loading:"Loading exam…", submit:"✅ Submit", submitting:"Submitting…", confirmSubmit:"Submit finally? You cannot change afterwards.", timeLeft:"Time left", answered:"Answered", result:"Result", obtained:"Score", pendingNote:"Short/long answers await teacher grading", ended:"Time over — auto-submitted", trueLabel:"True", falseLabel:"False"
   },
+  results: {
+    title: "Results",
+    colRank: "Rank",
+    colStudent: "Student",
+    colScore: "Score",
+    colPending: "Pending grading",
+    inProgress: "In progress",
+    back: "← Back to list",
+    grading: "Grade answer sheet",
+    correct: "Correct",
+    response: "Student's answer",
+    marksGiven: "Marks given",
+    maxMarks: "Max",
+    save: "Save",
+    saved: "Marks saved",
+    needMarks: "Enter marks",
+    autoNote: "Auto-marked — locked",
+    unanswered: "Not answered",
+    noAttempts: "No attempts yet",
+  },
+
   lang: {
     bn: "বাংলা",
     en: "English",

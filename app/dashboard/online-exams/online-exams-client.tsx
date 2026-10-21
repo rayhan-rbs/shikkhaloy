@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { t, type Lang } from "@/lib/i18n";
 import type { Dictionary } from "@/messages/bn";
+import Link from "next/link";
 
 interface Exam {
   id: string; title: string; classId: string; subjectId: string; durationMin: number;
@@ -163,6 +164,12 @@ export default function OnlineExamsClient({ dict, lang }: { dict: Dictionary; la
                       <td className="py-2.5 pr-3">{e.submittedCount}/{e.attemptCount}</td>
                       <td className="py-2.5 text-right">
                         <div className="flex justify-end gap-1">
+                          {(e.submittedCount > 0 || e.attemptCount > 0) && (
+                            <Link href={`/dashboard/online-exams/${e.id}/results`} className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10">
+                              {t(dict, "results.title")}
+                            </Link>
+                          )}
+
                           {e.status === "DRAFT" && <Button size="sm" variant="outline" disabled={busy} onClick={() => setStatus(e.id, "PUBLISHED")}>{t(dict, "onlineExams.publish")}</Button>}
                           {e.status === "PUBLISHED" && <Button size="sm" variant="outline" disabled={busy} onClick={() => setStatus(e.id, "CLOSED")}>{t(dict, "onlineExams.closeExam")}</Button>}
                           <Button size="sm" variant="ghost" disabled={busy || e.attemptCount > 0} title={e.attemptCount > 0 ? t(dict, "onlineExams.attemptsExist") : undefined}

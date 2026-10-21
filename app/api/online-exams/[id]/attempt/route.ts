@@ -105,7 +105,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const qs = await prisma.onlineExamQuestion.findMany({ where: { examId: id } });
   const byId = new Map(qs.map((q) => [q.id, q]));
-  const ordered = (JSON.parse(attempt.questionOrder) as string[]).map((oid) => byId.get(oid)).filter(Boolean);
+  const ordered = (JSON.parse(attempt.questionOrder) as string[])
+  .map((oid) => byId.get(oid))
+  .filter((q): q is NonNullable<typeof q> => Boolean(q));   // TS-প্রেডিকেট — নোট ৫৮
+
   const answers = await prisma.examAnswer.findMany({ where: { attemptId: attempt.id }, select: { examQuestionId: true, response: true } });
 
   return NextResponse.json({ success: true, data: {

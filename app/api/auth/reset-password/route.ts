@@ -34,10 +34,12 @@ export async function POST(request: NextRequest) {
     }
 
     const hashed = await bcrypt.hash(newPassword, 12);
+    // লিংক-রিসেট = নিজেই নতুন পাস সেট করলো — আর ফার্স্ট-লগইন-চেঞ্জে ফেলা হবে না (নোট ৬২)
     await prisma.user.update({
       where: { id: user.id },
-      data: { password: hashed },
+      data: { password: hashed, isFirstLogin: false },
     });
+
 
     return NextResponse.json({
       success: true,

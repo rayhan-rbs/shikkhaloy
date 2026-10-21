@@ -634,3 +634,64 @@ model ExamAnswer {
   @@unique([attemptId, examQuestionId])
 }
 
+
+// ─── ৪.৬ ফি-মডিউল (নোট ৫৫: scalar-FK অ্যাপেন্ড; রিলেশন-জুটি সব ব্লকের ভেতরে — ৫৫(ক))
+model FeeStructure {
+  id        String    @id @default(cuid())
+  branchId  String
+  classId   String
+  name      String
+  nameEn    String?
+  amount    Float
+  monthKey  String? // "2026-01" = মাসিক ফি; null = এককালীন
+  dueDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  invoices FeeInvoice[]
+
+  @@index([branchId])
+  @@index([classId])
+}
+
+model FeeInvoice {
+  id          String    @id @default(cuid())
+  branchId    String
+  structureId String
+  studentId   String
+  classId     String
+  amount      Float
+  dueDate     DateTime?
+  status      String    @default("UNPAID") // UNPAID/PARTIAL/PAID
+  paidTotal   Float     @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  structure FeeStructure @relation(fields: [structureId], references: [id])
+  payments  FeePayment[]
+
+  @@unique([structureId, studentId])
+  @@index([branchId])
+  @@index([studentId])
+  @@index([classId])
+}
+
+model FeePayment {
+  id           String   @id @default(cuid())
+  branchId     String
+  invoiceId    String
+  amount       Float
+  method       String   @default("CASH") // CASH/BKASH/BANK/OTHER
+  note         String?
+  receivedById String
+  createdAt    DateTime @default(now())
+  deletedAt    DateTime?
+
+  invoice FeeInvoice @relation(fields: [invoiceId], references: [id])
+
+  @@index([invoiceId])
+  @@index([branchId])
+}
+

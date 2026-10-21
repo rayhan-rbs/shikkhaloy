@@ -39,6 +39,8 @@ export const ROUTE_ROLES: { prefix: string; roles: Role[] }[] = [
   // ৪.৪ অনলাইন এক্সাম ইঞ্জিন — বিল্ডার = অ্যাডমিন+শিক্ষক; গ্রহণ = শুধু ছাত্র
   { prefix: "/dashboard/online-exams", roles: [...ADMINS, "TEACHER"] },
   { prefix: "/dashboard/my-exams", roles: ["STUDENT"] },
+  { prefix: "/dashboard/fees", roles: ADMINS },
+
 
   // উদাহরণ (ভবিষ্যৎ): অ্যাকাউন্ট্স-প্যানেল
   // { prefix: "/dashboard/finance", roles: [...ADMINS, "ACCOUNTANT"] },

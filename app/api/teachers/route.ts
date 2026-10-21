@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
           update: profileData,
         }),
       ]);
-      return NextResponse.json({ success: true, data: { credentials: { email, temporaryPassword: tempPassword } } });
+      return NextResponse.json({ success: true, data: { credentials: { email, password: tempPassword } } });
     }
 
     const user = await prisma.$transaction(async (tx) => {
@@ -127,9 +127,10 @@ export async function POST(request: NextRequest) {
       return user;
     });
 
-    return NextResponse.json({ success: true, data: { id: user.id, credentials: { email, temporaryPassword: tempPassword } } });
+    return NextResponse.json({ success: true, data: { id: user.id, credentials: { email, password: tempPassword } } });
   } catch (error) {
     console.error("❌ POST /api/teachers:", error);
     return NextResponse.json({ success: false, error: "সার্ভারে অপ্রত্যাশিত সমস্যা হয়েছে" }, { status: 500 });
   }
 }
+

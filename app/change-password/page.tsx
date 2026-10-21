@@ -2,14 +2,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function ChangePasswordPage() {
-  const router = useRouter();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -36,8 +34,11 @@ export default function ChangePasswordPage() {
         setError(json.error || "পাসওয়ার্ড বদলানো যায়নি");
         return;
       }
-      router.push("/dashboard");
-      router.refresh();
+      // নোট ৬৩: auth-বাউন্ডারিতে ফুল-রিলোড — router.push ক্লায়েন্ট-ক্যাশের
+      // স্টেল-payload (guard-redirect-সহ) রেন্ডার করতে পারে → লুপ;
+      // window.location = সার্ভার-ফ্রেশ-রেন্ডার, isFirstLogin:false সঙ্গে-সঙ্গে পড়া হয়
+      window.location.href = "/dashboard";
+      return;
     } catch {
       setError("সার্ভারের সাথে যোগাযোগ করা যাচ্ছে না");
     } finally {

@@ -94,7 +94,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const hashed = await bcrypt.hash(tempPassword, 10);
     await prisma.user.update({ where: { id }, data: { password: hashed, isFirstLogin: true } });
 
-    return NextResponse.json({ success: true, data: { credentials: { email: teacher.email, temporaryPassword: tempPassword } } });
+    return NextResponse.json({ success: true, data: { credentials: { email: teacher.email, password: tempPassword } } });
   } catch (error) {
     console.error("❌ PATCH /api/teachers/[id]:", error);
     return NextResponse.json({ success: false, error: "সার্ভারে অপ্রত্যাশিত সমস্যা হয়েছে" }, { status: 500 });

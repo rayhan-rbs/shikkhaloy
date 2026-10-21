@@ -208,7 +208,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         enrollment: { id: enrollment.id, rollNumber: enrollment.rollNumber },
-        credentials: { email, temporaryPassword: tempPassword },
+        credentials: { email, password: tempPassword },
       },
     });
   } catch (error) {

@@ -177,8 +177,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     return NextResponse.json({
       success: true,
-      data: { credentials: { email: existing.student.email, temporaryPassword: tempPassword } },
+      data: { credentials: { email: existing.student.email, password: tempPassword } },
     });
+
   } catch (error) {
     console.error("❌ PATCH /api/students/[id]:", error);
     return NextResponse.json({ success: false, error: "সার্ভারে অপ্রত্যাশিত সমস্যা হয়েছে" }, { status: 500 });

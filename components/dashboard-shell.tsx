@@ -91,7 +91,8 @@ export default function DashboardShell({
         { href: "/dashboard/attendance", label: t(dict, "nav.attendance"), icon: CalendarCheck, active: pathname.startsWith("/dashboard/attendance"), soon: false },
         { href: "/dashboard/leave", label: t(dict, "nav.leave"), icon: CalendarOff, active: pathname.startsWith("/dashboard/leave"), soon: false },
 
-        { href: "#", label: t(dict, "nav.finance"), icon: Wallet, active: false, soon: true },
+        { href: "/dashboard/fees", label: t(dict, "fees.title"), icon: Wallet, active: pathname.startsWith("/dashboard/fees"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
+
       ],
     },
     {
@@ -316,6 +317,13 @@ export default function DashboardShell({
                   <FileQuestion size={15} className="mr-2" />
                   {t(dict, "questions.title")}
                 </CommandItem>
+                {["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"].includes(user.role) && (
+                  <CommandItem onSelect={() => { setPaletteOpen(false); router.push("/dashboard/fees"); }}>
+                    <Wallet size={15} className="mr-2" />
+                    {t(dict, "fees.title")}
+                  </CommandItem>
+                )}
+
                 {["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER"].includes(user.role) && (
                   <CommandItem onSelect={() => { setPaletteOpen(false); router.push("/dashboard/online-exams"); }}>
                     <MonitorCheck size={15} className="mr-2" />

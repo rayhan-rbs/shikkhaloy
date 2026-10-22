@@ -318,6 +318,19 @@ export const en: Dictionary = {
     allSections: "All sections",
     pickClassFirst: "Pick a class first",
 
+    // M1: documents + health tabs
+    tabProfile: "Profile", tabDocs: "📄 Documents", tabHealth: "🏥 Health",
+    docList: "List", docEmpty: "No documents yet",
+    docTitleLbl: "Title", docTypeLbl: "Type", docFileLbl: "File (PDF/image, max 5MB)",
+    docUploadBtn: "Upload", docUploading: "Uploading...",
+    docDeleteConfirm: "Delete this document?", docView: "View",
+    docDtBirth: "Birth certificate", docDtAcademic: "Academic document", docDtPhoto: "Photo", docDtOther: "Other",
+    docErrTitle: "Enter a title", docErrFile: "Select a file",
+    healthList: "List", healthEmpty: "No health records yet",
+    healthDateLbl: "Date", healthTypeLbl: "Type", healthTitleLbl: "Title", healthNoteLbl: "Note (optional)",
+    healthAddBtn: "Add record", healthAdding: "Adding...",
+    healthDeleteConfirm: "Delete this record?", healthErrDate: "Enter a date",
+    htCheckup: "Checkup", htVaccination: "Vaccination", htIllness: "Illness", htInjury: "Injury", htAllergy: "Allergy", htOther: "Other",
 
   },
 

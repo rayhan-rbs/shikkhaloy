@@ -634,7 +634,6 @@ model ExamAnswer {
   @@unique([attemptId, examQuestionId])
 }
 
-
 // ─── ৪.৬ ফি-মডিউল (নোট ৫৫: scalar-FK অ্যাপেন্ড; রিলেশন-জুটি সব ব্লকের ভেতরে — ৫৫(ক))
 model FeeStructure {
   id        String    @id @default(cuid())
@@ -679,14 +678,14 @@ model FeeInvoice {
 }
 
 model FeePayment {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   branchId     String
   invoiceId    String
   amount       Float
-  method       String   @default("CASH") // CASH/BKASH/BANK/OTHER
+  method       String    @default("CASH") // CASH/BKASH/BANK/OTHER
   note         String?
   receivedById String
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
   deletedAt    DateTime?
 
   invoice FeeInvoice @relation(fields: [invoiceId], references: [id])
@@ -695,3 +694,36 @@ model FeePayment {
   @@index([branchId])
 }
 
+// ─── P2-DOC স্টুডেন্ট-ডকুমেন্ট + হেলথ-রেকর্ড (নোট ৫৫: scalar-FK অ্যাপেন্ড; রিলেশন-নেই = পুরনো-স্পর্শ-শূন্য)
+model StudentDocument {
+  id           String    @id @default(cuid())
+  branchId     String
+  studentId    String
+  title        String
+  docType      String    @default("OTHER") // BIRTH_CERT/ACADEMIC/PHOTO/OTHER
+  fileUrl      String
+  uploadedById String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  @@index([branchId])
+  @@index([studentId])
+}
+
+model HealthRecord {
+  id           String    @id @default(cuid())
+  branchId     String
+  studentId    String
+  date         DateTime  @db.Date
+  type         String // CHECKUP/VACCINATION/ILLNESS/INJURY/ALLERGY/OTHER
+  title        String
+  note         String?
+  recordedById String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  @@index([branchId])
+  @@index([studentId])
+}

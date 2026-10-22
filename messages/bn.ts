@@ -317,6 +317,19 @@ export const bn = {
     errPassword: "পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে",
     allSections: "সব সেকশন",
     pickClassFirst: "আগে ক্লাস বাছুন",
+    // M1: ডকুমেন্ট + হেলথ ট্যাব
+    tabProfile: "প্রোফাইল", tabDocs: "📄 ডকুমেন্ট", tabHealth: "🏥 হেলথ",
+    docList: "তালিকা", docEmpty: "কোনো ডকুমেন্ট নেই",
+    docTitleLbl: "শিরোনাম", docTypeLbl: "ধরন", docFileLbl: "ফাইল (PDF/ছবি, সর্বোচ্চ ৫MB)",
+    docUploadBtn: "আপলোড করুন", docUploading: "আপলোড হচ্ছে...",
+    docDeleteConfirm: "ডকুমেন্টটি মুছে ফেলবেন?", docView: "দেখুন",
+    docDtBirth: "জন্মসনদ", docDtAcademic: "একাডেমিক ডকুমেন্ট", docDtPhoto: "ছবি", docDtOther: "অন্যান্য",
+    docErrTitle: "শিরোনাম দিন", docErrFile: "ফাইল নির্বাচন করুন",
+    healthList: "তালিকা", healthEmpty: "কোনো হেলথ-রেকর্ড নেই",
+    healthDateLbl: "তারিখ", healthTypeLbl: "ধরন", healthTitleLbl: "শিরোনাম", healthNoteLbl: "নোট (ঐচ্ছিক)",
+    healthAddBtn: "রেকর্ড যোগ করুন", healthAdding: "যোগ হচ্ছে...",
+    healthDeleteConfirm: "রেকর্ডটি মুছে ফেলবেন?", healthErrDate: "তারিখ দিন",
+    htCheckup: "চেকআপ", htVaccination: "টিকা", htIllness: "অসুস্থতা", htInjury: "আঘাত", htAllergy: "অ্যালার্জি", htOther: "অন্যান্য",
 
 
   },

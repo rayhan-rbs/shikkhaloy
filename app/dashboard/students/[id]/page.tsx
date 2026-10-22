@@ -10,6 +10,7 @@ import { verifyToken } from "@/lib/auth";
 import { getDict } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 import ProfileClient from "./profile-client";
+import ProfileTabs from "./profile-tabs";
 
 const ADMIN_ROLES = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"];
 
@@ -48,52 +49,54 @@ export default async function StudentProfilePage({ params }: { params: Promise<{
   const sp = enrollment.student.studentProfile;
 
   return (
-    <ProfileClient
-      dict={dict}
-      lang={lang}
-      enrollmentId={enrollment.id}
-      student={{
-        fullName: enrollment.student.fullName,
-        email: enrollment.student.email,
-        accountStatus: enrollment.student.status,
-        isFirstLogin: enrollment.student.isFirstLogin,
-      }}
-      enrollment={{
-        classId: enrollment.classId,
-        sectionId: enrollment.sectionId,
-        rollNumber: enrollment.rollNumber,
-        status: enrollment.status,
-        admissionDate: enrollment.admissionDate.toISOString(),
-      }}
-      className={enrollment.klass.name}
-      classNameEn={enrollment.klass.nameEn || ""}
-      sectionName={enrollment.section?.name || null}
-      profile={{
-        photoUrl: sp?.photoUrl || null,
-        dateOfBirth: sp?.dateOfBirth?.toISOString() || null,
-        gender: sp?.gender || null,
-        bloodGroup: sp?.bloodGroup || null,
-        fatherName: sp?.fatherName || null,
-        motherName: sp?.motherName || null,
-        guardianPhone: sp?.guardianPhone || null,
-        address: sp?.address || null,
-        birthCertificateNo: sp?.birthCertificateNo || null,
-        studentPhone: sp?.studentPhone || null,
-        nationality: sp?.nationality || null,
-        religion: sp?.religion || null,
-        previousInstitution: sp?.previousInstitution || null,
-        previousQualification: sp?.previousQualification || null,
-        guardianRelation: sp?.guardianRelation || null,
-        guardianOccupation: sp?.guardianOccupation || null,
-        guardianNid: sp?.guardianNid || null,
-        notes: sp?.notes || null,
-      }}
-      classes={classes.map((c) => ({
-        id: c.id,
-        name: c.name,
-        nameEn: c.nameEn || "",
-        sections: c.sections.map((s) => ({ id: s.id, name: s.name })),
-      }))}
-    />
+    <ProfileTabs dict={dict} studentId={id}>
+      <ProfileClient
+        dict={dict}
+        lang={lang}
+        enrollmentId={enrollment.id}
+        student={{
+          fullName: enrollment.student.fullName,
+          email: enrollment.student.email,
+          accountStatus: enrollment.student.status,
+          isFirstLogin: enrollment.student.isFirstLogin,
+        }}
+        enrollment={{
+          classId: enrollment.classId,
+          sectionId: enrollment.sectionId,
+          rollNumber: enrollment.rollNumber,
+          status: enrollment.status,
+          admissionDate: enrollment.admissionDate.toISOString(),
+        }}
+        className={enrollment.klass.name}
+        classNameEn={enrollment.klass.nameEn || ""}
+        sectionName={enrollment.section?.name || null}
+        profile={{
+          photoUrl: sp?.photoUrl || null,
+          dateOfBirth: sp?.dateOfBirth?.toISOString() || null,
+          gender: sp?.gender || null,
+          bloodGroup: sp?.bloodGroup || null,
+          fatherName: sp?.fatherName || null,
+          motherName: sp?.motherName || null,
+          guardianPhone: sp?.guardianPhone || null,
+          address: sp?.address || null,
+          birthCertificateNo: sp?.birthCertificateNo || null,
+          studentPhone: sp?.studentPhone || null,
+          nationality: sp?.nationality || null,
+          religion: sp?.religion || null,
+          previousInstitution: sp?.previousInstitution || null,
+          previousQualification: sp?.previousQualification || null,
+          guardianRelation: sp?.guardianRelation || null,
+          guardianOccupation: sp?.guardianOccupation || null,
+          guardianNid: sp?.guardianNid || null,
+          notes: sp?.notes || null,
+        }}
+        classes={classes.map((c) => ({
+          id: c.id,
+          name: c.name,
+          nameEn: c.nameEn || "",
+          sections: c.sections.map((s) => ({ id: s.id, name: s.name })),
+        }))}
+      />
+    </ProfileTabs>
   );
 }

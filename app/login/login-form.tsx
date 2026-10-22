@@ -1,10 +1,9 @@
 // 📁 app/login/login-form.tsx
-// লগইন ফর্ম — i18n সহ
+// লগইন ফর্ম — i18n সহ; সাফল্যে window.location.href (নোট ৬২ — auth-বাউন্ডারি ফুল-রিলোড)
 
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +12,6 @@ import { Label } from "@/components/ui/label";
 import { getDict, t, type Lang } from "@/lib/i18n";
 
 export default function LoginForm({ lang }: { lang: Lang }) {
-  const router = useRouter();
   const dict = getDict(lang);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,12 +32,13 @@ export default function LoginForm({ lang }: { lang: Lang }) {
       const json = await res.json();
 
       if (!json.success) {
-        setError(json.error || "লগইন ব্যর্থ হয়েছে");
+        setError(json.error || t(dict, "login.failFailed"));
         return;
       }
 
-      router.push("/dashboard");
-      router.refresh();
+      // নোট ৬২: router.push stale-cache-লুপের ঝুঁকি — auth-বাউন্ডারিতে ফুল-রিলোড
+      window.location.href = "/dashboard";
+      return;
     } catch {
       setError(t(dict, "login.networkError"));
     } finally {

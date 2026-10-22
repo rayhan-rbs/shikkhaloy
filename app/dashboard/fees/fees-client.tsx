@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { t, type Lang } from "@/lib/i18n";
 import type { Dictionary } from "@/messages/bn";
 import type { PrintHeader } from "@/lib/print";
+import Link from "next/link";
 
 interface Structure { id: string; classId: string; name: string; amount: number; monthKey: string | null; dueDate: string | null; invoiceCount: number; }
 interface Invoice { id: string; studentName: string; className: string; structureName: string; monthKey: string | null; amount: number; paidTotal: number; status: string; dueDate: string | null; }
@@ -182,6 +183,7 @@ export default function FeesClient({ dict, lang, institution }: { dict: Dictiona
         <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/40 p-1">
           {tabBtn("structure", t(dict, "fees.tabStructure"))}
           {tabBtn("invoices", t(dict, "fees.tabInvoices"))}
+          <Link href="/dashboard/fees/due" className="rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">{t(dict, "fees.dueTab")}</Link>
         </div>
       </div>
 

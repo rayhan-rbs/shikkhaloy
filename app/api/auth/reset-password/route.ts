@@ -40,7 +40,6 @@ export async function POST(request: NextRequest) {
       data: { password: hashed, isFirstLogin: false },
     });
 
-
     return NextResponse.json({
       success: true,
       data: { message: "পাসওয়ার্ড রিসেট হয়েছে — এখন লগইন করুন" },

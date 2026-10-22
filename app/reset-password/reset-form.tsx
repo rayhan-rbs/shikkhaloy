@@ -1,17 +1,18 @@
 // 📁 app/reset-password/reset-form.tsx
+// নতুন-পাস সেট ফর্ম — i18n; শেষে window.location.href (নোট ৬২-চেতনা)
+
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getDict, t, type Lang } from "@/lib/i18n";
 
-export default function ResetPasswordForm({ token }: { token: string }) {
-  const router = useRouter();
+export default function ResetPasswordForm({ token, lang }: { token: string; lang: Lang }) {
+  const dict = getDict(lang);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -22,7 +23,7 @@ export default function ResetPasswordForm({ token }: { token: string }) {
     e.preventDefault();
     setError("");
     if (newPassword !== confirmPassword) {
-      setError("পাসওয়ার্ড দুটো মিলছে না");
+      setError(t(dict, "login.mismatch"));
       return;
     }
 
@@ -35,12 +36,12 @@ export default function ResetPasswordForm({ token }: { token: string }) {
       });
       const json = await res.json();
       if (!json.success) {
-        setError(json.error || "রিসেট করা যায়নি");
+        setError(json.error || t(dict, "login.resetFail"));
         return;
       }
       setDone(true);
     } catch {
-      setError("সার্ভারের সাথে যোগাযোগ করা যাচ্ছে না");
+      setError(t(dict, "login.networkError"));
     } finally {
       setLoading(false);
     }
@@ -52,11 +53,11 @@ export default function ResetPasswordForm({ token }: { token: string }) {
         <Card className="w-full max-w-md border-slate-800/60 bg-slate-900/80 backdrop-blur-xl">
           <CardContent className="p-8 text-center">
             <p className="text-4xl">✅</p>
-            <h2 className="mt-3 text-lg font-semibold text-white">পাসওয়ার্ড রিসেট হয়েছে!</h2>
-            <p className="mt-1 text-sm text-slate-400">এখন নতুন পাসওয়ার্ড দিয়ে লগইন করুন</p>
-            <Button onClick={() => router.push("/login")}
+            <h2 className="mt-3 text-lg font-semibold text-white">{t(dict, "login.resetDoneTitle")}</h2>
+            <p className="mt-1 text-sm text-slate-400">{t(dict, "login.resetDoneNote")}</p>
+            <Button onClick={() => (window.location.href = "/login")}
               className="mt-6 w-full bg-gradient-to-r from-indigo-500 to-violet-600 text-white">
-              লগইনে যান
+              {t(dict, "login.goLogin")}
             </Button>
           </CardContent>
         </Card>
@@ -69,15 +70,13 @@ export default function ResetPasswordForm({ token }: { token: string }) {
       <div className="w-full max-w-md">
         <Card className="border-slate-800/60 bg-slate-900/80 shadow-2xl backdrop-blur-xl">
           <CardHeader>
-            <CardTitle className="text-xl text-white">🔑 নতুন পাসওয়ার্ড সেট করুন</CardTitle>
-            <CardDescription className="text-slate-400">
-              লিংকটি বৈধ হলে নতুন পাসওয়ার্ড দিতে পারবেন
-            </CardDescription>
+            <CardTitle className="text-xl text-white">{t(dict, "login.resetTitle")}</CardTitle>
+            <CardDescription className="text-slate-400">{t(dict, "login.resetSubtitle")}</CardDescription>
           </CardHeader>
           <CardContent>
             {!token && (
               <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-                লিংকে টোকেন নেই — আবার রিসেট লিংক নিন
+                {t(dict, "login.noToken")}
               </div>
             )}
             {error && (
@@ -87,25 +86,25 @@ export default function ResetPasswordForm({ token }: { token: string }) {
             )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="new" className="text-slate-300">নতুন পাসওয়ার্ড</Label>
+                <Label htmlFor="new" className="text-slate-300">{t(dict, "login.newPass")}</Label>
                 <Input id="new" type="password" required value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="border-slate-700 bg-slate-800/60 text-white" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirm" className="text-slate-300">নতুন পাসওয়ার্ড আবার</Label>
+                <Label htmlFor="confirm" className="text-slate-300">{t(dict, "login.confirmPass")}</Label>
                 <Input id="confirm" type="password" required value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="border-slate-700 bg-slate-800/60 text-white" />
               </div>
               <Button type="submit" disabled={loading || !token}
                 className="w-full bg-gradient-to-r from-indigo-500 to-violet-600 text-white">
-                {loading ? "রিসেট হচ্ছে..." : "পাসওয়ার্ড রিসেট করুন"}
+                {loading ? t(dict, "login.resetting") : t(dict, "login.resetBtn")}
               </Button>
             </form>
             <div className="mt-4 text-center">
               <Link href="/login" className="text-sm text-slate-400 hover:text-indigo-300">
-                ← লগইনে ফিরে যান
+                {t(dict, "login.backToLogin")}
               </Link>
             </div>
           </CardContent>

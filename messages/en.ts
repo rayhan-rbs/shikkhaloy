@@ -32,6 +32,23 @@ export const en: Dictionary = {
     changing: "Changing...",
     mismatch: "The two new passwords do not match",
     changeFail: "Could not change password",
+        // auth polish (A-final): forgot/reset + denied banner
+    forgotTitle: "🔑 Forgot password?",
+    forgotSubtitle: "Enter your email — a reset link will be generated",
+    forgotSubmit: "Get reset link",
+    forgotSending: "Sending...",
+    forgotFail: "Something went wrong",
+    backToLogin: "← Back to login",
+    resetTitle: "🔑 Set a new password",
+    resetSubtitle: "If the link is valid, you can set a new password",
+    noToken: "No token in the link — request a new reset link",
+    resetFail: "Could not reset",
+    resetBtn: "Reset password",
+    resetting: "Resetting...",
+    resetDoneTitle: "Password reset!",
+    resetDoneNote: "Now sign in with your new password",
+    goLogin: "Go to login",
+    deniedMsg: "🔒 No permission for that page — please sign in again",
 
   },
   dashboard: {

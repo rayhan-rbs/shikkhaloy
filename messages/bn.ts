@@ -30,6 +30,23 @@ export const bn = {
     changing: "বদলানো হচ্ছে...",
     mismatch: "নতুন পাসওয়ার্ড দুটো মিলছে না",
     changeFail: "পাসওয়ার্ড বদলানো যায়নি",
+        // auth-পলিশ (A-শেষ): forgot/reset + denied-ব্যানার
+    forgotTitle: "🔑 পাসওয়ার্ড ভুলে গেছেন?",
+    forgotSubtitle: "ইমেইল দিন — রিসেট লিংক তৈরি হবে",
+    forgotSubmit: "রিসেট লিংক দিন",
+    forgotSending: "পাঠানো হচ্ছে...",
+    forgotFail: "সমস্যা হয়েছে",
+    backToLogin: "← লগইনে ফিরে যান",
+    resetTitle: "🔑 নতুন পাসওয়ার্ড সেট করুন",
+    resetSubtitle: "লিংকটি বৈধ হলে নতুন পাসওয়ার্ড দিতে পারবেন",
+    noToken: "লিংকে টোকেন নেই — আবার রিসেট লিংক নিন",
+    resetFail: "রিসেট করা যায়নি",
+    resetBtn: "পাসওয়ার্ড রিসেট করুন",
+    resetting: "রিসেট হচ্ছে...",
+    resetDoneTitle: "পাসওয়ার্ড রিসেট হয়েছে!",
+    resetDoneNote: "এখন নতুন পাসওয়ার্ড দিয়ে লগইন করুন",
+    goLogin: "লগইনে যান",
+    deniedMsg: "🔒 ওই-পেজে অনুমতি নেই — অনুগ্রহ-করে আবার লগইন করুন",
 
   },
   dashboard: {

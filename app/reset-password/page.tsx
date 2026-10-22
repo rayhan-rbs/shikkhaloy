@@ -4,6 +4,7 @@
 export const instant = false;
 
 import ResetPasswordForm from "./reset-form";
+import { getLang } from "@/lib/i18n-server";
 
 export default async function ResetPasswordPage({
   searchParams,
@@ -11,5 +12,6 @@ export default async function ResetPasswordPage({
   searchParams: Promise<{ token?: string }>;
 }) {
   const { token } = await searchParams;
-  return <ResetPasswordForm token={token || ""} />;
+  const lang = await getLang();
+  return <ResetPasswordForm token={token || ""} lang={lang} />;
 }

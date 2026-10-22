@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getDict, t, type Lang } from "@/lib/i18n";
 
-export default function LoginForm({ lang }: { lang: Lang }) {
+export default function LoginForm({ lang, denied }: { lang: Lang; denied?: boolean }) {
   const dict = getDict(lang);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -72,6 +72,12 @@ export default function LoginForm({ lang }: { lang: Lang }) {
               <CardDescription className="text-slate-400">{t(dict, "login.subtitle")}</CardDescription>
             </CardHeader>
             <CardContent>
+              {denied && (
+                <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+                  {t(dict, "login.deniedMsg")}
+                </div>
+              )}
+
               {error && (
                 <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
                   ⚠️ {error}

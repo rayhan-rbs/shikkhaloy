@@ -10,6 +10,8 @@ import { verifyToken } from "@/lib/auth";
 import { getDict, t } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import DeniedBanner from "@/components/denied-banner";
+
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -30,6 +32,8 @@ export default async function DashboardPage() {
 
   return (
     <>
+      <DeniedBanner />
+
       {/* হিরো */}
       <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 p-8 shadow-xl shadow-indigo-500/20">
         <div className="pointer-events-none absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-2xl" />

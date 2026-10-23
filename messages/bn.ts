@@ -830,6 +830,15 @@ export const bn = {
       conductGood: "ভালো", closing: "শিক্ষার্থীর ভবিষ্যৎ জীবনের জন্য আন্তরিক শুভকামনা।",
       signature: "প্রধান শিক্ষক / অধ্যক্ষ", noEnrollment: "ভর্তি-রেকর্ড পাওয়া যায়নি",
     },
+    // M5: ID কার্ড
+    idcards: {
+      title: "ID কার্ড", classLbl: "ক্লাস *", sectionLbl: "সেকশন", loadBtn: "কার্ড তৈরি করুন",
+      loading: "লোড হচ্ছে...", print: "🖨️ প্রিন্ট", selected: "নির্বাচিত",
+      selectAll: "সব নির্বাচন", clearAll: "সব বাদ", empty: "এই ক্লাসে সক্রিয় ছাত্র নেই",
+      errClass: "ক্লাস নির্বাচন করুন", networkError: "সংযোগ সমস্যা — আবার চেষ্টা করুন",
+      dob: "জন্ম", blood: "রক্ত", id: "আইডি",
+      hint: "প্রিন্ট-ডায়ালগ: A4 + Margins: None + Background graphics: ON — প্রতি-পৃষ্ঠায় ১০ কার্ড",
+    },
 
   lang: {
     bn: "বাংলা",

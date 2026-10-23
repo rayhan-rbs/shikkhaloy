@@ -717,6 +717,15 @@ export const en: Dictionary = {
       conductGood: "Good", closing: "We wish the student every success in the future.",
       signature: "Head Teacher / Principal", noEnrollment: "No enrollment record found",
     },
+    // M5: ID cards
+    idcards: {
+      title: "ID Cards", classLbl: "Class *", sectionLbl: "Section", loadBtn: "Generate cards",
+      loading: "Loading...", print: "🖨️ Print", selected: "selected",
+      selectAll: "Select all", clearAll: "Clear all", empty: "No active students in this class",
+      errClass: "Select a class", networkError: "Connection problem — try again",
+      dob: "DOB", blood: "Blood", id: "ID",
+      hint: "Print dialog: A4 + Margins: None + Background graphics: ON — 10 cards per page",
+    },
 
   lang: {
     bn: "বাংলা",

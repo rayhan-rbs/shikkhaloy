@@ -44,6 +44,7 @@ export const ROUTE_ROLES: { prefix: string; roles: Role[] }[] = [
   { prefix: "/dashboard/admissions", roles: ADMINS },
   { prefix: "/dashboard/parents", roles: ADMINS },
   { prefix: "/dashboard/my-children", roles: ["PARENT"] },
+  { prefix: "/dashboard/idcards", roles: ADMINS },
 
 
 

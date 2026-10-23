@@ -698,6 +698,25 @@ export const en: Dictionary = {
       attendance: "Attendance this month", due: "Due", noDue: "No dues 🎉", roll: "Roll", loading: "...",
       networkError: "Connection problem — try again",
     },
+    // M4: status transition + TC
+    transition: {
+      title: "Status", alumniBtn: "🎓 Alumni", transferBtn: "📤 Transfer (TC)",
+      reactivateBtn: "✅ Reactivate", tcPrint: "📄 TC", stAlumni: "Alumni",
+      alumniConfirm: "Enrollment will be COMPLETED and status ALUMNI — confirm?",
+      transferConfirm: "Enrollment will be TRANSFERRED and account deactivated — confirm?",
+      reactivateConfirm: "Reactivate this account?",
+      saved: "Status updated",
+    },
+    tc: {
+      print: "Print", title: "Transfer Certificate",
+      serial: "TC No", issueDate: "Issue date",
+      intro: "This is to certify that the above student was enrolled in our institution. All dues have been settled as per the details below, and a Transfer Certificate has been issued.",
+      fName: "Student name", fFather: "Father's name", fMother: "Mother's name",
+      fDob: "Date of birth", fClass: "Class/Section", fRoll: "Roll no", fAdmission: "Admission date",
+      fLeaving: "Leaving date", fStatus: "Enrollment status", fNationality: "Nationality", fConduct: "Conduct",
+      conductGood: "Good", closing: "We wish the student every success in the future.",
+      signature: "Head Teacher / Principal", noEnrollment: "No enrollment record found",
+    },
 
   lang: {
     bn: "বাংলা",

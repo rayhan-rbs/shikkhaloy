@@ -1,4 +1,4 @@
-// প্রোফাইল-ট্যাব-র‍্যাপার: প্রোফাইল | ডকুমেন্ট | হেলথ — profile-client অস্পৃশ্য
+// প্রোফাইল-ট্যাব-র‍্যাপার: স্ট্যাটাস-বার + প্রোফাইল | ডকুমেন্ট | হেলথ — profile-client অস্পৃশ্য (নোট ৬৭)
 "use client";
 
 import { useState, type ReactNode } from "react";
@@ -6,6 +6,7 @@ import { t } from "@/lib/i18n";
 import type { Dictionary } from "@/messages/bn";
 import DocumentsTab from "./documents-tab";
 import HealthTab from "./health-tab";
+import TransitionBar from "./transition-bar";
 
 type TabKey = "profile" | "docs" | "health";
 
@@ -23,6 +24,7 @@ export default function ProfileTabs({ dict, studentId, children }: {
 
   return (
     <div>
+      <TransitionBar dict={dict} studentId={studentId} />
       <div className="mb-6 flex gap-1 rounded-lg border border-border bg-muted/40 p-1">
         {tabs.map((tb) => (
           <button key={tb.key} onClick={() => setTab(tb.key)}

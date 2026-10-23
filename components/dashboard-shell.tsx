@@ -2,6 +2,7 @@
 // ড্যাশবোর্ড শেল: সাইডবার (গ্রুপ-ভিত্তিক + role-ফিল্টার) + টপবার + Command Palette (Ctrl+K)
 // ব্র্যান্ডিং DB থেকে; রঙ সব shadcn টোকেন → ডার্ক মোড অটো
 // ৪.৪: online-exams (অ্যাডমিন/শিক্ষক) + my-exams (ছাত্র) — NavItem.roles = ঐচ্ছিক-ফিল্টার
+// M2: admissions (অ্যাডমিন) — UserPlus
 
 "use client";
 
@@ -9,7 +10,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, Settings, Search, Menu, X,
+  LayoutDashboard, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X,
   GraduationCap, Sun, Moon, LogOut, Languages, Award, type LucideIcon,
 } from "lucide-react";
 
@@ -92,6 +93,7 @@ export default function DashboardShell({
         { href: "/dashboard/leave", label: t(dict, "nav.leave"), icon: CalendarOff, active: pathname.startsWith("/dashboard/leave"), soon: false },
 
         { href: "/dashboard/fees", label: t(dict, "fees.title"), icon: Wallet, active: pathname.startsWith("/dashboard/fees"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
+        { href: "/dashboard/admissions", label: t(dict, "admissions.title"), icon: UserPlus, active: pathname.startsWith("/dashboard/admissions"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
 
       ],
     },
@@ -321,6 +323,13 @@ export default function DashboardShell({
                   <CommandItem onSelect={() => { setPaletteOpen(false); router.push("/dashboard/fees"); }}>
                     <Wallet size={15} className="mr-2" />
                     {t(dict, "fees.title")}
+                  </CommandItem>
+                )}
+
+                {["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"].includes(user.role) && (
+                  <CommandItem onSelect={() => { setPaletteOpen(false); router.push("/dashboard/admissions"); }}>
+                    <UserPlus size={15} className="mr-2" />
+                    {t(dict, "admissions.title")}
                   </CommandItem>
                 )}
 

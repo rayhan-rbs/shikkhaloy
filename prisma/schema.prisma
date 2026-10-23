@@ -727,3 +727,36 @@ model HealthRecord {
   @@index([branchId])
   @@index([studentId])
 }
+
+
+// ─── M2: অনলাইন ভর্তি আবেদন (scalar-FK অ্যাপেন্ড — নোট ৫৫)
+model AdmissionApplication {
+  id                  String    @id @default(cuid())
+  applicationNo       String    @unique
+  branchId            String
+  classId             String
+  sectionId           String?
+  sessionId           String?
+  fullName            String
+  email               String
+  phone               String
+  dateOfBirth         DateTime? @db.Date
+  gender              String?
+  fatherName          String?
+  motherName          String?
+  guardianPhone       String?
+  address             String?
+  previousInstitution String?
+  photoUrl            String?
+  status              String    @default("PENDING") // PENDING/APPROVED/REJECTED
+  reviewNote          String?
+  reviewedById        String?
+  reviewedAt          DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+
+  @@index([branchId])
+  @@index([status])
+}
+

@@ -791,6 +791,26 @@ export const bn = {
       errEmailTaken: "এই ইমেইলে অ্যাকাউন্ট আছে — অন্য ইমেইল দিন",
       networkError: "সংযোগ সমস্যা — আবার চেষ্টা করুন",
     },
+    // M3: PARENT লিংকিং
+    parents: {
+      title: "অভিভাবক", createTitle: "নতুন অভিভাবক অ্যাকাউন্ট", listTitle: "অভিভাবক তালিকা",
+      name: "পূর্ণ নাম *", email: "ইমেইল *", phone: "মোবাইল",
+      createBtn: "অ্যাকাউন্ট খুলুন", creating: "খোলা হচ্ছে...",
+      children: "সন্তান", noChildren: "সন্তান লিংক করা নেই",
+      addStudent: "সন্তান যোগ", searchPh: "নাম/ইমেইল লিখে খুঁজুন...",
+      relation: "সম্পর্ক", relFather: "বাবা", relMother: "মা", relGuardian: "অভিভাবক", relOther: "অন্যান্য",
+      remove: "সরান", resetPass: "🔑 রিসেট", deactivate: "⛔ নিষ্ক্রিয়", activate: "✅ সক্রিয়",
+      stActive: "সক্রিয়", stDeactivated: "নিষ্ক্রিয়",
+      empty: "কোনো অভিভাবক নেই", loading: "...", searching: "খোঁজা হচ্ছে...", searchEmpty: "মেলেনি",
+      errName: "নাম দিন", errEmail: "সঠিক ইমেইল দিন", errEmailTaken: "এই ইমেইলে অ্যাকাউন্ট আছে",
+      errStudent: "ছাত্র পাওয়া যায়নি", errLinked: "এই ছাত্র ইতিমধ্যে লিংক-করা",
+      networkError: "সংযোগ সমস্যা — আবার চেষ্টা করুন",
+    },
+    parent: {
+      title: "আমার সন্তানেরা", empty: "কোনো সন্তান লিংক-করা নেই — প্রতিষ্ঠানের সাথে যোগাযোগ করুন",
+      attendance: "এ-মাসে উপস্থিতি", due: "বকেয়া", noDue: "বকেয়া নেই 🎉", roll: "রোল", loading: "...",
+      networkError: "সংযোগ সমস্যা — আবার চেষ্টা করুন",
+    },
 
   lang: {
     bn: "বাংলা",

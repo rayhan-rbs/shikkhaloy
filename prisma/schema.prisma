@@ -760,3 +760,19 @@ model AdmissionApplication {
   @@index([status])
 }
 
+
+// ─── M3: PARENT-সন্তান লিংক (scalar-FK অ্যাপেন্ড — নোট ৫৫)
+model ParentLink {
+  id          String    @id @default(cuid())
+  branchId    String
+  parentId    String
+  studentId   String
+  relation    String? // FATHER/MOTHER/GUARDIAN/OTHER
+  createdById String
+  createdAt   DateTime  @default(now())
+  deletedAt   DateTime?
+
+  @@unique([parentId, studentId])
+  @@index([branchId])
+  @@index([studentId])
+}

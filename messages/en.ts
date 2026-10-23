@@ -678,6 +678,26 @@ export const en: Dictionary = {
       errEmailTaken: "An account already exists with this email — use another",
       networkError: "Connection problem — try again",
     },
+    // M3: parent linking
+    parents: {
+      title: "Parents", createTitle: "New Parent Account", listTitle: "Parents",
+      name: "Full name *", email: "Email *", phone: "Mobile",
+      createBtn: "Create account", creating: "Creating...",
+      children: "Children", noChildren: "No children linked",
+      addStudent: "Add child", searchPh: "Search by name/email...",
+      relation: "Relation", relFather: "Father", relMother: "Mother", relGuardian: "Guardian", relOther: "Other",
+      remove: "Remove", resetPass: "🔑 Reset", deactivate: "⛔ Deactivate", activate: "✅ Activate",
+      stActive: "Active", stDeactivated: "Deactivated",
+      empty: "No parents yet", loading: "...", searching: "Searching...", searchEmpty: "No match",
+      errName: "Enter name", errEmail: "Enter a valid email", errEmailTaken: "An account exists with this email",
+      errStudent: "Student not found", errLinked: "This student is already linked",
+      networkError: "Connection problem — try again",
+    },
+    parent: {
+      title: "My Children", empty: "No children linked — contact the institution",
+      attendance: "Attendance this month", due: "Due", noDue: "No dues 🎉", roll: "Roll", loading: "...",
+      networkError: "Connection problem — try again",
+    },
 
   lang: {
     bn: "বাংলা",

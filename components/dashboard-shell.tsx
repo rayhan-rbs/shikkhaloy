@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X,
+  LayoutDashboard, Contact, UsersRound, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X,
   GraduationCap, Sun, Moon, LogOut, Languages, Award, type LucideIcon,
 } from "lucide-react";
 
@@ -84,6 +84,7 @@ export default function DashboardShell({
         { href: "/dashboard/exams", label: t(dict, "nav.exam"), icon: ClipboardList, active: pathname.startsWith("/dashboard/exams"), soon: false },
         { href: "/dashboard/online-exams", label: t(dict, "onlineExams.title"), icon: MonitorCheck, active: pathname.startsWith("/dashboard/online-exams"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER"] },
         { href: "/dashboard/my-exams", label: t(dict, "myExams.title"), icon: GraduationCap, active: pathname.startsWith("/dashboard/my-exams"), soon: false, roles: ["STUDENT"] },
+        { href: "/dashboard/my-children", label: t(dict, "parent.title"), icon: UsersRound, active: pathname.startsWith("/dashboard/my-children"), soon: false, roles: ["PARENT"] },
         { href: "/dashboard/seats", label: t(dict, "nav.seats"), icon: Armchair, active: pathname.startsWith("/dashboard/seats"), soon: false },
         { href: "/dashboard/marks", label: t(dict, "nav.marks"), icon: PenLine, active: pathname.startsWith("/dashboard/marks"), soon: false },
         { href: "/dashboard/routine", label: t(dict, "nav.routine"), icon: CalendarRange, active: pathname.startsWith("/dashboard/routine"), soon: false },
@@ -94,6 +95,8 @@ export default function DashboardShell({
 
         { href: "/dashboard/fees", label: t(dict, "fees.title"), icon: Wallet, active: pathname.startsWith("/dashboard/fees"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
         { href: "/dashboard/admissions", label: t(dict, "admissions.title"), icon: UserPlus, active: pathname.startsWith("/dashboard/admissions"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
+        { href: "/dashboard/parents", label: t(dict, "parents.title"), icon: Contact, active: pathname.startsWith("/dashboard/parents"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
+
 
       ],
     },
@@ -332,6 +335,20 @@ export default function DashboardShell({
                     {t(dict, "admissions.title")}
                   </CommandItem>
                 )}
+
+                {["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"].includes(user.role) && (
+                  <CommandItem onSelect={() => { setPaletteOpen(false); router.push("/dashboard/parents"); }}>
+                    <Contact size={15} className="mr-2" />
+                    {t(dict, "parents.title")}
+                  </CommandItem>
+                )}
+                {user.role === "PARENT" && (
+                  <CommandItem onSelect={() => { setPaletteOpen(false); router.push("/dashboard/my-children"); }}>
+                    <UsersRound size={15} className="mr-2" />
+                    {t(dict, "parent.title")}
+                  </CommandItem>
+                )}
+
 
                 {["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER"].includes(user.role) && (
                   <CommandItem onSelect={() => { setPaletteOpen(false); router.push("/dashboard/online-exams"); }}>

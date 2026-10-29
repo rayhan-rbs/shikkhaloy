@@ -736,6 +736,7 @@ export const en: Dictionary = {
       waiting: "Waiting for scans...", errClass: "Select a class and date",
       checkTitle: "Attendance check-in", marking: "Verifying...",
       ok: "✅ Attendance recorded", already: "Today's attendance was already recorded",
+      durationLbl: "Duration", min: "min",
       leaveBlocked: "Your leave is approved — attendance will not be marked",
       invalid: "Invalid or expired QR — ask your teacher for a new one",
       notEnrolled: "You have no active enrollment in this class",
@@ -759,6 +760,15 @@ export const en: Dictionary = {
         card: "Card", receivedBy: "Received by", empty: "No payments yet",
         export: "⬇️ Excel", networkError: "Connection problem — try again", backTo: "← Back to fees",
       },
+      receipts: {
+        title: "Receipts", hint: "Payment receipts — server-PDF (QR + letterhead)",
+        back: "← Payment log", search: "Search name/fee/transaction…", allMethods: "All methods",
+        empty: "No payments", date: "Date", student: "Student", klass: "Class",
+        fee: "Fee", method: "Method", amount: "Amount", gateway: "Gateway", receipt: "Receipt",
+        netError: "Connection problem — please retry",
+      },
+
+
     },
 
   lang: {

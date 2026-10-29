@@ -1,7 +1,8 @@
-// M6: ক্লাস+তারিখ → QR + কাউন্টডাউন + লাইভ-কাউন্টার (৫-সেকেন্ড poll)
+// M6: ক্লাস+তারিখ+মেয়াদ → QR + কাউন্টডাউন + লাইভ-কাউন্টার (৫-সেকেন্ড poll)
+// M6-প্যাচ: মেয়াদ-সিলেক্ট (ডিফল্ট ১০ মিনিট; server clamp 1–60 — client-বিশ্বাস-নয়)
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ interface Status { roster: number; present: number; qrPresent: number; recent: R
 interface Qr { qrDataUrl: string; url: string; expiresAt: string; }
 
 const sel = "h-9 rounded-lg border border-border bg-background px-3 text-sm";
+const DURATIONS = ["5", "10", "15", "20", "30", "45", "60"];
 
 function mmss(ms: number): string {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -26,6 +28,7 @@ export default function QrClient({ dict }: { dict: Dictionary }) {
   const [classId, setClassId] = useState("");
   const [sectionId, setSectionId] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [duration, setDuration] = useState("10");
   const [qr, setQr] = useState<Qr | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
   const [now, setNow] = useState(Date.now());
@@ -70,7 +73,7 @@ export default function QrClient({ dict }: { dict: Dictionary }) {
     try {
       const res = await fetch("/api/attendance/qr", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "GENERATE", classId, sectionId, date }),
+        body: JSON.stringify({ action: "GENERATE", classId, sectionId, date, durationMin: Number(duration) }),
       });
       const json = await res.json();
       if (!json.success) { setError(json.error || t(dict, "attQr.networkError")); return; }
@@ -113,6 +116,13 @@ export default function QrClient({ dict }: { dict: Dictionary }) {
           <div className="space-y-1.5">
             <Label>{t(dict, "attQr.dateLbl")}</Label>
             <Input type="date" value={date} onChange={(e) => { setDate(e.target.value); setQr(null); setStatus(null); }} className={sel} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t(dict, "attQr.durationLbl")}</Label>
+            <select value={duration} className={sel}
+              onChange={(e) => { setDuration(e.target.value); setQr(null); setStatus(null); }}>
+              {DURATIONS.map((m) => <option key={m} value={m}>{m} {t(dict, "attQr.min")}</option>)}
+            </select>
           </div>
           <Button onClick={generate} disabled={busy} className="bg-primary text-primary-foreground">
             {busy ? "..." : qr ? t(dict, "attQr.regenerate") : t(dict, "attQr.generate")}

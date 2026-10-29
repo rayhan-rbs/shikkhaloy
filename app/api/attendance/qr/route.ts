@@ -1,4 +1,4 @@
-// M6: QR হাজিরা — meta=1 classes+sections | GET status (লাইভ-কাউন্টার) | POST GENERATE (10-min session)
+// M6: QR হাজিরা — meta=1 classes+sections | GET status (লাইভ-কাউন্টার) | POST GENERATE (মেয়াদ-নির্বাচযোগ্য — ডিফল্ট ১০, clamp 1–60)
 import { NextRequest, NextResponse } from "next/server";
 import QRCode from "qrcode";
 import crypto from "crypto";
@@ -7,7 +7,6 @@ import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 
 const ADMIN_ROLES = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"];
-const TTL_MIN = 10;
 
 async function me(request: NextRequest) {
   const token = request.cookies.get("shikkhaloy_token")?.value;
@@ -128,12 +127,16 @@ export async function POST(request: NextRequest) {
       if (!sec) return NextResponse.json({ success: false, error: "সেকশন পাওয়া যায়নি" }, { status: 404 });
     }
 
+    // মেয়াদ = client-পাঠানো durationMin, server clamp 1–60 (client-বিশ্বাস-নয়); অনুপস্থিত/অবৈধ = ডিফল্ট ১০
+    const rawDur = Number(body.durationMin);
+    const durationMin = Number.isFinite(rawDur) && rawDur > 0 ? Math.min(60, Math.max(1, Math.round(rawDur))) : 10;
+
     const sess = await prisma.attendanceQrSession.create({
       data: {
         branchId: meU.branchId, classId, sectionId,
         date: new Date(`${dateStr}T00:00:00.000Z`),
         nonce: crypto.randomUUID(),
-        expiresAt: new Date(Date.now() + TTL_MIN * 60 * 1000),
+        expiresAt: new Date(Date.now() + durationMin * 60 * 1000),
         createdById: meU.id,
       },
     });

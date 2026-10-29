@@ -793,3 +793,25 @@ model AttendanceQrSession {
   @@index([branchId, date])
   @@index([classId, date])
 }
+
+// ─── M7: অনলাইন-পেমেন্ট-ইনটেন্ট (৪.৭-B — scalar-FK অ্যাপেন্ড — নোট ৫৫)
+model PaymentIntent {
+  id            String    @id @default(cuid())
+  branchId      String
+  invoiceId     String
+  studentId     String
+  amount        Float
+  tranId        String    @unique
+  valId         String?
+  gatewayTxnId  String?
+  cardBrand     String?
+  status        String    @default("PENDING") // PENDING/SUCCESS/FAILED
+  initiatedById String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  @@index([branchId])
+  @@index([invoiceId])
+  @@index([status])
+}

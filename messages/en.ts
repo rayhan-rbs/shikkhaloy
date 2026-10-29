@@ -742,6 +742,24 @@ export const en: Dictionary = {
       studentOnly: "Check-in works only with a student account",
       backToDash: "Back to dashboard", networkError: "Connection problem — try again",
     },
+    // M7: Online payment (4.7-B)
+    payOnline: {
+      title: "Pay Online", hint: "Pick a due invoice and pay via SSLCommerz gateway (sandbox)",
+      invoice: "Invoice", student: "Student", classLbl: "Class", amount: "Total", remaining: "Due",
+      pay: "Go to gateway", paying: "Redirecting...", empty: "No due invoices 🎉",
+      okTitle: "✅ Payment successful", okText: "Payment recorded — invoice status updated",
+      failTitle: "⚠️ Payment failed", failText: "No success confirmation from gateway — try again if needed",
+      cancelTitle: "Payment cancelled",
+      networkError: "Connection problem — try again", backTo: "← Back to fees",
+          // M7 add-on: Payment history
+      payLog: {
+        title: "Payment Log", hint: "Full payment history — with method, gateway transaction and card",
+        search: "Search name/transaction…", date: "Date", student: "Student", invoice: "Invoice",
+        method: "Method", amount: "Amount", tranId: "Tran ID", gatewayTxn: "Gateway Txn",
+        card: "Card", receivedBy: "Received by", empty: "No payments yet",
+        export: "⬇️ Excel", networkError: "Connection problem — try again", backTo: "← Back to fees",
+      },
+    },
 
   lang: {
     bn: "বাংলা",

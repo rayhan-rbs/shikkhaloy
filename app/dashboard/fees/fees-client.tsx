@@ -184,6 +184,7 @@ export default function FeesClient({ dict, lang, institution }: { dict: Dictiona
           {tabBtn("structure", t(dict, "fees.tabStructure"))}
           {tabBtn("invoices", t(dict, "fees.tabInvoices"))}
           <Link href="/dashboard/fees/due" className="rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">{t(dict, "fees.dueTab")}</Link>
+          <Link href="/dashboard/fees/payments" className="rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">{t(dict, "payOnline.payLog.title")}</Link>
         </div>
       </div>
 

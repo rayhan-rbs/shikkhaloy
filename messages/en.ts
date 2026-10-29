@@ -726,6 +726,22 @@ export const en: Dictionary = {
       dob: "DOB", blood: "Blood", id: "ID",
       hint: "Print dialog: A4 + Margins: None + Background graphics: ON — 10 cards per page",
     },
+    // M6: QR attendance
+    attQr: {
+      title: "QR Attendance", hint: "Pick class+date and generate QR — students scan to mark themselves present",
+      classLbl: "Class *", sectionLbl: "Section", dateLbl: "Date *",
+      generate: "Generate QR", regenerate: "🔄 New QR", expires: "Valid for",
+      expired: "Expired — generate a new QR", scanHint: "Students scan with their phone camera",
+      roster: "Total students", present: "Present", qrPresent: "Present via QR",
+      waiting: "Waiting for scans...", errClass: "Select a class and date",
+      checkTitle: "Attendance check-in", marking: "Verifying...",
+      ok: "✅ Attendance recorded", already: "Today's attendance was already recorded",
+      leaveBlocked: "Your leave is approved — attendance will not be marked",
+      invalid: "Invalid or expired QR — ask your teacher for a new one",
+      notEnrolled: "You have no active enrollment in this class",
+      studentOnly: "Check-in works only with a student account",
+      backToDash: "Back to dashboard", networkError: "Connection problem — try again",
+    },
 
   lang: {
     bn: "বাংলা",

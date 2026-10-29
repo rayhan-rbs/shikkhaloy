@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, Contact, UsersRound, IdCard, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X,
+  LayoutDashboard, Contact, UsersRound, IdCard, QrCode, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X,
   GraduationCap, Sun, Moon, LogOut, Languages, Award, type LucideIcon,
 } from "lucide-react";
 
@@ -91,6 +91,8 @@ export default function DashboardShell({
         { href: "/dashboard/students", label: t(dict, "nav.students"), icon: Users, active: pathname.startsWith("/dashboard/students"), soon: false },
         { href: "/dashboard/teachers", label: t(dict, "nav.teachers"), icon: UserCog, active: pathname.startsWith("/dashboard/teachers"), soon: false },
         { href: "/dashboard/attendance", label: t(dict, "nav.attendance"), icon: CalendarCheck, active: pathname.startsWith("/dashboard/attendance"), soon: false },
+        { href: "/dashboard/attendance/qr", label: t(dict, "attQr.title"), icon: QrCode, active: pathname.startsWith("/dashboard/attendance/qr"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER"] },
+
         { href: "/dashboard/leave", label: t(dict, "nav.leave"), icon: CalendarOff, active: pathname.startsWith("/dashboard/leave"), soon: false },
 
         { href: "/dashboard/fees", label: t(dict, "fees.title"), icon: Wallet, active: pathname.startsWith("/dashboard/fees"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },

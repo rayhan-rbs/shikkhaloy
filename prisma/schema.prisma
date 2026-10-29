@@ -776,3 +776,20 @@ model ParentLink {
   @@index([branchId])
   @@index([studentId])
 }
+
+// ─── M6: QR হাজিরা-সেশন (scalar-FK অ্যাপেন্ড — নোট ৫৫)
+model AttendanceQrSession {
+  id          String   @id @default(cuid())
+  branchId    String
+  classId     String
+  sectionId   String?
+  date        DateTime @db.Date
+  nonce       String   @unique
+  expiresAt   DateTime
+  createdById String
+  createdAt   DateTime @default(now())
+  deletedAt   DateTime?
+
+  @@index([branchId, date])
+  @@index([classId, date])
+}

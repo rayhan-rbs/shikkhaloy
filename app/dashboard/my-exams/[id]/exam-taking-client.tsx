@@ -1,4 +1,5 @@
-// 📁 ৪.৪ — টাইমার + অটোসেভ (20s) + অটো-সাবমিট (সময়-শেষে) + ফলাফল
+// ৪.৪ — টাইমার + অটোসেভ (20s) + অটো-সাবমিট (সময়-শেষে) + ফলাফল
+// ফিক্স: fetchJson = ১-বার-retry — dev-প্রথম-কম্পাইল-রেস/StrictMode-দ্বৈত-POST-এ "Network error" এড়াতে
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +18,20 @@ interface Data {
   responses?: Record<string, string>;
 }
 
+// হেল্পার component-বাইরে (হাউস-নিয়ম): fetch+json — ব্যর্থ-হলে ১-বার আবার (৭০০ms-পরে)
+async function fetchJson(url: string, init?: RequestInit, tries = 2) {
+  let lastErr: unknown = null;
+  for (let i = 0; i < tries; i++) {
+    try {
+      return await fetch(url, init).then((r) => r.json());
+    } catch (e) {
+      lastErr = e;
+      if (i < tries - 1) await new Promise((res) => setTimeout(res, 700));
+    }
+  }
+  throw lastErr ?? new Error("network");
+}
+
 export default function ExamTakingClient({ examId, dict, lang }: { examId: string; dict: Dictionary; lang: Lang }) {
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState("");
@@ -32,7 +47,7 @@ export default function ExamTakingClient({ examId, dict, lang }: { examId: strin
 
   const start = useCallback(async () => {
     try {
-      const r = await fetch(`/api/online-exams/${examId}/attempt`, { method: "POST" }).then((r) => r.json());
+      const r = await fetchJson(`/api/online-exams/${examId}/attempt`, { method: "POST" });
       if (!r.success) { setError(r.error || "Error"); setData({ submitted: true }); return; }
       const d = r.data as Data;
       if (d.serverTime) offsetRef.current = Date.now() - new Date(d.serverTime).getTime();
@@ -49,10 +64,10 @@ export default function ExamTakingClient({ examId, dict, lang }: { examId: strin
     submittedRef.current = true;
     setBusy(true);
     try {
-      const r = await fetch(`/api/online-exams/${examId}/attempt`, {
+      const r = await fetchJson(`/api/online-exams/${examId}/attempt`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answers: Object.entries(respRef.current).map(([examQuestionId, response]) => ({ examQuestionId, response })) }),
-      }).then((r) => r.json());
+      });
       if (r.success && r.data?.submitted) {
         if (auto) setAutoEnded(true);
         setData({ submitted: true, result: r.data.result });
@@ -78,7 +93,7 @@ export default function ExamTakingClient({ examId, dict, lang }: { examId: strin
       void fetch(`/api/online-exams/${examId}/attempt`, {
         method: "PUT", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answers: Object.entries(respRef.current).map(([examQuestionId, response]) => ({ examQuestionId, response })) }),
-      });
+      }).catch(() => { /* নীরব — চূড়ান্ত-PATCH-ই-সত্য */ });
     }, 20000);
     return () => clearInterval(iv);
   }, [data, examId]);

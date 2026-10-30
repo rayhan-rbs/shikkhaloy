@@ -817,3 +817,49 @@ model PaymentIntent {
   @@index([invoiceId])
   @@index([status])
 }
+
+
+// ─── M10: অ্যাসাইনমেন্ট + সাবমিশন (scalar-FK অ্যাপেন্ড — নোট ৫৫; রিলেশন-জুটি ব্লকের-ভেতরেই)
+model Assignment {
+  id          String    @id @default(cuid())
+  branchId    String
+  classId     String
+  subjectId   String
+  createdById String
+  title       String
+  description String?
+  dueDate     DateTime
+  maxMarks    Float     @default(10)
+  fileUrl     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  submissions AssignmentSubmission[]
+
+  @@index([branchId])
+  @@index([classId, dueDate])
+}
+
+model AssignmentSubmission {
+  id            String     @id @default(cuid())
+  branchId      String
+  assignmentId  String
+  assignment    Assignment @relation(fields: [assignmentId], references: [id])
+  studentId     String
+  fileUrl       String
+  note          String?
+  submittedAt   DateTime   @default(now())
+  isLate        Boolean    @default(false)
+  marksObtained Float?
+  feedback      String?
+  gradedById    String?
+  gradedAt      DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  deletedAt     DateTime?
+
+  @@unique([assignmentId, studentId])
+  @@index([branchId])
+  @@index([studentId])
+}

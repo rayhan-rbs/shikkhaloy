@@ -283,9 +283,10 @@ export default function QuizzesClient({ dict }: { dict: Dictionary }) {
                   </table>
                 )}
               </div>
-              <a href={`/online-exams/${detail.id}/results`} className="text-sm text-primary underline-offset-4 hover:underline">
+              <a href={`/dashboard/online-exams/${detail.id}/results`} className="text-sm text-primary underline-offset-4 hover:underline">
                 {t(dict, "quizzes.fullResults")} →
               </a>
+
             </div>
           )}
         </DialogContent>

@@ -133,7 +133,7 @@ export default function FeesClient({ dict, lang, institution }: { dict: Dictiona
   function printReceipt(inv: Invoice, payment?: { amount: number; method: string; createdAt: string; note: string | null } | null) {
     const instName = lang === "en" && institution.nameEn?.trim() ? institution.nameEn : institution.name;
     const contact = [institution.address, institution.phone].filter(Boolean).map((x) => esc(x)).join(" · ");
-    const methodLabel = (m: string) => m === "CASH" ? t(dict, "fees.mCash") : m === "BKASH" ? t(dict, "fees.mBkash") : m === "BANK" ? t(dict, "fees.mBank") : t(dict, "fees.mOther");
+    const methodLabel = (m: string) => m === "CASH" ? t(dict, "fees.mCash") : m === "BKASH" ? t(dict, "fees.mBkash") : m === "BANK" ? t(dict, "fees.mBank") : m === "SSLCOMMERZ" ? "SSLCOMMERZ" : t(dict, "fees.mOther");
     const html = `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"/><title>${esc(t(dict, "fees.receiptTitle"))}</title><style>
       @page { size: A5 portrait; margin: 10mm; }
       body { font-family: 'Hind Siliguri','Inter',sans-serif; color:#111; font-size:13px; }
@@ -193,9 +193,10 @@ export default function FeesClient({ dict, lang, institution }: { dict: Dictiona
       {lastPaid && (
         <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
           {t(dict, "fees.paidOk")} — {lastPaid.invoice.studentName} · ৳{lastPaid.payment.amount}
-          <Button size="sm" variant="outline" className="ml-3" onClick={() => printReceipt(lastPaid.invoice, lastPaid.payment)}>
+          <Button size="sm" variant="outline" className="ml-3" onClick={() => window.open(`/api/fees/receipts/${lastPaid.payment.id}`, "_blank")}>
             🧾 {t(dict, "fees.receipt")}
           </Button>
+
         </div>
       )}
 

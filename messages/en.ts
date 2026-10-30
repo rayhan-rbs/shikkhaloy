@@ -770,6 +770,19 @@ export const en: Dictionary = {
 
 
     },
+  quizzes: {
+    title: "Quizzes / Class Tests", navTitle: "Quizzes", create: "New Quiz", empty: "No quizzes yet",
+    needFields: "Title, class, subject, time and at least one question are required", created: "Quiz created & published",
+    confirmDelete: "Delete this quiz?",
+    colTitle: "Title", colClass: "Class", colSubject: "Subject", colWindow: "Window",
+    colAttempts: "Attempts", colStatus: "Status", colQuestions: "Questions", colStudent: "Student",
+    colScore: "Score", view: "View", publishNow: "Create & Publish",
+    stPublished: "Published", stClosed: "Closed", stDraft: "Draft",
+    titlePh: "Quiz title", classPh: "Pick class", subjectPh: "Pick subject",
+    durationPh: "Duration (min)", startTime: "Start", endTime: "End",
+    pickHint: "Pick from question bank", selectAll: "Select all", noQuestions: "No questions for this class/subject",
+    noAttempts: "No attempts yet", fullResults: "Full results", minSuffix: " min",
+  },
 
   lang: {
     bn: "বাংলা",

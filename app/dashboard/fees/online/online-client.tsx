@@ -29,9 +29,9 @@ export default function OnlineClient({ dict }: { dict: Dictionary }) {
       const res = await fetch("/api/fees/online-invoices");
       const json = await res.json();
       if (json.success) setRows(json.data);
-      else setError(json.error || t(dict, "fees.payOnline.networkError"));
+      else setError(json.error || t(dict, "payOnline.networkError"));
     } catch {
-      setError(t(dict, "fees.payOnline.networkError"));
+      setError(t(dict, "payOnline.networkError"));
     }
   }, [dict]);
   useEffect(() => { load(); }, [load]);
@@ -48,9 +48,9 @@ export default function OnlineClient({ dict }: { dict: Dictionary }) {
         window.location.href = json.data.redirectUrl; // গেটওয়ে = ফুল-নেভিগেশন
         return;
       }
-      setError(json.error || t(dict, "fees.payOnline.networkError"));
+      setError(json.error || t(dict, "payOnline.networkError"));
     } catch {
-      setError(t(dict, "fees.payOnline.networkError"));
+      setError(t(dict, "payOnline.networkError"));
     } finally {
       setBusyId("");
     }
@@ -60,35 +60,35 @@ export default function OnlineClient({ dict }: { dict: Dictionary }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold">{t(dict, "fees.payOnline.title")}</h1>
-          <p className="text-sm text-muted-foreground">{t(dict, "fees.payOnline.hint")}</p>
+          <h1 className="text-xl font-bold">{t(dict, "payOnline.title")}</h1>
+          <p className="text-sm text-muted-foreground">{t(dict, "payOnline.hint")}</p>
         </div>
         <a href="/dashboard/fees" className="text-sm text-primary underline-offset-4 hover:underline">
-          {t(dict, "fees.payOnline.backTo")}
+          {t(dict, "payOnline.backTo")}
         </a>
       </div>
 
       {notice === "ok" && (
         <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3">
-          <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">{t(dict, "fees.payOnline.okTitle")}</p>
-          <p className="text-xs text-muted-foreground">{t(dict, "fees.payOnline.okText")}</p>
+          <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">{t(dict, "payOnline.okTitle")}</p>
+          <p className="text-xs text-muted-foreground">{t(dict, "payOnline.okText")}</p>
         </div>
       )}
       {notice === "fail" && (
         <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3">
-          <p className="text-sm font-semibold text-red-600 dark:text-red-300">{t(dict, "fees.payOnline.failTitle")}</p>
-          <p className="text-xs text-muted-foreground">{t(dict, "fees.payOnline.failText")}</p>
+          <p className="text-sm font-semibold text-red-600 dark:text-red-300">{t(dict, "payOnline.failTitle")}</p>
+          <p className="text-xs text-muted-foreground">{t(dict, "payOnline.failText")}</p>
         </div>
       )}
       {notice === "cancel" && (
-        <div className="rounded-lg border border-border bg-muted px-4 py-3 text-sm">{t(dict, "fees.payOnline.cancelTitle")}</div>
+        <div className="rounded-lg border border-border bg-muted px-4 py-3 text-sm">{t(dict, "payOnline.cancelTitle")}</div>
       )}
       {error && (
         <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-300">⚠️ {error}</div>
       )}
 
       {rows.length === 0 && !error ? (
-        <Card><CardContent className="pt-6 text-center text-sm text-muted-foreground">{t(dict, "fees.payOnline.empty")}</CardContent></Card>
+        <Card><CardContent className="pt-6 text-center text-sm text-muted-foreground">{t(dict, "payOnline.empty")}</CardContent></Card>
       ) : (
         <Card>
           <CardContent className="pt-6">
@@ -96,11 +96,11 @@ export default function OnlineClient({ dict }: { dict: Dictionary }) {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                    <th className="pb-2 pr-3">{t(dict, "fees.payOnline.student")}</th>
-                    <th className="pb-2 pr-3">{t(dict, "fees.payOnline.invoice")}</th>
-                    <th className="pb-2 pr-3">{t(dict, "fees.payOnline.classLbl")}</th>
-                    <th className="pb-2 pr-3">{t(dict, "fees.payOnline.amount")}</th>
-                    <th className="pb-2 pr-3">{t(dict, "fees.payOnline.remaining")}</th>
+                    <th className="pb-2 pr-3">{t(dict, "payOnline.student")}</th>
+                    <th className="pb-2 pr-3">{t(dict, "payOnline.invoice")}</th>
+                    <th className="pb-2 pr-3">{t(dict, "payOnline.classLbl")}</th>
+                    <th className="pb-2 pr-3">{t(dict, "payOnline.amount")}</th>
+                    <th className="pb-2 pr-3">{t(dict, "payOnline.remaining")}</th>
                     <th className="pb-2"></th>
                   </tr>
                 </thead>
@@ -115,7 +115,7 @@ export default function OnlineClient({ dict }: { dict: Dictionary }) {
                       <td className="py-2.5">
                         <Button size="sm" disabled={busyId === r.id} onClick={() => pay(r)}
                           className="bg-primary text-primary-foreground">
-                          {busyId === r.id ? t(dict, "fees.payOnline.paying") : t(dict, "fees.payOnline.pay")}
+                          {busyId === r.id ? t(dict, "payOnline.paying") : t(dict, "payOnline.pay")}
                         </Button>
                       </td>
                     </tr>

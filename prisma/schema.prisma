@@ -580,6 +580,7 @@ model OnlineExam {
   endTime     DateTime
   randomize   Boolean          @default(true)
   status      OnlineExamStatus @default(DRAFT)
+  examKind    String           @default("EXAM") // 🆕 M9: EXAM/QUIZ
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   deletedAt   DateTime?
@@ -589,6 +590,7 @@ model OnlineExam {
 
   @@index([branchId, status])
 }
+
 
 model OnlineExamQuestion {
   id       String       @id @default(cuid())

@@ -883,6 +883,19 @@ export const bn = {
 
 
     },
+  quizzes: {
+    title: "কুইজ/ক্লাস-টেস্ট", navTitle: "কুইজ", create: "নতুন কুইজ", empty: "কোনো কুইজ নেই",
+    needFields: "শিরোনাম, ক্লাস, বিষয়, সময় ও অন্তত ১টি প্রশ্ন দিন", created: "কুইজ তৈরি ও প্রকাশিত",
+    confirmDelete: "কুইজ ডিলিট করবেন?",
+    colTitle: "শিরোনাম", colClass: "শ্রেণি", colSubject: "বিষয়", colWindow: "সময়সীমা",
+    colAttempts: "অংশগ্রহণ", colStatus: "স্টেটাস", colQuestions: "প্রশ্ন", colStudent: "শিক্ষার্থী",
+    colScore: "স্কোর", view: "দেখুন", publishNow: "তৈরি ও প্রকাশ",
+    stPublished: "চালু", stClosed: "বন্ধ", stDraft: "খসড়া",
+    titlePh: "কুইজের শিরোনাম", classPh: "শ্রেণি বাছুন", subjectPh: "বিষয় বাছুন",
+    durationPh: "সময় (মিনিট)", startTime: "শুরু", endTime: "শেষ",
+    pickHint: "প্রশ্ন-ব্যাংক থেকে বাছুন", selectAll: "সব-বাছাই", noQuestions: "এই ক্লাস/বিষয়ে প্রশ্ন নেই",
+    noAttempts: "এখনো কেউ অংশ নেয়নি", fullResults: "পূর্ণ-ফলাফল", minSuffix: " মিনিট",
+  },
 
   lang: {
     bn: "বাংলা",

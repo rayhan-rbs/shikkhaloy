@@ -951,6 +951,26 @@ export const bn = {
     needFields: "কর্মচারী ও সঠিক বেতন দিন", confirmDelete: "রেকর্ড মুছে ফেলবেন?",
     autoLedger: "পরিশোধে অটো-লেজার-ব্যয় (খাত: বেতন) — হাতে-এন্ট্রি দিতে হবে না",
   },
+  notices: {
+    title: "নোটিশ বোর্ড", navTitle: "নোটিশ", addNew: "নতুন নোটিশ", empty: "কোনো নোটিশ নেই",
+    titlePh: "নোটিশের শিরোনাম", bodyPh: "বিস্তারিত লিখুন…", pinned: "পিন করা", pin: "📌 পিন", unpin: "📌 আন-পিন",
+    file: "সংযুক্তি", audAll: "সবাই", audStudent: "শিক্ষার্থী", audTeacher: "শিক্ষক", audParent: "অভিভাবক", audStaff: "স্টাফ",
+    needFields: "শিরোনাম ও বিস্তারিত দিন", created: "নোটিশ প্রকাশিত — প্রাপকদের নোটিফিকেশন গেছে", confirmDelete: "নোটিশ মুছে ফেলবেন?",
+  },
+  events: {
+    title: "ইভেন্ট ক্যালেন্ডার", navTitle: "ইভেন্ট", addNew: "নতুন ইভেন্ট", empty: "কোনো ইভেন্ট নেই",
+    titlePh: "ইভেন্টের নাম", descPh: "বিবরণ (ঐচ্ছিক)", date: "তারিখ", type: "ধরন",
+    tHoliday: "ছুটি", tExam: "পরীক্ষা", tEvent: "ইভেন্ট", tMeeting: "সভা",
+    needFields: "নাম ও তারিখ দিন", created: "ইভেন্ট যোগ হয়েছে", confirmDelete: "ইভেন্ট মুছে ফেলবেন?",
+  },
+  messages: {
+    title: "বার্তা", navTitle: "বার্তা",
+    tabInbox: "ইনবক্স", tabSent: "প্রেরিত", compose: "নতুন বার্তা",
+    to: "প্রাপক", subject: "বিষয়", body: "বার্তা লিখুন…", send: "পাঠান", reply: "উত্তর লিখুন…", back: "ফিরুন",
+    emptyInbox: "ইনবক্স খালি", emptySent: "কোনো প্রেরিত বার্তা নেই",
+    sentDone: "বার্তা পাঠানো হয়েছে", needFields: "প্রাপক ও বার্তা দিন",
+    sendAll: "সবাইকে পাঠান (ব্রডকাস্ট)", bDone: "জনকে বার্তা+নোটিফিকেশন গেছে", bRecips: "জন প্রাপক — উত্তর ইনবক্সে আসবে",
+  },
 
   lang: {
     bn: "বাংলা",

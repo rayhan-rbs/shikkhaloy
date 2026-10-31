@@ -838,6 +838,26 @@ export const en: Dictionary = {
     needFields: "Pick employee and valid amount", confirmDelete: "Delete this record?",
     autoLedger: "Payment auto-posts a ledger expense (category: Salary)",
   },
+  notices: {
+    title: "Notice Board", navTitle: "Notices", addNew: "New Notice", empty: "No notices yet",
+    titlePh: "Notice title", bodyPh: "Write details…", pinned: "Pinned", pin: "📌 Pin", unpin: "📌 Unpin",
+    file: "Attachment", audAll: "Everyone", audStudent: "Students", audTeacher: "Teachers", audParent: "Parents", audStaff: "Staff",
+    needFields: "Title and body required", created: "Notice published — notifications sent", confirmDelete: "Delete this notice?",
+  },
+  events: {
+    title: "Event Calendar", navTitle: "Events", addNew: "New Event", empty: "No events yet",
+    titlePh: "Event name", descPh: "Description (optional)", date: "Date", type: "Type",
+    tHoliday: "Holiday", tExam: "Exam", tEvent: "Event", tMeeting: "Meeting",
+    needFields: "Name and date required", created: "Event added", confirmDelete: "Delete this event?",
+  },
+  messages: {
+    title: "Messages", navTitle: "Messages",
+    tabInbox: "Inbox", tabSent: "Sent", compose: "New Message",
+    to: "Recipient", subject: "Subject", body: "Write a message…", send: "Send", reply: "Write a reply…", back: "Back",
+    emptyInbox: "Inbox is empty", emptySent: "No sent messages",
+    sentDone: "Message sent", needFields: "Pick recipient and write message",
+    sendAll: "Send to everyone (broadcast)", bDone: "recipients got message + notification", bRecips: "recipients — replies arrive in inbox",
+  },
 
   lang: {
     bn: "বাংলা",

@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, Percent, ReceiptText, BarChart3, Banknote, FileUp, ListChecks, Contact, UsersRound, IdCard, QrCode, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X,
+  LayoutDashboard, Percent, MessageSquare, Megaphone, CalendarDays, ReceiptText, BarChart3, Banknote, FileUp, ListChecks, Contact, UsersRound, IdCard, QrCode, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X,
   GraduationCap, Sun, Moon, LogOut, Languages, Award, type LucideIcon,
 } from "lucide-react";
 
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/command";
 import LanguageSwitcher from "@/components/language-switcher";
 import ThemeToggle from "@/components/theme-toggle";
+import NotificationBell from "@/components/notification-bell";
 import { t, type Lang } from "@/lib/i18n";
 import type { Dictionary } from "@/messages/bn";
 import { THEME_COOKIE, type Theme } from "@/lib/theme";
@@ -114,6 +115,10 @@ export default function DashboardShell({
         { href: "/dashboard/quizzes", label: t(dict, "quizzes.navTitle"), icon: ListChecks, active: pathname.startsWith("/dashboard/quizzes"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER"] },
 
         { href: "/dashboard/salary", label: t(dict, "salary.navTitle"), icon: Banknote, active: pathname.startsWith("/dashboard/salary"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"] },
+
+        { href: "/dashboard/notices", label: t(dict, "notices.navTitle"), icon: Megaphone, active: pathname.startsWith("/dashboard/notices"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER", "STUDENT", "PARENT", "ACCOUNTANT", "STAFF", "ALUMNI"] },
+        { href: "/dashboard/events", label: t(dict, "events.navTitle"), icon: CalendarDays, active: pathname.startsWith("/dashboard/events"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER", "STUDENT", "PARENT", "ACCOUNTANT", "STAFF", "ALUMNI"] },
+        { href: "/dashboard/messages", label: t(dict, "messages.navTitle"), icon: MessageSquare, active: pathname.startsWith("/dashboard/messages"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER", "STUDENT", "PARENT", "ACCOUNTANT", "STAFF", "ALUMNI"] },
 
 
       ],
@@ -280,6 +285,7 @@ export default function DashboardShell({
             <div className="ml-auto flex items-center gap-2">
               <LanguageSwitcher current={lang} />
               <ThemeToggle current={theme} />
+              <NotificationBell />
               <form action="/api/auth/logout" method="POST">
                 <button
                   type="submit"

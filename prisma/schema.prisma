@@ -940,3 +940,70 @@ model SalaryRecord {
   @@unique([userId, monthKey])
   @@index([branchId, monthKey])
 }
+
+// ─── M13-A: নোটিশ + ইভেন্ট + নোটিফিকেশন (scalar-FK অ্যাপেন্ড — নোট ৫৫)
+model Notice {
+  id            String    @id @default(cuid())
+  branchId      String
+  title         String
+  body          String
+  audience      String    @default("ALL") // ALL/STUDENT/TEACHER/PARENT/STAFF
+  isPinned      Boolean   @default(false)
+  fileUrl       String?
+  publishedById String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  @@index([branchId, createdAt])
+}
+
+model CalendarEvent {
+  id          String   @id @default(cuid())
+  branchId    String
+  title       String
+  description String?
+  date        DateTime @db.Date
+  type        String   @default("EVENT") // HOLIDAY/EXAM/EVENT/MEETING
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  @@index([branchId, date])
+}
+
+model AppNotification {
+  id        String   @id @default(cuid())
+  branchId  String
+  userId    String
+  title     String
+  body      String?
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+
+  @@index([userId, isRead])
+  @@index([branchId])
+}
+
+// ─── M13-B: মেসেজিং (scalar-FK অ্যাপেন্ড — নোট ৫৫; threadId = রুট-মেসেজের-নিজের-id — নোট ৮১)
+model Message {
+  id          String    @id @default(cuid())
+  branchId    String
+  threadId    String    @default("")
+  broadcastId String? // একই-ব্রডকাস্ট = এক-কী (sent-গ্রুপিং)
+  senderId    String
+  recipientId String
+  subject     String
+  body        String
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([branchId, threadId])
+  @@index([recipientId, readAt])
+  @@index([senderId])
+}

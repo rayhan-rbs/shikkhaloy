@@ -72,7 +72,12 @@ export default function ResultsClient({ examId, dict, lang }: { examId: string; 
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="flex items-center gap-2 text-2xl font-bold"><ClipboardList size={22} />{t(dict, "results.title")}{info ? ` — ${info.title}` : ""}</h1>
-        <Button variant="outline" size="sm" onClick={() => { setDetail(null); void loadList(); router.refresh(); }}>{t(dict, "results.back")}</Button>
+        <Button variant="outline" size="sm" onClick={() => {
+          if (detail) { setDetail(null); void loadList(); router.refresh(); }
+          else if (window.history.length > 1) { router.back(); }
+          else { router.push("/dashboard/online-exams"); }
+        }}>{t(dict, "results.back")}</Button>
+
       </div>
       {error && <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-300">⚠️ {error}</div>}
       {okMsg && <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">🎉 {okMsg}</div>}

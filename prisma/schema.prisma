@@ -863,3 +863,39 @@ model AssignmentSubmission {
   @@index([branchId])
   @@index([studentId])
 }
+
+// ─── M11: ডিসকাউন্ট/স্কলারশিপ + Income-Expense Ledger (scalar-FK অ্যাপেন্ড — নোট ৫৫; রিলেশন-নেই = পুরনো-স্পর্শ-শূন্য)
+model StudentDiscount {
+  id          String    @id @default(cuid())
+  branchId    String
+  studentId   String
+  name        String
+  type        String    @default("PERCENT") // PERCENT/AMOUNT
+  value       Float
+  isActive    Boolean   @default(true)
+  note        String?
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([branchId])
+  @@index([studentId])
+}
+
+model LedgerEntry {
+  id          String    @id @default(cuid())
+  branchId    String
+  type        String // INCOME/EXPENSE
+  category    String
+  amount      Float
+  date        DateTime  @db.Date
+  note        String?
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([branchId, type])
+  @@index([branchId, date])
+}

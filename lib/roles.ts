@@ -40,6 +40,9 @@ export const ROUTE_ROLES: { prefix: string; roles: Role[] }[] = [
   { prefix: "/dashboard/online-exams", roles: [...ADMINS, "TEACHER"] },
   // M9 কুইজ/ক্লাস-টেস্ট — একই রোল (সূক্ষ্ম-যাচাই = API-র TeacherAssignment-চেক)
   { prefix: "/dashboard/quizzes", roles: [...ADMINS, "TEACHER"] },
+  { prefix: "/dashboard/discounts", roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"] },
+  { prefix: "/dashboard/ledger", roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"] },
+  { prefix: "/dashboard/finance/report", roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"] },
   { prefix: "/dashboard/homework", roles: [...ADMINS, "TEACHER"] },
   { prefix: "/dashboard/my-homework", roles: ["STUDENT"] },
 

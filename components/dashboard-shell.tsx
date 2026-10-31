@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, ListChecks, Contact, UsersRound, IdCard, QrCode, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X,
+  LayoutDashboard, Percent, ReceiptText, BarChart3, FileUp, ListChecks, Contact, UsersRound, IdCard, QrCode, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X,
   GraduationCap, Sun, Moon, LogOut, Languages, Award, type LucideIcon,
 } from "lucide-react";
 
@@ -83,7 +83,13 @@ export default function DashboardShell({
         { href: "/dashboard/questions", label: t(dict, "questions.title"), icon: FileQuestion, active: pathname.startsWith("/dashboard/questions"), soon: false },
         { href: "/dashboard/exams", label: t(dict, "nav.exam"), icon: ClipboardList, active: pathname.startsWith("/dashboard/exams"), soon: false },
         { href: "/dashboard/online-exams", label: t(dict, "onlineExams.title"), icon: MonitorCheck, active: pathname.startsWith("/dashboard/online-exams"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER"] },
+        
+        { href: "/dashboard/homework", label:t(dict, "assignments.title"), icon: ClipboardList, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER"], active: true, soon: false },
+        { href: "/dashboard/my-homework", label: t(dict, "myAssignments.title"), icon: FileUp, roles: ["STUDENT"], active: true, soon: false },
+
+
         { href: "/dashboard/my-exams", label: t(dict, "myExams.title"), icon: GraduationCap, active: pathname.startsWith("/dashboard/my-exams"), soon: false, roles: ["STUDENT"] },
+
         { href: "/dashboard/my-children", label: t(dict, "parent.title"), icon: UsersRound, active: pathname.startsWith("/dashboard/my-children"), soon: false, roles: ["PARENT"] },
         { href: "/dashboard/seats", label: t(dict, "nav.seats"), icon: Armchair, active: pathname.startsWith("/dashboard/seats"), soon: false },
         { href: "/dashboard/marks", label: t(dict, "nav.marks"), icon: PenLine, active: pathname.startsWith("/dashboard/marks"), soon: false },
@@ -96,6 +102,12 @@ export default function DashboardShell({
         { href: "/dashboard/leave", label: t(dict, "nav.leave"), icon: CalendarOff, active: pathname.startsWith("/dashboard/leave"), soon: false },
 
         { href: "/dashboard/fees", label: t(dict, "fees.title"), icon: Wallet, active: pathname.startsWith("/dashboard/fees"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
+
+        { href: "/dashboard/discounts", label: t(dict, "discounts.navTitle"), icon: Percent, active: pathname.startsWith("/dashboard/discounts"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"] },
+        { href: "/dashboard/ledger", label: t(dict, "ledger.navTitle"), icon: ReceiptText, active: pathname.startsWith("/dashboard/ledger"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"] },
+        { href: "/dashboard/finance/report", label: t(dict, "finance.navTitle"), icon: BarChart3, active: pathname.startsWith("/dashboard/finance/report"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"] },
+
+
         { href: "/dashboard/admissions", label: t(dict, "admissions.title"), icon: UserPlus, active: pathname.startsWith("/dashboard/admissions"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
         { href: "/dashboard/parents", label: t(dict, "parents.title"), icon: Contact, active: pathname.startsWith("/dashboard/parents"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
         { href: "/dashboard/idcards", label: t(dict, "idcards.title"), icon: IdCard, active: pathname.startsWith("/dashboard/idcards"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },

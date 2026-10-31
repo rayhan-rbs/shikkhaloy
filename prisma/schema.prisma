@@ -899,3 +899,44 @@ model LedgerEntry {
   @@index([branchId, type])
   @@index([branchId, date])
 }
+
+// ─── M12: স্যালারি (scalar-FK অ্যাপেন্ড — নোট ৫৫; রিলেশন-নেই = পুরনো-স্পর্শ-শূন্য; upsert — নোট ৩৬)
+model SalaryStructure {
+  id          String    @id @default(cuid())
+  branchId    String
+  userId      String
+  amount      Float
+  isActive    Boolean   @default(true)
+  note        String?
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@unique([userId])
+  @@index([branchId])
+}
+
+model SalaryRecord {
+  id            String    @id @default(cuid())
+  branchId      String
+  userId        String
+  monthKey      String // "2026-11"
+  baseAmount    Float
+  bonus         Float     @default(0)
+  deduction     Float     @default(0)
+  netAmount     Float
+  status        String    @default("PENDING") // PENDING/PAID
+  paidAt        DateTime?
+  method        String?
+  note          String?
+  ledgerEntryId String? // M11-অটো-ব্যয়-রেফারেন্স
+  paidById      String?
+  createdById   String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  @@unique([userId, monthKey])
+  @@index([branchId, monthKey])
+}

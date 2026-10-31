@@ -936,6 +936,21 @@ export const bn = {
     incomeByCat: "আয়-বিভাজন (খাতভিত্তিক)", expenseByCat: "ব্যয়-বিভাজন (খাতভিত্তিক)",
     empty: "এ-মাসে কোনো তথ্য নেই", csv: "⬇️ CSV", cat: "খাত", amount: "পরিমাণ",
   },
+  salary: {
+    title: "স্যালারি ম্যানেজমেন্ট", navTitle: "স্যালারি",
+    tabRecords: "মাসিক বেতন", tabStructure: "বেতন-কাঠামো",
+    generate: "জেনারেট", genCreated: "জন নতুন যোগ", genSkipped: "জন আগে-থেকে ছিল",
+    staff: "কর্মচারী", base: "ভিত্তি-বেতন", bonus: "বোনাস", deduction: "কর্তন", net: "নিট",
+    status: "স্ট্যাটাস", pending: "বাকি", paid: "পরিশোধিত",
+    pay: "পরিশোধ", payTitle: "বেতন পরিশোধ", method: "মাধ্যম", note: "মন্তব্য",
+    cash: "নগদ", bank: "ব্যাংক", bkash: "বিকাশ", other: "অন্যান্য",
+    payDone: "বেতন পরিশোধ হয়েছে — লেজারে ব্যয় যুক্ত",
+    totalBill: "মোট বিল", totalPaid: "পরিশোধিত", totalDue: "বাকি",
+    structureAdd: "বেতন নির্ধারণ", amountPh: "মাসিক বেতন (৳)", structureSaved: "বেতন-কাঠামো সংরক্ষিত",
+    noStructure: "নির্ধারিত নেই", empty: "কোনো রেকর্ড নেই — ⚡ জেনারেট চাপুন", emptyStaff: "কোনো কর্মচারী নেই",
+    needFields: "কর্মচারী ও সঠিক বেতন দিন", confirmDelete: "রেকর্ড মুছে ফেলবেন?",
+    autoLedger: "পরিশোধে অটো-লেজার-ব্যয় (খাত: বেতন) — হাতে-এন্ট্রি দিতে হবে না",
+  },
 
   lang: {
     bn: "বাংলা",

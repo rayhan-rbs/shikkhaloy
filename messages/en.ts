@@ -823,6 +823,21 @@ export const en: Dictionary = {
     incomeByCat: "Income by Category", expenseByCat: "Expense by Category",
     empty: "No data for this month", csv: "⬇️ CSV", cat: "Category", amount: "Amount",
   },
+  salary: {
+    title: "Salary Management", navTitle: "Salary",
+    tabRecords: "Monthly Payroll", tabStructure: "Salary Structure",
+    generate: "Generate", genCreated: "new added", genSkipped: "already existed",
+    staff: "Employee", base: "Base", bonus: "Bonus", deduction: "Deduction", net: "Net",
+    status: "Status", pending: "Pending", paid: "Paid",
+    pay: "Pay", payTitle: "Pay Salary", method: "Method", note: "Note",
+    cash: "Cash", bank: "Bank", bkash: "bKash", other: "Other",
+    payDone: "Salary paid — expense posted to ledger",
+    totalBill: "Total Bill", totalPaid: "Paid", totalDue: "Due",
+    structureAdd: "Set Salary", amountPh: "Monthly salary (৳)", structureSaved: "Salary structure saved",
+    noStructure: "Not set", empty: "No records — press ⚡ Generate", emptyStaff: "No employees",
+    needFields: "Pick employee and valid amount", confirmDelete: "Delete this record?",
+    autoLedger: "Payment auto-posts a ledger expense (category: Salary)",
+  },
 
   lang: {
     bn: "বাংলা",

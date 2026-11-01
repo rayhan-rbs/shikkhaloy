@@ -1007,3 +1007,25 @@ model Message {
   @@index([recipientId, readAt])
   @@index([senderId])
 }
+
+// ─── M13-C: ডকুমেন্ট ইঞ্জিন (scalar-FK অ্যাপেন্ড — নোট ৫৫; ভেরিফিকেশন-পোর্টাল = পরের-চেকবক্স)
+model Document {
+  id           String    @id @default(cuid())
+  branchId     String
+  studentId    String
+  type         String    @default("CERTIFICATE") // TC/CERTIFICATE/MARKSHEET/TRANSCRIPT
+  docNo        String    @unique // ADM-প্যাটার্ন: DOC-YYYY-XXXXXX
+  verifyCode   String    @unique // QR-চাবি (random) — পোর্টাল-যাচাই + REVOKED-প্রদর্শন
+  title        String
+  payload      Json?     // ইস্যু-মুহূর্তের-স্ন্যাপশট (নাম/শ্রেণি/মার্কস — পরে-ডেটা-বদললেও-ডকুমেন্ট-ভাঙে-না)
+  status       String    @default("ACTIVE") // ACTIVE/REVOKED
+  revokedAt    DateTime?
+  revokeReason String?
+  issuedById   String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  @@index([branchId, type])
+  @@index([studentId])
+}

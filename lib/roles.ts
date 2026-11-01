@@ -60,6 +60,9 @@ export const ROUTE_ROLES: { prefix: string; roles: Role[] }[] = [
 
   { prefix: "/dashboard/messages", roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER", "STUDENT", "PARENT", "ACCOUNTANT", "STAFF", "ALUMNI"] },
 
+  { prefix: "/dashboard/documents", roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT", "STUDENT", "PARENT"] },
+
+
 
 
   // উদাহরণ (ভবিষ্যৎ): অ্যাকাউন্ট্স-প্যানেল

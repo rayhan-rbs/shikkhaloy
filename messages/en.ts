@@ -859,7 +859,7 @@ export const en: Dictionary = {
     sendAll: "Send to everyone (broadcast)", bDone: "recipients got message + notification", bRecips: "recipients — replies arrive in inbox",
   },
   documents: {
-    title: "Document Engine", generate: "New document", pickStudent: "Select student", pickType: "Select type", TC: "TC", CERTIFICATE: "Certificate", MARKSHEET: "Marksheet", TRANSCRIPT: "Transcript", search: "Search by name/doc no", all: "All types", docNo: "Doc No", type: "Type", student: "Student", status: "Status", issued: "Issued", actions: "Actions", active: "Active", revoked: "Revoked", revokeReason: "Revoke reason (optional):", confirmRevoke: "Revoke this document? QR scan will show 'Revoked'.", needFields: "Select student & type", done: "Document issued", empty: "No documents", csv: "CSV",
+    title: "Document Engine", generate: "New document", pickStudent: "Select student", pickType: "Select type", TC: "TC", CERTIFICATE: "Certificate", MARKSHEET: "Marksheet", TRANSCRIPT: "Transcript", search: "Search by name/doc no", all: "All types", docNo: "Doc No", type: "Type", student: "Student", status: "Status", issued: "Issued", actions: "Actions", active: "Active", revoked: "Revoked", revokeReason: "Revoke reason (optional):", confirmRevoke: "Revoke this document? QR scan will show 'Revoked'.", needFields: "Select student & type", done: "Document issued", empty: "No documents", csv: "CSV",  TESTIMONIAL: "Testimonial",
   },
   lang: {
     bn: "বাংলা",

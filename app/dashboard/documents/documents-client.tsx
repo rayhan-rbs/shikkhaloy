@@ -12,7 +12,7 @@ import type { Dictionary } from "@/messages/bn";
 interface Row { id: string; docNo: string; type: string; status: string; studentName: string; classLabel: string; createdAt: string }
 interface Stu { id: string; fullName: string; classLabel: string }
 
-const TYPES = ["TC", "CERTIFICATE", "MARKSHEET", "TRANSCRIPT"] as const;
+const TYPES = ["TC", "CERTIFICATE", "TESTIMONIAL", "MARKSHEET", "TRANSCRIPT"] as const;
 
 export default function DocumentsClient({ dict, canManage }: { dict: Dictionary; canManage: boolean }) {
   const [rows, setRows] = useState<Row[]>([]);
@@ -41,7 +41,8 @@ export default function DocumentsClient({ dict, canManage }: { dict: Dictionary;
 
   const TL: Record<string, string> = {
     TC: t(dict, "documents.TC"), CERTIFICATE: t(dict, "documents.CERTIFICATE"),
-    MARKSHEET: t(dict, "documents.MARKSHEET"), TRANSCRIPT: t(dict, "documents.TRANSCRIPT"),
+    MARKSHEET: t(dict, "documents.MARKSHEET"), TRANSCRIPT: t(dict, "documents.TRANSCRIPT"), 
+    TESTIMONIAL: t(dict, "documents.TESTIMONIAL"),
   };
 
   async function issue() {

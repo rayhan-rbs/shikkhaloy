@@ -980,7 +980,8 @@ export const bn = {
     active: "সক্রিয়", revoked: "বাতিল", revokeReason: "বাতিলের কারণ (ঐচ্ছিক):",
     confirmRevoke: "ডকুমেন্টটি বাতিল করবেন? পরে QR-স্ক্যানে 'বাতিল' দেখাবে।",
     needFields: "শিক্ষার্থী ও ধরন বাছাই করুন", done: "ডকুমেন্ট ইস্যু হয়েছে",
-    empty: "কোনো ডকুমেন্ট নেই", csv: "CSV",
+    empty: "কোনো ডকুমেন্ট নেই", csv: "CSV", TESTIMONIAL: "প্রত্যয়নপত্র",
+
   },
 
   lang: {

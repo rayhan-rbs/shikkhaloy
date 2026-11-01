@@ -10,7 +10,9 @@ const STAFF_VIEW_ROLES = [...ADMIN_ROLES, "ACCOUNTANT"];
 const DOC_TITLES: Record<string, string> = {
   TC: "TRANSFER CERTIFICATE", CERTIFICATE: "CERTIFICATE",
   MARKSHEET: "MARKSHEET", TRANSCRIPT: "ACADEMIC TRANSCRIPT",
+  TESTIMONIAL: "TESTIMONIAL",
 };
+
 
 export async function GET(request: NextRequest) {
   try {
@@ -142,10 +144,17 @@ export async function POST(request: NextRequest) {
     let payload: DocPayload = { kv: kvBase };
     if (type === "CERTIFICATE") {
       payload = { ...payload, paragraph: {
-        bn: `এই মর্মে প্রত্যয়ন করা হচ্ছে যে, ${student.fullName} আমাদের প্রতিষ্ঠানের একজন শিক্ষার্থী। তার সামগ্রিক আচরণ সন্তোষজনক।`,
+        bn: `এই মর্মে সনদপত্র করা হচ্ছে যে, ${student.fullName} আমাদের প্রতিষ্ঠানের একজন শিক্ষার্থী। তার সামগ্রিক আচরণ সন্তোষজনক।`,
         en: `This is to certify that ${student.fullName} is a student of our institution with satisfactory overall conduct.`,
       } };
     }
+    if (type === "TESTIMONIAL") {
+      payload = { ...payload, paragraph: {
+        bn: `এই মর্মে প্রত্যয়ন করা হচ্ছে যে, ${student.fullName} (পিতা: ${profile?.fatherName ?? "—"}, মাতা: ${profile?.motherName ?? "—"}, জন্ম: ${fmtDate(profile?.dateOfBirth ?? null)}) আমাদের প্রতিষ্ঠানের ${classLabel}-এ অধ্যয়ন করেছেন। অধ্যয়নকালে তার চরিত্র ও আচরণ উত্তম ছিল এবং সামগ্রিক পাঠ-মনোযোগ সন্তোষজনক ছিল। তার জন্য ভবিষ্যৎ জীবনে সর্বাঙ্গীণ সাফল্য কামনা করছি।`,
+        en: `This is to certify that ${student.fullName} (father: ${profile?.fatherName ?? "—"}, mother: ${profile?.motherName ?? "—"}, date of birth: ${fmtDate(profile?.dateOfBirth ?? null)}) studied in ${classLabel} at our institution. His/Her character and conduct during the period of study were excellent and overall academic engagement was satisfactory. I wish every success in future life.`,
+      } };
+    }
+
     if (type === "MARKSHEET" || type === "TRANSCRIPT") {
       const marks = await prisma.mark.findMany({
         where: { studentId, branchId: me.branchId, deletedAt: null },

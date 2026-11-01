@@ -19,6 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ success: false, error: "অ্যাকাউন্ট সক্রিয় নয়" }, { status: 403 });
 
     const { id } = await params; // Next 16 — params Promise (নোট ২৫)
+    const origin = new URL(request.url).origin; // dev/prod-অটো — env-অনুমান-শূন্য
     const doc = await prisma.document.findFirst({ where: { id, branchId: me.branchId, deletedAt: null } });
     if (!doc) return NextResponse.json({ success: false, error: "ডকুমেন্ট পাওয়া যায়নি" }, { status: 404 });
 
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       date: doc.createdAt.toLocaleDateString("en-GB"),
       student: { name: student?.fullName ?? "—", classLabel: payload.kv.find((k) => k[1] === "Class")?.[2] ?? "—",
         id: doc.studentId.slice(-6).toUpperCase() },
-      payload, status: doc.status, revokeReason: doc.revokeReason,
+      payload, status: doc.status, verifyOrigin: origin, revokeReason: doc.revokeReason,
     });
     return new NextResponse(new Uint8Array(pdf), {
       headers: { "Content-Type": "application/pdf", "Content-Disposition": `inline; filename="${doc.docNo}.pdf"` },

@@ -42,12 +42,14 @@ export interface DocumentArgs {
   student: { name: string; classLabel: string; id: string };
   payload: DocPayload;
   status?: string; // ACTIVE/REVOKED
+  verifyOrigin?: string | null; // থাকলে QR = {origin}/verify/{code} — পোর্টাল-URL; না-থাকলে টেক্সট-পেলোড
   revokeReason?: string | null;
 }
 
 const TITLES: Record<string, [string, string]> = {
   TC: ["স্থানান্তর সনদ", "TRANSFER CERTIFICATE"],
-  CERTIFICATE: ["প্রত্যয়নপত্র", "CERTIFICATE"],
+  CERTIFICATE: ["সনদপত্র", "CERTIFICATE"],
+  TESTIMONIAL: ["প্রত্যয়নপত্র", "TESTIMONIAL"],
   MARKSHEET: ["মার্কশিট", "MARKSHEET"],
   TRANSCRIPT: ["একাডেমিক ট্রান্সক্রিপ্ট", "ACADEMIC TRANSCRIPT"],
 };
@@ -81,7 +83,9 @@ const S = StyleSheet.create({
 export async function buildDocumentPdf(a: DocumentArgs): Promise<Buffer> {
   const bn = FONT !== "Helvetica";
   const [tBn, tEn] = TITLES[a.type] ?? [a.type, a.type];
-  const qrPayload = `shikkhaloy-doc:${a.verifyCode}|${a.docNo}|${a.type}`;
+  const qrPayload = a.verifyOrigin
+    ? `${a.verifyOrigin.replace(/\/$/, "")}/verify/${a.verifyCode}`
+    : `shikkhaloy-doc:${a.verifyCode}|${a.docNo}|${a.type}`;
   const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 320, margin: 1 });
 
   let logoDataUrl: string | null = null;

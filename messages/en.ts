@@ -860,6 +860,23 @@ export const en: Dictionary = {
   },
   documents: {
     title: "Document Engine", generate: "New document", pickStudent: "Select student", pickType: "Select type", TC: "TC", CERTIFICATE: "Certificate", MARKSHEET: "Marksheet", TRANSCRIPT: "Transcript", search: "Search by name/doc no", all: "All types", docNo: "Doc No", type: "Type", student: "Student", status: "Status", issued: "Issued", actions: "Actions", active: "Active", revoked: "Revoked", revokeReason: "Revoke reason (optional):", confirmRevoke: "Revoke this document? QR scan will show 'Revoked'.", needFields: "Select student & type", done: "Document issued", empty: "No documents", csv: "CSV",  TESTIMONIAL: "Testimonial",
+      // M13-D1: duplicate document requests
+    requests: {
+      title: "Document Requests", subtitle: "Duplicate document requests — approval issues a new document number",
+      newReq: "New Request", pickType: "Type", pickChild: "Student",
+      reason: "Reason (why the duplicate is needed)", reasonPh: "e.g. lost the original / need a permanent copy",
+      submit: "Submit Request", submitting: "Submitting…", submitted: "✅ Request submitted — awaiting approval",
+      colStudent: "Student", colType: "Type", colReason: "Reason", colStatus: "Status",
+      colRequested: "Requested on", colNote: "Note", colActions: "Actions",
+      stPending: "Pending", stIssued: "Issued", stRejected: "Rejected", all: "All",
+      approve: "✅ Issue", reject: "❌ Reject",
+      approveConfirm: "A duplicate with a new document number will be issued — confirm?", rejectConfirm: "Reject this request?",
+      notePh: "Note (optional)", empty: "No requests yet", docIssued: "Document No",
+      errType: "Select a type", errReason: "Write the reason",
+      printNote: "Print the issued document (with QR) from the Documents page.",
+      networkError: "Connection problem — try again",
+    },
+
   },
   lang: {
     bn: "বাংলা",

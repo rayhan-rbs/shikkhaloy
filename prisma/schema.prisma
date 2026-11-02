@@ -1029,3 +1029,25 @@ model Document {
   @@index([branchId, type])
   @@index([studentId])
 }
+
+// ─── M13-D1: ডুপ্লিকেট-ডকুমেন্ট রিকোয়েস্ট (scalar-FK অ্যাপেন্ড — নোট ৫৫; রিলেশন-নেই = পুরনো-স্পর্শ-শূন্য)
+model DocumentRequest {
+  id            String    @id @default(cuid())
+  branchId      String
+  studentId     String    // যে-ছাত্রের-জন্য ডকুমেন্ট
+  requestedById String    // কে-চেয়েছে (STUDENT-নিজে / PARENT)
+  type          String    // TC/CERTIFICATE/MARKSHEET/TRANSCRIPT — Document.type-হুবহু
+  reason        String
+  status        String    @default("PENDING") // PENDING/APPROVED/REJECTED/ISSUED
+  reviewNote    String?
+  reviewedById  String?
+  reviewedAt    DateTime?
+  documentId    String?   // ইস্যুর-পরে নতুন-Document-এর-id
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  @@index([branchId, status])
+  @@index([studentId])
+}
+

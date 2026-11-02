@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, Percent, MessageSquare, Megaphone, CalendarDays, ReceiptText, BarChart3, Banknote, FileUp, FileText, FilePlus2, ListChecks, Contact, UsersRound, IdCard, QrCode, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X,
+  LayoutDashboard, Percent, BookMarked, MessageSquare, Megaphone, CalendarDays, ReceiptText, BarChart3, Banknote, FileUp, FileText, FilePlus2, ListChecks, Contact, UsersRound, IdCard, QrCode, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X,
   GraduationCap, Sun, Moon, LogOut, Languages, Award, type LucideIcon,
 } from "lucide-react";
 
@@ -87,6 +87,7 @@ export default function DashboardShell({
         
         { href: "/dashboard/homework", label:t(dict, "assignments.title"), icon: ClipboardList, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER"], active: true, soon: false },
         { href: "/dashboard/my-homework", label: t(dict, "myAssignments.title"), icon: FileUp, roles: ["STUDENT"], active: true, soon: false },
+        { href: "/dashboard/study", label: t(dict, "study.navTitle"), icon: BookMarked, active: pathname.startsWith("/dashboard/study"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER", "STUDENT", "PARENT"] },
 
 
         { href: "/dashboard/my-exams", label: t(dict, "myExams.title"), icon: GraduationCap, active: pathname.startsWith("/dashboard/my-exams"), soon: false, roles: ["STUDENT"] },
@@ -121,7 +122,6 @@ export default function DashboardShell({
         { href: "/dashboard/messages", label: t(dict, "messages.navTitle"), icon: MessageSquare, active: pathname.startsWith("/dashboard/messages"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER", "STUDENT", "PARENT", "ACCOUNTANT", "STAFF", "ALUMNI"] },
         { href: "/dashboard/documents", label: t(dict, "documents.title"), icon: FileText, active: pathname.startsWith("/dashboard/documents") && !pathname.startsWith("/dashboard/documents/requests"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT", "STUDENT", "PARENT"] },
         { href: "/dashboard/documents/requests", label: t(dict, "documents.requests.title"), icon: FilePlus2, active: pathname.startsWith("/dashboard/documents/requests"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT", "STUDENT", "PARENT"] },
-
 
 
       ],

@@ -878,6 +878,23 @@ export const en: Dictionary = {
     },
 
   },
+  study: {
+    title: "Study Materials & Diary", navTitle: "Study",
+    subtitle: "Class materials, daily homework and syllabus progress",
+    tabMaterial: "Materials", tabDiary: "Homework Diary", tabSyllabus: "Syllabus",
+    subject: "Class-Subject",
+    mTitle: "Title", mDesc: "Description (optional)", mFile: "File (max 10MB)",
+    addMaterial: "Upload", uploading: "Uploading…",
+    dDate: "Date", dTask: "Today's homework", dDue: "Submission due (optional)", addDiary: "Add to Diary",
+    sDate: "Date", sChapter: "Chapter", sTopic: "Topic (optional)", sNote: "Note (optional)", addSyllabus: "Add",
+    colSubject: "Subject", colTitle: "Title", colDate: "Date", colTask: "Homework", colDue: "Due",
+    colChapter: "Chapter", colTopic: "Topic", colFile: "File", colActions: "Actions",
+    emptyMaterial: "No materials yet", emptyDiary: "Diary is empty", emptySyllabus: "No syllabus records",
+    saved: "✅ Saved", deleted: "Deleted", confirmDelete: "Delete this?",
+    errSubject: "Pick a class-subject", errTitle: "Enter a title", errTask: "Write the homework", errChapter: "Enter the chapter", errFile: "Choose a file",
+    open: "Open", saving: "Saving…", networkError: "Connection problem — try again",
+  },
+
   lang: {
     bn: "বাংলা",
     en: "English",

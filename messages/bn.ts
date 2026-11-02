@@ -999,6 +999,22 @@ export const bn = {
     },
 
   },
+  study: {
+    title: "স্টাডি ম্যাটেরিয়াল ও ডায়েরি", navTitle: "স্টাডি",
+    subtitle: "ক্লাসের ম্যাটেরিয়াল, দৈনিক হোমওয়ার্ক ও সিলেবাস-অগ্রগতি",
+    tabMaterial: "ম্যাটেরিয়াল", tabDiary: "হোমওয়ার্ক ডায়েরি", tabSyllabus: "সিলেবাস",
+    subject: "শ্রেণি-বিষয়",
+    mTitle: "শিরোনাম", mDesc: "বর্ণনা (ঐচ্ছিক)", mFile: "ফাইল (সর্বোচ্চ ১০MB)",
+    addMaterial: "আপলোড করুন", uploading: "আপলোড হচ্ছে…",
+    dDate: "তারিখ", dTask: "আজকের হোমওয়ার্ক", dDue: "জমার শেষ-তারিখ (ঐচ্ছিক)", addDiary: "ডায়েরিতে লিখুন",
+    sDate: "তারিখ", sChapter: "অধ্যায়", sTopic: "টপিক (ঐচ্ছিক)", sNote: "নোট (ঐচ্ছিক)", addSyllabus: "যোগ করুন",
+    colSubject: "বিষয়", colTitle: "শিরোনাম", colDate: "তারিখ", colTask: "হোমওয়ার্ক", colDue: "শেষ-তারিখ",
+    colChapter: "অধ্যায়", colTopic: "টপিক", colFile: "ফাইল", colActions: "অ্যাকশন",
+    emptyMaterial: "কোনো ম্যাটেরিয়াল নেই", emptyDiary: "ডায়েরি খালি", emptySyllabus: "সিলেবাস-রেকর্ড নেই",
+    saved: "✅ সংরক্ষিত", deleted: "মুছে ফেলা হয়েছে", confirmDelete: "মুছে ফেলবেন?",
+    errSubject: "শ্রেণি-বিষয় বাছুন", errTitle: "শিরোনাম দিন", errTask: "হোমওয়ার্ক লিখুন", errChapter: "অধ্যায় লিখুন", errFile: "ফাইল বাছুন",
+    open: "খুলুন", saving: "সংরক্ষণ হচ্ছে…", networkError: "সংযোগ সমস্যা — আবার চেষ্টা করুন",
+  },
 
   lang: {
     bn: "বাংলা",

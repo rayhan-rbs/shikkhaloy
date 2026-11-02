@@ -1051,3 +1051,57 @@ model DocumentRequest {
   @@index([studentId])
 }
 
+// ─── M13-D2: স্টাডি ম্যাটেরিয়াল + হোমওয়ার্ক-ডায়েরি + সিলেবাস-ট্র্যাকিং (scalar-FK অ্যাপেন্ড — নোট ৫৫; রিলেশন-নেই = পুরনো-স্পর্শ-শূন্য)
+model StudyMaterial {
+  id          String    @id @default(cuid())
+  branchId    String
+  classId     String
+  subjectId   String
+  title       String
+  description String?
+  fileUrl     String
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([branchId])
+  @@index([classId, subjectId])
+}
+
+model HomeworkDiary {
+  id          String    @id @default(cuid())
+  branchId    String
+  classId     String
+  subjectId   String
+  date        DateTime  @db.Date
+  task        String
+  dueDate     DateTime? @db.Date
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@unique([classId, subjectId, date]) // এক-দিন-এক-বিষয়-এক-এন্ট্রি → upsert=last-write-wins (নোট ৩৬)
+  @@index([branchId, date])
+  @@index([classId, subjectId])
+}
+
+model SyllabusProgress {
+  id          String    @id @default(cuid())
+  branchId    String
+  classId     String
+  subjectId   String
+  date        DateTime  @db.Date
+  chapter     String
+  topic       String?
+  note        String?
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([branchId])
+  @@index([classId, subjectId])
+}
+

@@ -916,6 +916,19 @@ export const en: Dictionary = {
     search: "Search name/code…", empty: "No branches yet",
     networkError: "Connection problem — try again",
   },
+  transfer: {
+    title: "Branch Transfer", navTitle: "Branch Transfer",
+    subtitle: "Move a student to another branch — old enrollment stays as history, new enrollment + roll in the new branch",
+    fromBranch: "Source branch", toBranch: "Destination branch",
+    pickStudent: "Student", pickClass: "New class *", pickSection: "Section (optional)",
+    transferDate: "Transfer date",
+    submit: "Transfer", submitting: "Working…",
+    confirm: "The account moves to the new branch, old enrollment becomes TRANSFERRED, and the student gets a new roll. Confirm?",
+    done: "✅ Transfer complete — new roll:",
+    emptyStudents: "No active students in this branch",
+    errStudent: "Pick a student", errBranch: "Pick the destination branch", errClass: "Pick the new class",
+    networkError: "Connection problem — try again",
+  },
 
   lang: {
     bn: "বাংলা",

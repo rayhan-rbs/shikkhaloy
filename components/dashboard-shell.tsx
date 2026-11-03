@@ -116,7 +116,9 @@ export default function DashboardShell({
         { href: "/dashboard/admissions", label: t(dict, "admissions.title"), icon: UserPlus, active: pathname.startsWith("/dashboard/admissions"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
         { href: "/dashboard/parents", label: t(dict, "parents.title"), icon: Contact, active: pathname.startsWith("/dashboard/parents"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
         { href: "/dashboard/idcards", label: t(dict, "idcards.title"), icon: IdCard, active: pathname.startsWith("/dashboard/idcards"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
-        { href: "/dashboard/branches", label: t(dict, "branches.navTitle"), icon: Network, active: pathname.startsWith("/dashboard/branches"), soon: false, roles: ["PLATFORM_SUPER_ADMIN"] },
+        { href: "/dashboard/branches", label: t(dict, "branches.navTitle"), icon: Network, active: pathname.startsWith("/dashboard/branches") && !pathname.startsWith("/dashboard/branches/report"), soon: false, roles: ["PLATFORM_SUPER_ADMIN"] },
+        { href: "/dashboard/branches/report", label: t(dict, "branchReport.navTitle"), icon: BarChart3, active: pathname.startsWith("/dashboard/branches/report"), soon: false, roles: ["PLATFORM_SUPER_ADMIN"] },
+
         { href: "/dashboard/quizzes", label: t(dict, "quizzes.navTitle"), icon: ListChecks, active: pathname.startsWith("/dashboard/quizzes"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER"] },
 
         { href: "/dashboard/salary", label: t(dict, "salary.navTitle"), icon: Banknote, active: pathname.startsWith("/dashboard/salary"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"] },

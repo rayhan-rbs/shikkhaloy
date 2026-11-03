@@ -927,7 +927,18 @@ export const en: Dictionary = {
     done: "✅ Transfer complete — new roll:",
     emptyStudents: "No active students in this branch",
     errStudent: "Pick a student", errBranch: "Pick the destination branch", errClass: "Pick the new class",
-    networkError: "Connection problem — try again",
+    networkError: "Connection problem — try again",     hTitle: "Recent transfers", hStudent: "Student", hFrom: "From", hTo: "To", hDate: "Date", hEmpty: "No transfers yet",
+
+  },
+  branchReport: {
+    title: "Cross-Branch Report", navTitle: "Branch Report",
+    subtitle: "Compare all branches — people, money and attendance (attendance = last 30 days; month collection = current month)",
+    csv: "CSV",
+    colBranch: "Branch", colCode: "Code", colStudents: "Students", colTeachers: "Teachers", colClasses: "Classes",
+    colInvoiced: "Invoiced", colCollected: "Collected", colOutstanding: "Outstanding", colMonth: "This month",
+    colAttendance: "Attendance%", colStatus: "Status",
+    active: "Active", inactive: "Inactive", total: "Total",
+    empty: "No branches yet", networkError: "Connection problem — try again",
   },
 
   lang: {

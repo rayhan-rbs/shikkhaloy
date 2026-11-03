@@ -1048,7 +1048,18 @@ export const bn = {
     done: "✅ ট্রান্সফার সম্পন্ন — নতুন রোল:",
     emptyStudents: "এই ব্রাঞ্চে সক্রিয় শিক্ষার্থী নেই",
     errStudent: "শিক্ষার্থী বাছুন", errBranch: "গন্তব্য-ব্রাঞ্চ বাছুন", errClass: "নতুন শ্রেণি বাছুন",
-    networkError: "সংযোগ সমস্যা — আবার চেষ্টা করুন",
+    networkError: "সংযোগ সমস্যা — আবার চেষ্টা করুন",     hTitle: "সাম্প্রতিক ট্রান্সফার", hStudent: "শিক্ষার্থী", hFrom: "থেকে", hTo: "যায়", hDate: "তারিখ", hEmpty: "এখনো কোনো ট্রান্সফার হয়নি",
+
+  },
+  branchReport: {
+    title: "ক্রস-ব্রাঞ্চ রিপোর্ট", navTitle: "ব্রাঞ্চ-রিপোর্ট",
+    subtitle: "সব ব্রাঞ্চের তুলনা — মানুষ, অর্থ ও হাজিরা (হাজিরা = শেষ ৩০ দিন; এ-মাস আদায় = চলতি মাস)",
+    csv: "CSV",
+    colBranch: "ব্রাঞ্চ", colCode: "কোড", colStudents: "ছাত্র", colTeachers: "শিক্ষক", colClasses: "ক্লাস",
+    colInvoiced: "মোট ইনভয়েস", colCollected: "আদায়", colOutstanding: "বকেয়া", colMonth: "এ-মাস আদায়",
+    colAttendance: "হাজিরা%", colStatus: "অবস্থা",
+    active: "সক্রিয়", inactive: "নিষ্ক্রিয়", total: "মোট",
+    empty: "কোনো ব্রাঞ্চ নেই", networkError: "সংযোগ সমস্যা — আবার চেষ্টা করুন",
   },
 
   lang: {

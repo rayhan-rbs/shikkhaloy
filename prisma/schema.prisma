@@ -15,16 +15,17 @@ datasource db {
 
 // ─── 🏬 ব্রাঞ্চ ───
 model Branch {
-  id        String   @id @default(cuid())
-  name      String
-  code      String   @unique
-  address   String?
-  phone     String?
-  email     String?
-  logoUrl   String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  name       String
+  code       String   @unique
+  address    String?
+  phone      String?
+  email      String?
+  logoUrl    String?
+  brandColor String? // 🆕 M13-E4 — null = প্রতিষ্ঠানের-ডিফল্ট (InstitutionSetting.brandColor)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   users              User[]
   sessions           AcademicSession[]
@@ -42,6 +43,7 @@ model Branch {
   routineBreaks      RoutineBreak[]
   marks              Mark[]
 }
+
 
 // ─── 👤 ইউজার (নীতি ১) ───
 model User {
@@ -1104,4 +1106,113 @@ model SyllabusProgress {
   @@index([branchId])
   @@index([classId, subjectId])
 }
+
+
+// ─── M14-A: লাইব্রেরি (scalar-FK অ্যাপেন্ড — নোট ৫৫; রিলেশন-নেই = পুরনো-স্পর্শ-শূন্য; নাম = findMany+Map)
+model LibraryBook {
+  id          String    @id @default(cuid())
+  branchId    String
+  title       String
+  author      String?
+  isbn        String?
+  category    String?
+  copiesTotal Int       @default(1)
+  shelfCode   String?
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([branchId])
+}
+
+model BookLoan {
+  id          String    @id @default(cuid())
+  branchId    String
+  bookId      String
+  studentId   String
+  issueDate   DateTime  @db.Date
+  dueDate     DateTime  @db.Date
+  returnDate  DateTime? @db.Date
+  status      String    @default("ISSUED") // ISSUED/RETURNED
+  fine        Float     @default(0)
+  issuedById  String
+  note        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([branchId, status])
+  @@index([bookId])
+  @@index([studentId])
+}
+
+
+// ─── M14-B: হোস্টেল + ট্রান্সপোর্ট (scalar-FK অ্যাপেন্ড — নোট ৫৫; রিলেশন-নেই; প্রাপ্যতা = groupBy-গণনা — নোট ৯৩)
+model HostelRoom {
+  id          String    @id @default(cuid())
+  branchId    String
+  name        String
+  type        String    @default("BOYS") // BOYS/GIRLS/COMMON
+  capacity    Int       @default(4)
+  monthlyFee  Float     @default(0)
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@unique([branchId, name])
+  @@index([branchId])
+}
+
+model HostelAllocation {
+  id            String    @id @default(cuid())
+  branchId      String
+  roomId        String
+  studentId     String
+  status        String    @default("ACTIVE") // ACTIVE/VACATED
+  vacatedAt     DateTime?
+  allocatedById String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  @@unique([studentId]) // এক-শিক্ষার্থী-এক-রেকর্ড → পুনঃবরাদ্দ = upsert (ভূত-নিরাপদ — নোট ৩৬)
+  @@index([branchId, status])
+}
+
+model TransportRoute {
+  id          String    @id @default(cuid())
+  branchId    String
+  name        String
+  stops       String? // কমা-বিভাজিত স্টপ
+  vehicleNo   String?
+  capacity    Int       @default(30)
+  monthlyFee  Float     @default(0)
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@unique([branchId, name])
+  @@index([branchId])
+}
+
+model TransportAllocation {
+  id            String    @id @default(cuid())
+  branchId      String
+  routeId       String
+  studentId     String
+  stopName      String?
+  status        String    @default("ACTIVE") // ACTIVE/VACATED
+  vacatedAt     DateTime?
+  allocatedById String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  @@unique([studentId])
+  @@index([branchId, status])
+}
+
 

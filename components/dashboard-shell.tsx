@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, Percent, Network, ArrowRightLeft, BookMarked, MessageSquare, Megaphone, CalendarDays, ReceiptText, BarChart3, Banknote, FileUp, FileText, FilePlus2, ListChecks, Contact, UsersRound, IdCard, QrCode, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X,
+  LayoutDashboard, Percent, Network, Library, BedDouble, Bus, ArrowRightLeft, Palette, BookMarked, MessageSquare, Megaphone, CalendarDays, ReceiptText, BarChart3, Banknote, FileUp, FileText, FilePlus2, ListChecks, Contact, UsersRound, IdCard, QrCode, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X,
   GraduationCap, Sun, Moon, LogOut, Languages, Award, type LucideIcon,
 } from "lucide-react";
 
@@ -20,6 +20,7 @@ import {
   CommandItem, CommandList,
 } from "@/components/ui/command";
 import BranchSwitcher from "@/components/branch-switcher";
+import BranchBrandApplier from "@/components/branch-brand-applier";
 import LanguageSwitcher from "@/components/language-switcher";
 import ThemeToggle from "@/components/theme-toggle";
 import NotificationBell from "@/components/notification-bell";
@@ -89,6 +90,11 @@ export default function DashboardShell({
         { href: "/dashboard/homework", label:t(dict, "assignments.title"), icon: ClipboardList, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER"], active: true, soon: false },
         { href: "/dashboard/my-homework", label: t(dict, "myAssignments.title"), icon: FileUp, roles: ["STUDENT"], active: true, soon: false },
         { href: "/dashboard/study", label: t(dict, "study.navTitle"), icon: BookMarked, active: pathname.startsWith("/dashboard/study"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER", "STUDENT", "PARENT"] },
+        { href: "/dashboard/library", label: t(dict, "library.navTitle"), icon: Library, active: pathname.startsWith("/dashboard/library"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"] },
+
+        { href: "/dashboard/hostel", label: t(dict, "hostel.navTitle"), icon: BedDouble, active: pathname.startsWith("/dashboard/hostel"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
+        { href: "/dashboard/transport", label: t(dict, "transport.navTitle"), icon: Bus, active: pathname.startsWith("/dashboard/transport"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
+
 
 
         { href: "/dashboard/my-exams", label: t(dict, "myExams.title"), icon: GraduationCap, active: pathname.startsWith("/dashboard/my-exams"), soon: false, roles: ["STUDENT"] },
@@ -116,8 +122,13 @@ export default function DashboardShell({
         { href: "/dashboard/admissions", label: t(dict, "admissions.title"), icon: UserPlus, active: pathname.startsWith("/dashboard/admissions"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
         { href: "/dashboard/parents", label: t(dict, "parents.title"), icon: Contact, active: pathname.startsWith("/dashboard/parents"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
         { href: "/dashboard/idcards", label: t(dict, "idcards.title"), icon: IdCard, active: pathname.startsWith("/dashboard/idcards"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
-        { href: "/dashboard/branches", label: t(dict, "branches.navTitle"), icon: Network, active: pathname.startsWith("/dashboard/branches") && !pathname.startsWith("/dashboard/branches/report"), soon: false, roles: ["PLATFORM_SUPER_ADMIN"] },
+        // { href: "/dashboard/branches", label: t(dict, "branches.navTitle"), icon: Network, active: pathname.startsWith("/dashboard/branches") && !pathname.startsWith("/dashboard/branches/report"), soon: false, roles: ["PLATFORM_SUPER_ADMIN"] },
+        // { href: "/dashboard/branches/report", label: t(dict, "branchReport.navTitle"), icon: BarChart3, active: pathname.startsWith("/dashboard/branches/report"), soon: false, roles: ["PLATFORM_SUPER_ADMIN"] },
+
+        { href: "/dashboard/branches", label: t(dict, "branches.navTitle"), icon: Network, active: pathname.startsWith("/dashboard/branches") && !pathname.startsWith("/dashboard/branches/report") && !pathname.startsWith("/dashboard/branches/branding"), soon: false, roles: ["PLATFORM_SUPER_ADMIN"] },
         { href: "/dashboard/branches/report", label: t(dict, "branchReport.navTitle"), icon: BarChart3, active: pathname.startsWith("/dashboard/branches/report"), soon: false, roles: ["PLATFORM_SUPER_ADMIN"] },
+        { href: "/dashboard/branches/branding", label: t(dict, "branchBranding.navTitle"), icon: Palette, active: pathname.startsWith("/dashboard/branches/branding"), soon: false, roles: ["PLATFORM_SUPER_ADMIN"] },
+
 
         { href: "/dashboard/quizzes", label: t(dict, "quizzes.navTitle"), icon: ListChecks, active: pathname.startsWith("/dashboard/quizzes"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER"] },
 
@@ -167,7 +178,7 @@ export default function DashboardShell({
       <div className="flex h-16 items-center gap-3 border-b border-border px-5">
         <div
           className="flex h-9 w-9 items-center justify-center rounded-xl shadow-md"
-          style={{ background: brandColor }}
+            style={{ background: `var(--brand, ${brandColor})` }}
         >
           <GraduationCap size={18} className="text-white" />
         </div>
@@ -236,6 +247,7 @@ export default function DashboardShell({
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <BranchBrandApplier />
       {/* ডেস্কটপ সাইডবার */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-border bg-background lg:block">
         {sidebarContent}

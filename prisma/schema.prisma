@@ -1279,3 +1279,22 @@ model InventoryTxn {
 }
 
 
+// ─── M14-D: ভিজিটর-লগ (scalar-FK অ্যাপেন্ড — নোট ৫৫; রিলেশন-নেই; status-কলাম-নেই — INSIDE/CHECKED_OUT = checkOutAt-derived — নোট ৯৬)
+model VisitorLog {
+  id           String    @id @default(cuid())
+  branchId     String
+  name         String
+  phone        String?
+  personToMeet String?
+  purpose      String?
+  checkInAt    DateTime  @default(now())
+  checkOutAt   DateTime?
+  createdById  String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  @@index([branchId, checkInAt])
+}
+
+

@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, Percent, Network, Library, BedDouble, Bus, ArrowRightLeft, Palette, BookMarked, MessageSquare, Megaphone, CalendarDays, ReceiptText, BarChart3, Banknote, FileUp, FileText, FilePlus2, ListChecks, Contact, UsersRound, IdCard, QrCode, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X,
+  LayoutDashboard, Percent, Trophy, Package, Network, Library, BedDouble, Bus, ArrowRightLeft, Palette, BookMarked, MessageSquare, Megaphone, CalendarDays, ReceiptText, BarChart3, Banknote, FileUp, FileText, FilePlus2, ListChecks, Contact, UsersRound, IdCard, QrCode, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X,
   GraduationCap, Sun, Moon, LogOut, Languages, Award, type LucideIcon,
 } from "lucide-react";
 
@@ -94,6 +94,9 @@ export default function DashboardShell({
 
         { href: "/dashboard/hostel", label: t(dict, "hostel.navTitle"), icon: BedDouble, active: pathname.startsWith("/dashboard/hostel"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
         { href: "/dashboard/transport", label: t(dict, "transport.navTitle"), icon: Bus, active: pathname.startsWith("/dashboard/transport"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
+
+        { href: "/dashboard/clubs", label: t(dict, "clubs.navTitle"), icon: Trophy, active: pathname.startsWith("/dashboard/clubs"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
+        { href: "/dashboard/inventory", label: t(dict, "inventory.navTitle"), icon: Package, active: pathname.startsWith("/dashboard/inventory"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
 
 
 

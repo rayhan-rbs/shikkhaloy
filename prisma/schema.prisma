@@ -1216,3 +1216,66 @@ model TransportAllocation {
 }
 
 
+// ─── M14-C: ক্লাব + ইনভেন্টরি (scalar-FK অ্যাপেন্ড — নোট ৫৫; রিলেশন-নেই; স্টক = txn-সমষ্টি-গণনা — নোট ৯৩)
+model Club {
+  id          String    @id @default(cuid())
+  branchId    String
+  name        String
+  description String?
+  advisor     String? // দায়িত্বশীল-শিক্ষক (ঐচ্ছিক, টেক্সট)
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@unique([branchId, name])
+  @@index([branchId])
+}
+
+model ClubMembership {
+  id          String    @id @default(cuid())
+  branchId    String
+  clubId      String
+  studentId   String
+  status      String    @default("ACTIVE") // ACTIVE/LEFT
+  leftAt      DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@unique([clubId, studentId]) // এক-ক্লাবে-এক-সদস্য-রেকর্ড → পুনঃযোগ = upsert (ভূত-নিরাপদ — নোট ৩৬)
+  @@index([branchId, status])
+}
+
+model InventoryItem {
+  id          String    @id @default(cuid())
+  branchId    String
+  name        String
+  category    String?
+  unit        String? // পিস/সেট/লিটার…
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@unique([branchId, name])
+  @@index([branchId])
+}
+
+model InventoryTxn {
+  id          String   @id @default(cuid())
+  branchId    String
+  itemId      String
+  type        String // IN/OUT
+  qty         Int
+  note        String?
+  createdById String
+  createdAt   DateTime @default(now())
+  deletedAt   DateTime?
+
+  @@index([branchId])
+  @@index([itemId])
+}
+
+

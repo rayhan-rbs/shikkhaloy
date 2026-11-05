@@ -30,7 +30,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (user.status !== "ACTIVE") {
+    // M14-E2: ALUMNI-স্ট্যাটাসও লগইন-করতে পারবে (পোর্টাল-প্রয়োজন); SUSPENDED/DEACTIVATED-আটকানো-থাকবে
+    if (user.status !== "ACTIVE" && user.status !== "ALUMNI") {
       return NextResponse.json(
         { success: false, error: "আপনার অ্যাকাউন্ট সক্রিয় নেই" },
         { status: 403 }

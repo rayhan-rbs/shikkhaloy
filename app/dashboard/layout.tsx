@@ -1,5 +1,6 @@
 // 📁 app/dashboard/layout.tsx
 // ড্যাশবোর্ড সেকশনের লেআউট — অথ যাচাই + সেটিংস (ব্র্যান্ডিং) + শেল
+// M14-E2: ALUMNI-ও ড্যাশবোর্ডে ঢুকবে; পুরনো "ALUMNI→/alumni redirect" লাইন বাদ
 
 export const instant = false;
 
@@ -27,7 +28,10 @@ export default async function DashboardLayout({
     where: { id: session.userId },
     include: { branch: true },
   });
-  if (!user || user.status !== "ACTIVE") redirect("/login");
+  // M14-E2: ACTIVE অথবা ALUMNI দুটোই বৈধ; বাকি (SUSPENDED ইত্যাদি) → লগইনে
+  if (!user || (user.status !== "ACTIVE" && user.status !== "ALUMNI")) {
+    redirect("/login");
+  }
 
   const [lang, theme, settings] = await Promise.all([
     getLang(),
@@ -43,6 +47,7 @@ export default async function DashboardLayout({
         email: user.email,
         role: user.role,
         branchName: user.branch.name,
+        status: user.status, // 🆕 M14-E2 — shell-এর ALUMNI-মেনু-ফিল্টার এটা ছাড়া চলে না
       }}
       institutionName={settings.name}
       brandColor={settings.brandColor}

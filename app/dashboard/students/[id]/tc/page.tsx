@@ -1,5 +1,5 @@
 // 📁 app/dashboard/students/[id]/tc/page.tsx
-// M4 — TC print-পেজ (stateless — নোট ৫৪/৭০); students-prefix = ADMINS-কভার (roles-স্পর্শ-শূন্য)
+// M4 — TC print-পেজ; URL-id = Enrollment.id (অ্যাপ-কনভেনশন — profile/edit/reset-সবই এনরোলমেন্ট-id)
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -28,6 +28,7 @@ function Row({ label, value }: { label: string; value: string | null | undefined
 
 export default async function TCPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+
   const store = await cookies();
   const token = store.get("shikkhaloy_token")?.value;
   const session = token ? await verifyToken(token) : null;
@@ -40,31 +41,24 @@ export default async function TCPage({ params }: { params: Promise<{ id: string 
   const lang: Lang = store.get("shikkhaloy_lang")?.value === "en" ? "en" : "bn";
   const dict = lang === "en" ? en : bn;
 
-  const student = await prisma.user.findFirst({
-    where: { id, role: "STUDENT", branchId: me.branchId, deletedAt: null },
-    include: { studentProfile: true },
+  // URL-id = Enrollment.id; ব্রাঞ্চ-অ্যাডমিন → নিজের ব্রাঞ্চ, সুপার-অ্যাডমিন → সব ব্রাঞ্চ
+  const enrollment = await prisma.enrollment.findFirst({
+    where: {
+      id, deletedAt: null,
+      ...(session.role === "BRANCH_ADMIN" ? { branchId: me.branchId } : {}),
+    },
+    include: {
+      student: { include: { studentProfile: true } },
+      klass: { select: { name: true, nameEn: true } },
+      section: { select: { name: true } },
+    },
   });
-  if (!student) notFound();
+  if (!enrollment) notFound();
 
-  const enrollments = await prisma.enrollment.findMany({
-    where: { studentId: id, deletedAt: null },
-    orderBy: { createdAt: "desc" },
-  });
-  const enrollment = enrollments.find((e) => e.status === "ACTIVE") ?? enrollments[0] ?? null;
-  const tcNo = `TC-${new Date().getFullYear()}-${(enrollment ?? student).id.slice(-6).toUpperCase()}`;
-
-  let className = "—";
-  let sectionName: string | null = null;
-  if (enrollment) {
-    const klass = await prisma.academicClass.findUnique({
-      where: { id: enrollment.classId }, select: { name: true, nameEn: true },
-    });
-    className = klass ? (lang === "en" && klass.nameEn ? klass.nameEn : klass.name) : "—";
-    if (enrollment.sectionId) {
-      const sec = await prisma.section.findUnique({ where: { id: enrollment.sectionId }, select: { name: true } });
-      sectionName = sec?.name ?? null;
-    }
-  }
+  const student = enrollment.student;
+  const tcNo = `TC-${new Date().getFullYear()}-${enrollment.id.slice(-6).toUpperCase()}`;
+  const className = lang === "en" && enrollment.klass.nameEn ? enrollment.klass.nameEn : enrollment.klass.name;
+  const sectionName = enrollment.section?.name ?? null;
 
   const settings = await prisma.institutionSetting.findUnique({ where: { key: "global" } });
 
@@ -116,10 +110,10 @@ export default async function TCPage({ params }: { params: Promise<{ id: string 
           <Row label={dict.tc.fMother} value={student.studentProfile?.motherName} />
           <Row label={dict.tc.fDob} value={iso(student.studentProfile?.dateOfBirth)} />
           <Row label={dict.tc.fClass} value={sectionName ? `${className} — ${sectionName}` : className} />
-          <Row label={dict.tc.fRoll} value={enrollment?.rollNumber != null ? String(enrollment.rollNumber) : null} />
-          <Row label={dict.tc.fAdmission} value={iso(enrollment?.admissionDate)} />
+          <Row label={dict.tc.fRoll} value={enrollment.rollNumber != null ? String(enrollment.rollNumber) : null} />
+          <Row label={dict.tc.fAdmission} value={iso(enrollment.admissionDate)} />
           <Row label={dict.tc.fLeaving} value={iso(new Date())} />
-          <Row label={dict.tc.fStatus} value={enrollment ? enrLabels[enrollment.status] || enrollment.status : dict.tc.noEnrollment} />
+          <Row label={dict.tc.fStatus} value={enrLabels[enrollment.status] || enrollment.status} />
           <Row label={dict.tc.fNationality} value={student.studentProfile?.nationality} />
           <Row label={dict.tc.fConduct} value={dict.tc.conductGood} />
         </div>

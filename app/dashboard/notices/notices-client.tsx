@@ -1,4 +1,4 @@
-// M13-A: নোটিশ-ক্লায়েন্ট — কার্ড-তালিকা (পিন-আগে) + create-ডায়লগ(সংযুক্তি-সহ) + পিন-টগল/ডিলিট
+// M13-A: নোটিশ-ক্লায়েন্ট — তালিকা + create-ডায়লগ (সংযুক্তি + isPublic) + পিন/ডিলিট
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { Megaphone } from "lucide-react";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { t } from "@/lib/i18n";
 import type { Dictionary } from "@/messages/bn";
 
-interface Row { id: string; title: string; body: string; audience: string; isPinned: boolean; fileUrl: string | null; createdAt: string; publisherName: string }
+interface Row { id: string; title: string; body: string; audience: string; isPinned: boolean; isPublic: boolean; fileUrl: string | null; createdAt: string; publisherName: string }
 
 export default function NoticesClient({ dict, canManage }: { dict: Dictionary; canManage: boolean }) {
   const [rows, setRows] = useState<Row[]>([]);
@@ -18,7 +18,9 @@ export default function NoticesClient({ dict, canManage }: { dict: Dictionary; c
   const [error, setError] = useState(""); const [okMsg, setOkMsg] = useState("");
   const [open, setOpen] = useState(false);
   const [nTitle, setNTitle] = useState(""); const [nBody, setNBody] = useState("");
-  const [nAud, setNAud] = useState("ALL"); const [nPin, setNPin] = useState(false); const [nFile, setNFile] = useState<File | null>(null);
+  const [nAud, setNAud] = useState("ALL"); const [nPin, setNPin] = useState(false);
+  const [nFile, setNFile] = useState<File | null>(null);
+  const [nPub, setNPub] = useState(false);
 
   const load = useCallback(async () => {
     const r = await fetch("/api/notices").then((x) => x.json());
@@ -39,11 +41,12 @@ export default function NoticesClient({ dict, canManage }: { dict: Dictionary; c
       const fd = new FormData();
       fd.set("title", nTitle.trim()); fd.set("body", nBody.trim());
       fd.set("audience", nAud); fd.set("isPinned", String(nPin));
+      fd.set("isPublic", String(nPub));
       if (nFile) fd.set("file", nFile);
       const r = await fetch("/api/notices", { method: "POST", body: fd }).then((x) => x.json());
       if (!r.success) { setError(r.error || "Error"); return; }
       setOkMsg(t(dict, "notices.created")); setOpen(false);
-      setNTitle(""); setNBody(""); setNAud("ALL"); setNPin(false); setNFile(null);
+      setNTitle(""); setNBody(""); setNAud("ALL"); setNPin(false); setNPub(false); setNFile(null);
       void load();
     } catch { setError("Network error"); } finally { setBusy(false); }
   }
@@ -86,6 +89,7 @@ export default function NoticesClient({ dict, canManage }: { dict: Dictionary; c
           <CardContent className="space-y-1.5 pt-5">
             <div className="flex flex-wrap items-center gap-2">
               {x.isPinned && <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary">📌 {t(dict, "notices.pinned")}</span>}
+              {x.isPublic && <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-300">ওয়েবসাইটে</span>}
               <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">{audLabel(x.audience)}</span>
               <h3 className="text-base font-bold">{x.title}</h3>
             </div>
@@ -119,6 +123,10 @@ export default function NoticesClient({ dict, canManage }: { dict: Dictionary; c
                 <option value="STAFF">{t(dict, "notices.audStaff")}</option>
               </select>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={nPin} onChange={(e) => setNPin(e.target.checked)} />📌 {t(dict, "notices.pinned")}</label>
+              <label className="col-span-2 flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={nPub} onChange={(e) => setNPub(e.target.checked)} />
+                 পাবলিক ওয়েবসাইটে দৃশ্যমান (isPublic)
+              </label>
             </div>
             <Input type="file" onChange={(e) => setNFile(e.target.files?.[0] ?? null)} />
             <div className="flex gap-2">

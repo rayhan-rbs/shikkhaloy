@@ -1,4 +1,4 @@
-// M13-A: নোটিশ — GET (audience-স্কোপড — API-ই-ফিল্টার) | POST (admin, FormData+সংযুক্তি, tx+fan-out)
+// M13-A: নোটিশ — GET (audience-স্কোপড) | POST (admin, FormData+সংযুক্তি+isPublic, tx+fan-out)
 import { NextRequest, NextResponse } from "next/server";
 import type { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -25,12 +25,11 @@ export async function GET(request: NextRequest) {
     });
     if (!me || me.status !== "ACTIVE") return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
 
-    // সব-রোলে-এক-where — ternary-spread-নিষিদ্ধ (নোট ৫১)
     const visibleAudiences = ADMIN_ROLES.includes(me.role) ? AUDIENCES : (AUDIENCE_BY_ROLE[me.role] ?? ["ALL"]);
     const rows = await prisma.notice.findMany({
       where: { branchId: me.branchId, deletedAt: null, audience: { in: visibleAudiences } },
       orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }], take: 200,
-      select: { id: true, title: true, body: true, audience: true, isPinned: true, fileUrl: true, publishedById: true, createdAt: true },
+      select: { id: true, title: true, body: true, audience: true, isPinned: true, isPublic: true, fileUrl: true, publishedById: true, createdAt: true },
     });
     const pubs = await prisma.user.findMany({
       where: { id: { in: [...new Set(rows.map((r) => r.publishedById))] } }, select: { id: true, fullName: true },
@@ -39,7 +38,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true, count: rows.length,
       data: rows.map((r) => ({ id: r.id, title: r.title, body: r.body, audience: r.audience, isPinned: r.isPinned,
-        fileUrl: r.fileUrl, createdAt: r.createdAt.toISOString(), publisherName: pMap.get(r.publishedById) ?? "—" })),
+        isPublic: r.isPublic, fileUrl: r.fileUrl, createdAt: r.createdAt.toISOString(),
+        publisherName: pMap.get(r.publishedById) ?? "—" })),
     });
   } catch (error) {
     console.error("❌ notices-list error:", error);
@@ -63,18 +63,19 @@ export async function POST(request: NextRequest) {
     const body = String(form.get("body") ?? "").trim();
     const audience = String(form.get("audience") ?? "ALL");
     const isPinned = String(form.get("isPinned") ?? "false") === "true";
+    const isPublic = String(form.get("isPublic") ?? "false") === "true"; // 🆕 ওয়েবসাইট-ভিজিবিলিটি
     const file = form.get("file");
     if (!title || !body || !AUDIENCES.includes(audience))
       return NextResponse.json({ success: false, error: "শিরোনাম, বিস্তারিত ও সঠিক প্রাপক দিন" }, { status: 400 });
 
     let fileUrl: string | null = null;
     if (file instanceof File && file.size > 0) {
-      fileUrl = await saveUpload(file, "shikkhaloy/notices"); // saveUpload = URL-string-ফেরত (নোট ৭৬)
+      fileUrl = await saveUpload(file, "shikkhaloy/notices");
     }
 
     const created = await prisma.$transaction(async (tx) => {
       const notice = await tx.notice.create({
-        data: { branchId: me.branchId, title, body, audience, isPinned, fileUrl, publishedById: me.id },
+        data: { branchId: me.branchId, title, body, audience, isPinned, isPublic, fileUrl, publishedById: me.id },
       });
       const targets = await tx.user.findMany({
         where: { branchId: me.branchId, role: { in: FANOUT_ROLES[audience] }, status: "ACTIVE", deletedAt: null },

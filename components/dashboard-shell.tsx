@@ -33,6 +33,7 @@ interface ShellUser {
   email: string;
   role: string;
   branchName: string;
+  status: string;
 }
 
 interface NavItem {
@@ -63,6 +64,7 @@ export default function DashboardShell({
   // Ctrl+K → প্যালেট
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      if (user.status === "ALUMNI") return; // M14-E2
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setPaletteOpen((v) => !v);
@@ -144,6 +146,7 @@ export default function DashboardShell({
         { href: "/dashboard/messages", label: t(dict, "messages.navTitle"), icon: MessageSquare, active: pathname.startsWith("/dashboard/messages"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER", "STUDENT", "PARENT", "ACCOUNTANT", "STAFF", "ALUMNI"] },
         { href: "/dashboard/documents", label: t(dict, "documents.title"), icon: FileText, active: pathname.startsWith("/dashboard/documents") && !pathname.startsWith("/dashboard/documents/requests"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT", "STUDENT", "PARENT"] },
         { href: "/dashboard/documents/requests", label: t(dict, "documents.requests.title"), icon: FilePlus2, active: pathname.startsWith("/dashboard/documents/requests"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT", "STUDENT", "PARENT"] },
+        { href: "/dashboard/alumni", label: t(dict, "alumni.title"), icon: GraduationCap, active: pathname.startsWith("/dashboard/alumni"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ALUMNI", "STUDENT"] },
 
 
       ],
@@ -161,9 +164,18 @@ export default function DashboardShell({
   ];
 
   // role-ফিল্টার: roles-সেট আইটেম শুধু মিলে-যাওয়া রোলে দেখাবে; খালি-গ্রুপ লুকানো
+  // M14-E2: ALUMNI-স্ট্যাটাস = শুধু ড্যাশবোর্ড+অ্যালামনাই (অন্য-পেজের-নিজস্ব-গার্ড-লুপ-প্রতিরোধ)
+  const ALUMNI_ONLY_HREFS = ["/dashboard", "/dashboard/alumni"];
   const visibleGroups = navGroups
     .map((g) => ({ ...g, items: g.items.filter((i) => !i.roles || i.roles.includes(user.role)) }))
+    .filter((g) => g.items.length > 0)
+    .map((g) =>
+      user.status === "ALUMNI"
+        ? { ...g, items: g.items.filter((i) => ALUMNI_ONLY_HREFS.includes(i.href)) }
+        : g
+    )
     .filter((g) => g.items.length > 0);
+
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -291,7 +303,7 @@ export default function DashboardShell({
             </button>
 
             <button
-              onClick={() => setPaletteOpen(true)}
+              onClick={() => { if (user.status === "ALUMNI") return; setPaletteOpen(true); }}
               className="hidden items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:flex"
             >
               <Search size={14} />
@@ -301,7 +313,7 @@ export default function DashboardShell({
               </kbd>
             </button>
             <button
-              onClick={() => setPaletteOpen(true)}
+              onClick={() => { if (user.status === "ALUMNI") return; setPaletteOpen(true); }}
               className="rounded-lg p-2 text-muted-foreground hover:bg-muted sm:hidden"
               aria-label="খুঁজুন"
             >

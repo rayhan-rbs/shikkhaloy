@@ -1,6 +1,7 @@
 // 📁 app/layout.tsx
-// রুট লেআউট — ফন্ট: Inter (ইংরেজি) + Hind Siliguri (বাংলা)
-export const instant = false; 
+// রুট লেআউট — ফন্ট: Inter (ইংরেজি) + Hind Siliguri (বাংলা) + Noto Serif Bengali (শাপলা-থিম)
+export const instant = false;
+
 import type { Metadata } from "next";
 import { Geist_Mono, Hind_Siliguri, Inter } from "next/font/google";
 import "./globals.css";
@@ -38,6 +39,14 @@ export default async function RootLayout({
       suppressHydrationWarning
       className={`${inter.variable} ${hindSiliguri.variable} ${geistMono.variable} ${theme === "dark" ? "dark" : ""}`}
     >
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body className="antialiased">{children}</body>
     </html>
   );

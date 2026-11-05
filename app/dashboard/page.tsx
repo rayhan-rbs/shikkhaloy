@@ -24,7 +24,10 @@ export default async function DashboardPage() {
     where: { id: session.userId },
     include: { branch: true },
   });
-  if (!user || user.status !== "ACTIVE") redirect("/login");
+
+  if (!user || (user.status !== "ACTIVE" && user.status !== "ALUMNI")) redirect("/login");
+
+
   if (user.isFirstLogin) redirect("/change-password");
 
   const lang = await getLang();

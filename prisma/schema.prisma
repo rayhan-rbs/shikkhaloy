@@ -143,6 +143,7 @@ model InstitutionSetting {
   taglineEn  String?
   brandColor String    @default("#4f46e5")
   logoUrl    String?
+  heroImages String[]  @default([]) // 🆕 M14-E1 — হিরো-স্লাইডারের ক্যাম্পাস-ছবি; খালি = ডিজাইন-ব্যানার
   eiin       String?
   address    String?
   phone      String?
@@ -951,6 +952,7 @@ model Notice {
   body          String
   audience      String    @default("ALL") // ALL/STUDENT/TEACHER/PARENT/STAFF
   isPinned      Boolean   @default(false)
+  isPublic      Boolean   @default(false) // 🆕 M14-E1 — সত্যি = পাবলিক-ওয়েবসাইটে দৃশ্যমান
   fileUrl       String?
   publishedById String
   createdAt     DateTime  @default(now())
@@ -967,6 +969,7 @@ model CalendarEvent {
   description String?
   date        DateTime @db.Date
   type        String   @default("EVENT") // HOLIDAY/EXAM/EVENT/MEETING
+  isPublic    Boolean  @default(false) // 🆕 M14-E1 — সত্যি = পাবলিক-ওয়েবসাইটে দৃশ্যমান
   createdById String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -974,6 +977,7 @@ model CalendarEvent {
 
   @@index([branchId, date])
 }
+
 
 model AppNotification {
   id        String   @id @default(cuid())
@@ -1297,4 +1301,22 @@ model VisitorLog {
   @@index([branchId, checkInAt])
 }
 
+// ─── M14-E2: অ্যালামনাই-প্রোফাইল (scalar-FK অ্যাপেন্ড — নোট ৫৫; রিলেশন-নেই = পুরনো-স্পর্শ-শূন্য; নাম = findMany+Map — নোট ৯০)
+model AlumniProfile {
+  id                String    @id @default(cuid())
+  branchId          String
+  userId            String    @unique // এক-মানুষ-এক-প্রোফাইল → লেখা = ভূত-নিরাপদ upsert (নোট ৩৬)
+  batch             String?   // "2020" / "HSC 2018" — প্রতিষ্ঠান-নিজস্ব-লেবেল
+  profession        String?
+  organization      String?
+  bio               String?
+  linkedinUrl       String?
+  isDirectoryPublic Boolean   @default(false) // true = পাবলিক /alumni-ডিরেক্টরিতে দৃশ্যমান
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  @@index([branchId])
+  @@index([isDirectoryPublic])
+}
 

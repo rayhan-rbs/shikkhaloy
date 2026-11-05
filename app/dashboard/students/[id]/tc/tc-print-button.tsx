@@ -1,3 +1,4 @@
+//students/[id]/tc/tc-print-button.tsx
 "use client";
 
 export default function TcPrintButton({ label }: { label: string }) {

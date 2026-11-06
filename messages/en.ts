@@ -1109,6 +1109,13 @@ export const en: Dictionary = {
     noData: "Nothing deleted under this entity", loadFail: "Load failed — try again",
     conflict: "Conflict: an active record with the same unique value exists — resolve it first",
   },
+  backup: {
+    title: "Backup / Export", subtitle: "Institution data as Excel — max 5,000 rows per sheet",
+    full: "📦 Full backup (all sheets in one Excel)",
+    exporting: "Building… {done}/{total}", running: "(do not close this page)",
+    perSheet: "⬇️ Excel", done: "Backup downloaded ✅",
+    loadFail: "Load failed — try again",
+  },
 
   lang: {
     bn: "বাংলা",

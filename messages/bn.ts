@@ -1205,6 +1205,17 @@ export const bn = {
     loadFail: "তথ্য আনা যায়নি — পুনরায় চেষ্টা করুন",
     viewPublic: "পাবলিক ডিরেক্টরি দেখুন",
   },
+  masterDash: {
+    welcome: "স্বাগতম", subtitle: "প্রতিষ্ঠানের এক-নজরে চিত্র",
+    students: "চলমান শিক্ষার্থী", teachers: "শিক্ষক",
+    collected: "এ-মাসে আদায়", outstanding: "মোট বকেয়া",
+    income: "আয় (এ-মাস)", expense: "ব্যয় (এ-মাস)",
+    attendanceTrend: "হাজিরার ধারা (শেষ ৩০ দিন)", attendancePct: "উপস্থিতি %",
+    studentsByClass: "শ্রেণি-ভিত্তিক শিক্ষার্থী",
+    feeTrend: "ফি-আদায়ের ধারা (৬ মাস)", incomeExpense: "আয় বনাম ব্যয় (৬ মাস)",
+    recentNotices: "সর্বশেষ নোটিশ", upcomingEvents: "আসন্ন ইভেন্ট",
+    viewAll: "সব দেখুন", noData: "তথ্য নেই",
+  },
 
   lang: {
     bn: "বাংলা",

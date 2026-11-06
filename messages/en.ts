@@ -1081,6 +1081,17 @@ export const en: Dictionary = {
     loadFail: "Could not load — please retry",
     viewPublic: "View public directory",
   },
+  masterDash: {
+    welcome: "Welcome", subtitle: "Your institution at a glance",
+    students: "Active students", teachers: "Teachers",
+    collected: "Collected this month", outstanding: "Total outstanding",
+    income: "Income (this month)", expense: "Expense (this month)",
+    attendanceTrend: "Attendance trend (last 30 days)", attendancePct: "Present %",
+    studentsByClass: "Students by class",
+    feeTrend: "Fee collection trend (6 months)", incomeExpense: "Income vs Expense (6 months)",
+    recentNotices: "Recent notices", upcomingEvents: "Upcoming events",
+    viewAll: "View all", noData: "No data",
+  },
 
   lang: {
     bn: "বাংলা",

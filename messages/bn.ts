@@ -1224,6 +1224,15 @@ export const bn = {
     pageInfo: "মোট {total} এন্ট্রি — পৃষ্ঠা {page}/{pages}", prev: "← আগের", next: "পরের →",
     noData: "এ-সময়ে কোনো লগ নেই", loadFail: "লোড ব্যর্থ — আবার চেষ্টা করুন",
   },
+  recycle: {
+    title: "রিসাইকেল বিন", subtitle: "মুছে-ফেলা রেকর্ড — এক-ক্লিকে পুনরুদ্ধার",
+    colLabel: "বিবরণ", colBranch: "শাখা", colDeleted: "মুছেছে-কখনো", action: "কাজ",
+    restore: "পুনরুদ্ধার", restored: "পুনরুদ্ধার সম্পন্ন ✅",
+    search: "খুঁজুন...", refresh: "খুঁজুন", exportCsv: "⬇️ CSV",
+    pageInfo: "মোট {total} — পৃষ্ঠা {page}/{pages}", prev: "← আগের", next: "পরের →",
+    noData: "এই-বিষয়ে মুছে-ফেলা কিছু নেই", loadFail: "লোড ব্যর্থ — আবার চেষ্টা করুন",
+    conflict: "সংঘর্ষ: একই অনন্য-মানের সক্রিয় রেকর্ড আছে — আগে সেটা সমাধান করুন",
+  },
 
   lang: {
     bn: "বাংলা",

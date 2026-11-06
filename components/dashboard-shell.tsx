@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, ScrollText, Percent, Trophy, Package, DoorOpen, HeartPulse, Network, Library, BedDouble, Bus, ArrowRightLeft, Palette, BookMarked, MessageSquare, Megaphone, CalendarDays, ReceiptText, BarChart3, Banknote, FileUp, FileText, FilePlus2, ListChecks, Contact, UsersRound, IdCard, QrCode, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X,
+  LayoutDashboard, Trash2, ScrollText, Percent, Trophy, Package, DoorOpen, HeartPulse, Network, Library, BedDouble, Bus, ArrowRightLeft, Palette, BookMarked, MessageSquare, Megaphone, CalendarDays, ReceiptText, BarChart3, Banknote, FileUp, FileText, FilePlus2, ListChecks, Contact, UsersRound, IdCard, QrCode, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X,
   GraduationCap, Sun, Moon, LogOut, Languages, Award, type LucideIcon,
 } from "lucide-react";
 
@@ -102,6 +102,7 @@ export default function DashboardShell({
         { href: "/dashboard/visitors", label: t(dict, "visitors.navTitle"), icon: DoorOpen, active: pathname.startsWith("/dashboard/visitors"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "STAFF"] },
         { href: "/dashboard/health", label: t(dict, "health.navTitle"), icon: HeartPulse, active: pathname.startsWith("/dashboard/health"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
         { href: "/dashboard/audit", label: t(dict, "audit.title"), icon: ScrollText, active: pathname.startsWith("/dashboard/audit"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
+        { href: "/dashboard/recycle-bin", label: t(dict, "recycle.title"), icon: Trash2, active: pathname.startsWith("/dashboard/recycle-bin"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
 
 
 

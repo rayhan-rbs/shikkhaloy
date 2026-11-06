@@ -1100,6 +1100,15 @@ export const en: Dictionary = {
     pageInfo: "{total} entries — page {page}/{pages}", prev: "← Prev", next: "Next →",
     noData: "No logs in this period", loadFail: "Load failed — try again",
   },
+  recycle: {
+    title: "Recycle bin", subtitle: "Deleted records — restore in one click",
+    colLabel: "Item", colBranch: "Branch", colDeleted: "Deleted at", action: "Action",
+    restore: "Restore", restored: "Restored ✅",
+    search: "Search...", refresh: "Search", exportCsv: "⬇️ CSV",
+    pageInfo: "{total} items — page {page}/{pages}", prev: "← Prev", next: "Next →",
+    noData: "Nothing deleted under this entity", loadFail: "Load failed — try again",
+    conflict: "Conflict: an active record with the same unique value exists — resolve it first",
+  },
 
   lang: {
     bn: "বাংলা",

@@ -1216,6 +1216,14 @@ export const bn = {
     recentNotices: "সর্বশেষ নোটিশ", upcomingEvents: "আসন্ন ইভেন্ট",
     viewAll: "সব দেখুন", noData: "তথ্য নেই",
   },
+  audit: {
+    title: "অডিট লগ", subtitle: "গুরুত্বপূর্ণ পরিবর্তনের অপরিবর্তনীয় খাতা",
+    colTime: "সময়", colActor: "কে", colAction: "কাজ", colEntity: "বিষয়", colBranch: "শাখা", colSummary: "বিবরণ",
+    allActions: "সব কাজ", days7: "৭ দিন", days30: "৩০ দিন", days90: "৯০ দিন",
+    search: "বিবরণ/বিষয় খুঁজুন...", refresh: "খুঁজুন", exportCsv: "⬇️ CSV",
+    pageInfo: "মোট {total} এন্ট্রি — পৃষ্ঠা {page}/{pages}", prev: "← আগের", next: "পরের →",
+    noData: "এ-সময়ে কোনো লগ নেই", loadFail: "লোড ব্যর্থ — আবার চেষ্টা করুন",
+  },
 
   lang: {
     bn: "বাংলা",

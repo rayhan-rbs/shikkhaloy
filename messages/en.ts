@@ -1092,6 +1092,14 @@ export const en: Dictionary = {
     recentNotices: "Recent notices", upcomingEvents: "Upcoming events",
     viewAll: "View all", noData: "No data",
   },
+  audit: {
+    title: "Audit log", subtitle: "Immutable record of important changes",
+    colTime: "Time", colActor: "Actor", colAction: "Action", colEntity: "Entity", colBranch: "Branch", colSummary: "Summary",
+    allActions: "All actions", days7: "7 days", days30: "30 days", days90: "90 days",
+    search: "Search summary/entity...", refresh: "Search", exportCsv: "⬇️ CSV",
+    pageInfo: "{total} entries — page {page}/{pages}", prev: "← Prev", next: "Next →",
+    noData: "No logs in this period", loadFail: "Load failed — try again",
+  },
 
   lang: {
     bn: "বাংলা",

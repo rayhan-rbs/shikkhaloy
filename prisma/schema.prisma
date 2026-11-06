@@ -1320,3 +1320,20 @@ model AlumniProfile {
   @@index([isDirectoryPublic])
 }
 
+// ─── M14-H1: অডিট-লগ (scalar-FK অ্যাপেন্ড — নোট ৫৫; রিলেশন-নেই = পুরনো-স্পর্শ-শূন্য; নাম = findMany+Map — নোট ৯০)
+// অপরিবর্তনীয়-খাতা: updatedAt/deletedAt-ই-নেই — অডিট কখনো-সম্পাদনা/মুছে-নয় (নীতি-৩-এর-স্থায়ী-ব্যতিক্রম)
+model AuditLog {
+  id        String   @id @default(cuid())
+  branchId  String?  // null = প্ল্যাটফর্ম-স্তরের-কাজ (ব্রাঞ্চ-বহির্ভূত)
+  actorId   String?  // null = সিস্টেম
+  action    String   // LOGIN/LOGIN_FAIL/CREATE/UPDATE/DELETE/RESTORE/APPROVE/REJECT/PAY/ISSUE/REVOKE/RESET
+  entity    String   // User/AdmissionApplication/FeePayment/Document/...
+  entityId  String?
+  summary   String?  // মানুষ-পাঠযোগ্য এক-লাইন
+  meta      Json?    // প্রেক্ষাপট-স্ন্যাপশট — ⚠️ পাসওয়ার্ড/টোকেন/PII-কখনো-নয়
+  createdAt DateTime @default(now())
+
+  @@index([branchId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([entity, entityId])
+}

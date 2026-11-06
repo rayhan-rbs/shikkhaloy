@@ -1,10 +1,12 @@
 // 📁 app/api/auth/login/route.ts
 // লগইন API — ইমেইল + পাসওয়ার্ড যাচাই করে টোকেন-কুকি দেয়
+// M14-H1: LOGIN/LOGIN_FAIL অডিট-লগ (lib/audit — ব্যর্থ-লেখা = নীরব, ব্যবসা-ভাঙে-না)
 
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { createToken } from "@/lib/auth";
+import { audit } from "@/lib/audit";
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,11 +42,30 @@ export async function POST(request: NextRequest) {
 
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
+      // M14-H1: ব্যর্থ-চেষ্টাও খাতায় (ইমেইল-মিলেছে বলে actor জানা)
+      await audit(prisma, {
+        actorId: user.id,
+        branchId: user.branchId,
+        action: "LOGIN_FAIL",
+        entity: "User",
+        entityId: user.id,
+        summary: `ভুল পাসওয়ার্ড — ${user.email}`,
+      });
       return NextResponse.json(
         { success: false, error: "ইমেইল বা পাসওয়ার্ড ভুল" },
         { status: 401 }
       );
     }
+
+    // M14-H1: সফল-লগইন খাতায় (টোকেন-ইস্যুর-আগে)
+    await audit(prisma, {
+      actorId: user.id,
+      branchId: user.branchId,
+      action: "LOGIN",
+      entity: "User",
+      entityId: user.id,
+      summary: `লগইন সফল — ${user.email}`,
+    });
 
     // ✅ সব ঠিক — টোকেন বানাও
     const token = await createToken({

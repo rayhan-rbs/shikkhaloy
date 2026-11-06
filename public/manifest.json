@@ -1,0 +1,13 @@
+{
+  "name": "Shikkhaloy — ইনস্টিটিউট ম্যানেজমেন্ট",
+  "short_name": "Shikkhaloy",
+  "description": "শিক্ষার সম্পূর্ণ ডিজিটাল রূপ",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#16a34a",
+  "icons": [
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

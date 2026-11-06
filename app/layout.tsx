@@ -6,6 +6,8 @@ import type { Metadata } from "next";
 import { Geist_Mono, Hind_Siliguri, Inter } from "next/font/google";
 import "./globals.css";
 import { getTheme } from "@/lib/i18n-server";
+import PwaRegister from "@/components/pwa-register";
+
 
 const inter = Inter({
   variable: "--font-inter",
@@ -46,7 +48,11 @@ export default async function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@500;600;700;800&display=swap"
           rel="stylesheet"
         />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#16a34a" />
+
       </head>
+      <PwaRegister />
       <body className="antialiased">{children}</body>
     </html>
   );

@@ -1240,6 +1240,19 @@ export const bn = {
     perSheet: "⬇️ Excel", done: "ব্যাকআপ ডাউনলোড হয়েছে ✅",
     loadFail: "লোড ব্যর্থ — আবার চেষ্টা করুন",
   },
+  helpdesk: {
+    title: "হেল্পডেস্ক", subtitle: "সমস্যা জানান — টিকিট খুলুন, অগ্রগতি দেখুন",
+    newTicket: "নতুন টিকিট", formTitlePh: "সমস্যার সংক্ষিপ্ত শিরোনাম",
+    formDescPh: "সমস্যাটি বিস্তারিত লিখুন...", submit: "টিকিট খুলুন",
+    colNo: "নম্বর", colTitle: "শিরোনাম", colCat: "খাত", colPr: "প্রাধিকার", colStatus: "অবস্থা", colBy: "খুলেছেন", colDate: "তারিখ", colAction: "কাজ",
+    view: "দেখুন", all: "সব", assignedTo: "দায়িত্বে", replies: "কথোপকথন",
+    replyPh: "উত্তর লিখুন...", send: "পাঠান",
+    toProgress: "চলমান-করুন", toResolve: "সমাধান-হয়েছে", toClose: "বন্ধ-করুন", toReopen: "পুনঃখোলা",
+    pageInfo: "মোট {total} — পৃষ্ঠা {page}/{pages}", prev: "← আগের", next: "পরের →",
+    created: "টিকিট তৈরি হয়েছে ✅", updated: "আপডেট হয়েছে ✅",
+    loadFail: "লোড ব্যর্থ — আবার চেষ্টা করুন", noData: "কোনো টিকিট নেই",
+    needTitleDesc: "শিরোনাম ও বিবরণ দুটোই দিন",
+  },
 
   lang: {
     bn: "বাংলা",

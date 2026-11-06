@@ -1116,6 +1116,19 @@ export const en: Dictionary = {
     perSheet: "⬇️ Excel", done: "Backup downloaded ✅",
     loadFail: "Load failed — try again",
   },
+  helpdesk: {
+    title: "Helpdesk", subtitle: "Report an issue — open a ticket, track progress",
+    newTicket: "New ticket", formTitlePh: "Short title of the issue",
+    formDescPh: "Describe the issue in detail...", submit: "Open ticket",
+    colNo: "No.", colTitle: "Title", colCat: "Category", colPr: "Priority", colStatus: "Status", colBy: "Opened by", colDate: "Date", colAction: "Action",
+    view: "View", all: "All", assignedTo: "Assigned to", replies: "Conversation",
+    replyPh: "Write a reply...", send: "Send",
+    toProgress: "Mark in progress", toResolve: "Mark resolved", toClose: "Close", toReopen: "Reopen",
+    pageInfo: "{total} tickets — page {page}/{pages}", prev: "← Prev", next: "Next →",
+    created: "Ticket created ✅", updated: "Updated ✅",
+    loadFail: "Load failed — try again", noData: "No tickets",
+    needTitleDesc: "Both title and description are required",
+  },
 
   lang: {
     bn: "বাংলা",

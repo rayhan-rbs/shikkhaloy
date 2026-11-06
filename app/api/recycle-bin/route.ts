@@ -55,6 +55,8 @@ const ENTITIES: Record<string, Ent> = {
   Exam: { bn: "এক্সাম", en: "Exams", search: ["name"], sel: { name: true, examType: true }, label: (r) => `${r.name} (${r.examType ?? ""})` },
   AdmissionApplication: { bn: "ভর্তি-আবেদন", en: "Admission applications", search: ["fullName", "email", "phone"], sel: { fullName: true, email: true, applicationNo: true }, label: (r) => `${r.applicationNo} — ${r.fullName} (${r.email})` },
   Document: { bn: "অফিসিয়াল-ডকুমেন্ট", en: "Official documents", search: ["title", "docNo"], sel: { title: true, docNo: true, status: true }, label: (r) => `${r.docNo} — ${r.title} (${r.status ?? ""})` },
+  HelpDeskTicket: { bn: "হেল্পডেস্ক-টিকিট", en: "Helpdesk tickets", search: ["title", "ticketNo"], sel: { title: true, ticketNo: true, status: true }, label: (r) => `${r.ticketNo} — ${r.title} (${r.status ?? ""})` },
+
 };
 
 const DELEGATES: Record<string, BinDelegate> = {
@@ -69,6 +71,7 @@ const DELEGATES: Record<string, BinDelegate> = {
   FeeStructure: D(prisma.feeStructure), FeeInvoice: D(prisma.feeInvoice),
   StudentDiscount: D(prisma.studentDiscount), LedgerEntry: D(prisma.ledgerEntry),
   Exam: D(prisma.exam), AdmissionApplication: D(prisma.admissionApplication), Document: D(prisma.document),
+  HelpDeskTicket: D(prisma.helpDeskTicket),
 };
 
 async function guard() {

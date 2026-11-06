@@ -64,6 +64,7 @@ export const ROUTE_ROLES: { prefix: string; roles: Role[] }[] = [
 
   { prefix: "/dashboard/recycle-bin", roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
   { prefix: "/dashboard/backup", roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
+  { prefix: "/dashboard/helpdesk", roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER", "STUDENT", "PARENT", "ACCOUNTANT", "STAFF"] },
 
   
   { prefix: "/dashboard/admissions", roles: ADMINS },

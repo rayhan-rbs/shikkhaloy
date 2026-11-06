@@ -1337,3 +1337,33 @@ model AuditLog {
   @@index([actorId, createdAt])
   @@index([entity, entityId])
 }
+// ─── M14-I: হেল্পডেস্ক-টিকিট (scalar-FK অ্যাপেন্ড — নোট ৫৫; রিলেশন-নেই = পুরনো-স্পর্শ-শূন্য; নাম = findMany+Map)
+model HelpDeskTicket {
+  id          String    @id @default(cuid())
+  branchId    String
+  creatorId   String // User.id — যেকোনো-সক্রিয়-রোল
+  assigneeId  String? // User.id — ডায়ালগে-অ্যাডমিন
+  ticketNo    String    @unique // HD-YYYY-XXXXX
+  title       String
+  category    String // ACADEMIC/FEE/TECH/OTHER
+  priority    String // LOW/MEDIUM/HIGH
+  status      String    @default("OPEN") // OPEN/IN_PROGRESS/RESOLVED/CLOSED
+  description String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([branchId, status])
+  @@index([creatorId, createdAt])
+}
+
+model HelpDeskReply {
+  id        String   @id @default(cuid())
+  ticketId  String
+  senderId  String
+  body      String
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+
+  @@index([ticketId, createdAt])
+}

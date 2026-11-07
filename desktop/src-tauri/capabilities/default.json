@@ -1,0 +1,6 @@
+{
+  "identifier": "default",
+  "description": "default — remote page has no IPC",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

@@ -1,0 +1,20 @@
+[package]
+name = "shikkhaloy-desktop"
+version = "1.0.0"
+description = "Shikkhaloy desktop"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-single-instance = "2"
+open = "5"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
+panic = "abort"

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Shikkhaloy",
+  "version": "1.0.0",
+  "identifier": "com.shikkhaloy.desktop",
+  "build": { "frontendDist": "./dist" },
+  "app": {
+    "withGlobalTauri": false,
+    "security": { "csp": null }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["msi", "nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ]
+  }
+}

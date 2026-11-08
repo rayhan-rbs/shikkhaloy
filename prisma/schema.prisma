@@ -1389,3 +1389,21 @@ model StudentLeave {
   @@index([branchId, status])
   @@index([studentId, status])
 }
+
+
+// ─── M15-C: স্টাফ-হাজিরা (scalar-FK অ্যাপেন্ড — নোট ৫৫; রিলেশন-নেই = পুরনো-স্পর্শ-শূন্য) ───
+model StaffAttendance {
+  id         String   @id @default(cuid())
+  branchId   String
+  userId     String // TEACHER/ACCOUNTANT/STAFF/BRANCH_ADMIN — ছাত্র-নয়
+  date       DateTime @db.Date
+  status     String // PRESENT/ABSENT/LEAVE
+  note       String?
+  markedById String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  deletedAt  DateTime?
+
+  @@unique([userId, date]) // পুনঃসংরক্ষণ = upsert (নোট ৩৬)
+  @@index([branchId, date])
+}

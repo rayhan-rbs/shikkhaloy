@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, Medal, DatabaseBackup, LifeBuoy, Trash2, ScrollText, Percent, Trophy, Package, DoorOpen, HeartPulse, Network, Library, BedDouble, Bus, ArrowRightLeft, Palette, BookMarked, MessageSquare, Megaphone, CalendarDays, ReceiptText, BarChart3, Banknote, FileUp, FileText, FilePlus2, ListChecks, Contact, UsersRound, IdCard, QrCode, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X, CreditCard,
+  LayoutDashboard, Medal, Home, User, DatabaseBackup, LifeBuoy, Trash2, ScrollText, Percent, Trophy, Package, DoorOpen, HeartPulse, Network, Library, BedDouble, Bus, ArrowRightLeft, Palette, BookMarked, MessageSquare, Megaphone, CalendarDays, ReceiptText, BarChart3, Banknote, FileUp, FileText, FilePlus2, ListChecks, Contact, UsersRound, IdCard, QrCode, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X, CreditCard,
   GraduationCap, Sun, Moon, LogOut, Languages, Award, type LucideIcon,
 } from "lucide-react";
 
@@ -37,10 +37,14 @@ const R_ADMIN_TEACHER = [...R_ADMINS, "TEACHER"];
 const R_ADMIN_ACCOUNTANT = [...R_ADMINS, "ACCOUNTANT"];
 const R_ADMIN_STAFF = [...R_ADMINS, "STAFF"];
 const R_SUPER = ["PLATFORM_SUPER_ADMIN"];
-const R_STUDY = [...R_ADMIN_TEACHER, "STUDENT", "PARENT"]; // রুটিন/স্টাডি — দর্শক-সেট (ছাত্র-নিজের-রুটিন-দেখে)
+const R_STUDY = [...R_ADMIN_TEACHER, "STUDENT", "PARENT"]; // স্টাডি — দর্শক-সেট
+const R_ROUTINE_VIEW = [...R_ADMINS, "STUDENT", "PARENT"]; // রুটিন-পেজ (বিল্ডার=অ্যাডমিন; দর্শক=ছাত্র/অভিভাবক) — শিক্ষক = নিজের /my-routine
+const R_TEACHER = ["TEACHER"];
+
 const R_LEAVE = [...R_ADMIN_TEACHER, "STUDENT", "PARENT"]; // ছুটি: ছাত্র/অভিভাবক-আবেদন + অ্যাডমিন/শিক্ষক-অনুমোদন
 const R_FEE_PAY = ["STUDENT", "PARENT"]; // অনলাইন ফি-পরিশোধ — পেয়ার
-const R_STUDENT_LIST = [...R_ADMIN_TEACHER, "ACCOUNTANT"]; // students-তালিকা
+const R_STUDENT_LIST = [...R_ADMINS, "ACCOUNTANT"]; // students-তালিকা — পেজ-গার্ড=অ্যাডমিন+অ্যাকাউন্ট্যান্ট; শিক্ষক = মার্কস/হাজিরা-দিয়ে-নিজের-ক্লাস-দেখে
+
 const R_HELPDESK = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER", "STUDENT", "PARENT", "ACCOUNTANT", "STAFF"]; // ALUMNI-বাদ (১০৯)
 const R_DOCS = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT", "STUDENT", "PARENT"];
 const R_ALUMNI_PAGE = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ALUMNI", "STUDENT"];
@@ -104,8 +108,15 @@ export default function DashboardShell({
       label: null,
       items: [
         { href: "/dashboard", label: t(dict, "nav.dashboard"), icon: LayoutDashboard, active: pathname === "/dashboard", soon: false, roles: R_ALL },
+        { href: "/dashboard/student-hub", label: L("আমার হাব", "My Hub"), icon: Home, active: pathname.startsWith("/dashboard/student-hub"), soon: false, roles: ["STUDENT"] },
+        { href: "/dashboard/teacher-hub", label: L("আমার হাব", "My Hub"), icon: Home, active: pathname.startsWith("/dashboard/teacher-hub"), soon: false, roles: R_TEACHER },
+        { href: "/dashboard/parent-hub", label: L("আমার হাব", "My Hub"), icon: Home, active: pathname.startsWith("/dashboard/parent-hub"), soon: false, roles: ["PARENT"] },
+
+        { href: "/dashboard/my-profile", label: L("আমার প্রোফাইল", "My Profile"), icon: User, active: pathname.startsWith("/dashboard/my-profile"), soon: false, roles: ["STUDENT", "TEACHER", "PARENT"] },
+
       ],
     },
+
     {
       label: L("শিক্ষার্থী ও জনবল", "People"),
       items: [
@@ -123,9 +134,12 @@ export default function DashboardShell({
       items: [
         { href: "/dashboard/academics", label: t(dict, "nav.academics"), icon: BookOpen, active: pathname.startsWith("/dashboard/academics"), soon: false, roles: R_ADMINS },
         { href: "/dashboard/classrooms", label: t(dict, "nav.classroom"), icon: Building2, active: pathname.startsWith("/dashboard/classrooms"), soon: false, roles: R_ADMINS },
-        { href: "/dashboard/routine", label: t(dict, "nav.routine"), icon: CalendarRange, active: pathname.startsWith("/dashboard/routine"), soon: false, roles: R_STUDY },
+        { href: "/dashboard/routine", label: t(dict, "nav.routine"), icon: CalendarRange, active: pathname.startsWith("/dashboard/routine"), soon: false, roles: R_ROUTINE_VIEW },
+        { href: "/dashboard/my-routine", label: L("আমার রুটিন", "My Routine"), icon: CalendarRange, active: pathname.startsWith("/dashboard/my-routine"), soon: false, roles: R_TEACHER },
+
         { href: "/dashboard/questions", label: t(dict, "questions.title"), icon: FileQuestion, active: pathname.startsWith("/dashboard/questions"), soon: false, roles: R_ADMIN_TEACHER },
-        { href: "/dashboard/exams", label: t(dict, "nav.exam"), icon: ClipboardList, active: pathname.startsWith("/dashboard/exams"), soon: false, roles: R_ADMIN_TEACHER },
+        { href: "/dashboard/exams", label: t(dict, "nav.exam"), icon: ClipboardList, active: pathname.startsWith("/dashboard/exams"), soon: false, roles: R_ADMINS },
+
         { href: "/dashboard/online-exams", label: t(dict, "onlineExams.title"), icon: MonitorCheck, active: pathname.startsWith("/dashboard/online-exams"), soon: false, roles: R_ADMIN_TEACHER },
         { href: "/dashboard/quizzes", label: t(dict, "quizzes.navTitle"), icon: ListChecks, active: pathname.startsWith("/dashboard/quizzes"), soon: false, roles: R_ADMIN_TEACHER },
         { href: "/dashboard/homework", label: t(dict, "assignments.title"), icon: ClipboardList, active: pathname.startsWith("/dashboard/homework"), soon: false, roles: R_ADMIN_TEACHER },
@@ -134,15 +148,19 @@ export default function DashboardShell({
         { href: "/dashboard/my-results", label: L("ফলাফল", "Results"), icon: Medal, active: pathname.startsWith("/dashboard/my-results"), soon: false, roles: ["STUDENT", "PARENT"] },
 
         { href: "/dashboard/study", label: t(dict, "study.navTitle"), icon: BookMarked, active: pathname.startsWith("/dashboard/study"), soon: false, roles: R_STUDY },
-        { href: "/dashboard/seats", label: t(dict, "nav.seats"), icon: Armchair, active: pathname.startsWith("/dashboard/seats"), soon: false, roles: R_ADMIN_TEACHER },
+        { href: "/dashboard/seats", label: t(dict, "nav.seats"), icon: Armchair, active: pathname.startsWith("/dashboard/seats"), soon: false, roles: R_ADMINS },
+
         { href: "/dashboard/marks", label: t(dict, "nav.marks"), icon: PenLine, active: pathname.startsWith("/dashboard/marks"), soon: false, roles: R_ADMIN_TEACHER },
       ],
     },
     {
       label: L("উপস্থিতি ও ছুটি", "Attendance & Leave"),
       items: [
-        { href: "/dashboard/attendance", label: t(dict, "nav.attendance"), icon: CalendarCheck, active: pathname.startsWith("/dashboard/attendance") && !pathname.startsWith("/dashboard/attendance/qr"), soon: false, roles: R_ADMIN_TEACHER },
+        { href: "/dashboard/attendance", label: t(dict, "nav.attendance"), icon: CalendarCheck, active: pathname.startsWith("/dashboard/attendance") && !pathname.startsWith("/dashboard/attendance/qr") && !pathname.startsWith("/dashboard/attendance/staff"), soon: false, roles: R_ADMIN_TEACHER },
+
         { href: "/dashboard/attendance/qr", label: t(dict, "attQr.title"), icon: QrCode, active: pathname.startsWith("/dashboard/attendance/qr"), soon: false, roles: R_ADMIN_TEACHER },
+        { href: "/dashboard/attendance/staff", label: L("স্টাফ হাজিরা", "Staff Attendance"), icon: Users, active: pathname.startsWith("/dashboard/attendance/staff"), soon: false, roles: R_ADMINS },
+
         { href: "/dashboard/leave", label: t(dict, "nav.leave"), icon: CalendarOff, active: pathname.startsWith("/dashboard/leave"), soon: false, roles: R_LEAVE },
       ],
     },

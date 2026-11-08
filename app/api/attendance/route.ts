@@ -1,9 +1,9 @@
 // 📁 app/api/attendance/route.ts
-// GET  = রোস্টার: ক্লাস(/সেকশন)-এর সক্রিয় শিক্ষার্থী + ওই তারিখের বিদ্যমান হাজিরা
-// POST = বাল্ক সংরক্ষণ (tx-upsert — পুনঃসংরক্ষণ নিরাপদ; method="manual" নীতি ৪)
-// RBAC: admin = সব ক্লাস; TEACHER = শুধু নিজের TeacherAssignment (২.৬-এর ফসল!)
-// হাজিরা-লুকআপ সবসময় roster-ids দিয়ে — sectionId শুধু তালিকা-ফিল্টার (নোট ৩২)
-
+// GET  = রোস্টার (READ)  | POST = বাল্ক-সংরক্ষণ (WRITE)
+// 🔧 M15-ফিক্স (নোট ১০২ + ৩২): requireMe = রোল/ব্রাঞ্চ/স্ট্যাটাস সবসময় DB-রেজলভ (বাসি-JWT-ভুল-নেই)
+//    READ  = TEACHER-এর ক্লাসে যেকোনো-অ্যাসাইনমেন্ট থাকলেই পুরো-ক্লাস-রোস্টার দেখা যাবে
+//    WRITE = আগের-কড়া-নিয়ম: সেকশন-চাইলে সেই-সেকশন-অ্যাসাইনমেন্ট বা class-wide;
+//            পুরো-ক্লাস-লেখা = শুধু class-wide-অ্যাসাইনমেন্ট-থাকলে
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
@@ -12,35 +12,50 @@ const ADMIN_ROLES = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"];
 const STATUSES = ["PRESENT", "ABSENT", "LEAVE"];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-async function requireSession(request: NextRequest) {
+async function requireMe(request: NextRequest) {
   const token = request.cookies.get("shikkhaloy_token")?.value;
   if (!token) return { error: NextResponse.json({ success: false, error: "আগে লগইন করুন" }, { status: 401 }) };
   const session = await verifyToken(token);
   if (!session) return { error: NextResponse.json({ success: false, error: "সেশন শেষ" }, { status: 401 }) };
-  return { session };
+  const me = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { id: true, role: true, status: true, branchId: true },
+  });
+  if (!me || me.status !== "ACTIVE") return { error: NextResponse.json({ success: false, error: "সেশন শেষ" }, { status: 401 }) };
+  return { me };
 }
 
 function err(msg: string, status = 400) {
   return NextResponse.json({ success: false, error: msg }, { status });
 }
 
-type Sess = { role: string; userId: string; branchId: string };
+type Me = { id: string; role: string; status: string; branchId: string };
 
-// TEACHER-এর অনুমতি: ক্লাস অ্যাসাইন থাকতে হবে; assignment-এ সেকশন থাকলে সেটাই,
-// class-wide (sectionId=null) হলে পুরো ক্লাস চলবে
-async function canAccess(session: Sess, classId: string, sectionId: string | null): Promise<boolean> {
-  if (ADMIN_ROLES.includes(session.role)) return true;
-  if (session.role !== "TEACHER") return false;
+// READ — রোস্টার-দর্শন: ক্লাসে যেকোনো-অ্যাসাইনমেন্ট থাকলেই যথেষ্ট
+async function canRead(me: Me, classId: string): Promise<boolean> {
+  if (ADMIN_ROLES.includes(me.role)) return true;
+  if (me.role !== "TEACHER") return false;
   const a = await prisma.teacherAssignment.findFirst({
-    where: {
-      branchId: session.branchId, teacherId: session.userId, classId, deletedAt: null,
-      OR: [{ sectionId: sectionId ?? null }, { sectionId: null }],
-    },
+    where: { branchId: me.branchId, teacherId: me.id, classId, deletedAt: null },
+    select: { id: true },
   });
   return Boolean(a);
 }
 
-// রোস্টার = সক্রিয় ভর্তি; sectionId দিলে সেই সেকশন, না দিলে পুরো ক্লাস
+// WRITE — লেখা-স্কোপ (নোট ৩২): সেকশন-ম্যাচ অথবা class-wide; পুরো-ক্লাস = class-wide-ই
+async function canWrite(me: Me, classId: string, sectionId: string | null): Promise<boolean> {
+  if (ADMIN_ROLES.includes(me.role)) return true;
+  if (me.role !== "TEACHER") return false;
+  const a = await prisma.teacherAssignment.findFirst({
+    where: {
+      branchId: me.branchId, teacherId: me.id, classId, deletedAt: null,
+      OR: [{ sectionId: sectionId ?? null }, { sectionId: null }],
+    },
+    select: { id: true },
+  });
+  return Boolean(a);
+}
+
 async function loadRoster(branchId: string, classId: string, sectionId: string | null) {
   return prisma.enrollment.findMany({
     where: {
@@ -54,10 +69,10 @@ async function loadRoster(branchId: string, classId: string, sectionId: string |
 
 export async function GET(request: NextRequest) {
   try {
-    const guard = await requireSession(request);
+    const guard = await requireMe(request);
     if ("error" in guard) return guard.error;
-    const { session } = guard;
-    const branchId = session.branchId;
+    const me = guard.me;
+    const branchId = me.branchId;
 
     const url = new URL(request.url);
     const classId = url.searchParams.get("classId") || "";
@@ -71,7 +86,7 @@ export async function GET(request: NextRequest) {
       const sec = await prisma.section.findFirst({ where: { id: sectionId, classId, deletedAt: null } });
       if (!sec) return err("সেকশনটি এই ক্লাসের নয়");
     }
-    if (!(await canAccess(session, classId, sectionId))) return err("এই ক্লাসে হাজিরা নেওয়ার অনুমতি আপনার নেই", 403);
+    if (!(await canRead(me, classId))) return err("এই ক্লাসের তথ্য দেখার অনুমতি আপনার নেই", 403);
 
     const date = new Date(`${dateStr}T00:00:00.000Z`);
     const enrollments = await loadRoster(branchId, classId, sectionId);
@@ -105,10 +120,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const guard = await requireSession(request);
+    const guard = await requireMe(request);
     if ("error" in guard) return guard.error;
-    const { session } = guard;
-    const branchId = session.branchId;
+    const me = guard.me;
+    const branchId = me.branchId;
 
     const body = await request.json();
     const classId = String(body.classId || "");
@@ -128,11 +143,10 @@ export async function POST(request: NextRequest) {
       const sec = await prisma.section.findFirst({ where: { id: sectionId, classId, deletedAt: null } });
       if (!sec) return err("সেকশনটি এই ক্লাসের নয়");
     }
-    if (!(await canAccess(session, classId, sectionId))) return err("এই ক্লাসে হাজিরা নেওয়ার অনুমতি আপনার নেই", 403);
+    if (!(await canWrite(me, classId, sectionId))) return err("এই ক্লাসে হাজিরা নেওয়ার অনুমতি আপনার নেই — নিজের সেকশন বেছে নিন", 403);
 
     const date = new Date(`${dateStr}T00:00:00.000Z`);
 
-    // সব studentId সত্যিই এই ক্লাস(/সেকশন)-এর সক্রিয় ভর্তি কিনা
     const ids = [...new Set(entries.map((e) => String((e as { studentId: string }).studentId)))];
     const active = await prisma.enrollment.findMany({
       where: {
@@ -154,9 +168,9 @@ export async function POST(request: NextRequest) {
           where: { studentId_date: { studentId: e.studentId, date } },
           create: {
             branchId, studentId: e.studentId, classId, sectionId,
-            date, status: e.status, method: "manual", markedById: session.userId,
+            date, status: e.status, method: "manual", markedById: me.id,
           },
-          update: { status: e.status, method: "manual", markedById: session.userId, deletedAt: null },
+          update: { status: e.status, method: "manual", markedById: me.id, deletedAt: null },
         });
         n += 1;
       }

@@ -13,7 +13,8 @@ import { Label } from "@/components/ui/label";
 import { t, type Lang } from "@/lib/i18n";
 import type { Dictionary } from "@/messages/bn";
 import { printAdmitCards } from "@/lib/admit";
-import type { PrintHeader } from "@/lib/print";
+import { printTable, type PrintHeader } from "@/lib/print";
+
 
 interface ClassOption { id: string; name: string; nameEn: string; sections: { id: string; name: string }[]; }
 interface SubjectOpt { id: string; name: string; nameEn: string; classId: string; }
@@ -170,6 +171,32 @@ export default function ExamsClient({ dict, lang, institution, isAdmin, classes,
     } catch { setError(t(dict, "exam.networkError")); } finally { setBusy(false); }
   }
 
+  function printRoutine() {
+    if (!detail) return;
+    if (detail.subjects.length === 0) { setError(t(dict, "exam.noSubjects")); return; }
+    const range = detail.exam.startDate && detail.exam.endDate
+      ? `${detail.exam.startDate} → ${detail.exam.endDate}` : "";
+    const ok = printTable({
+      title: `${t(dict, "exam.routineTitle")} — ${detail.exam.name}`,
+      header: institution, lang, orientation: "portrait",
+      subtitle: [t(dict, TYPE_MAP[detail.exam.examType] || "exam.tyOther"), range].filter(Boolean).join(" · "),
+      columns: [
+        { header: t(dict, "exam.colSubject"), key: "s", width: "40%" },
+        { header: t(dict, "exam.colDate"), key: "d", width: "20%" },
+        { header: t(dict, "exam.colTime"), key: "t", width: "20%", align: "center" },
+        { header: t(dict, "exam.colMarks"), key: "m", width: "20%", align: "center" },
+      ],
+      rows: detail.subjects.map((s) => ({
+        s: pick(lang, s.subjectName, s.subjectNameEn),
+        d: s.examDate,
+        t: [s.startTime, s.endTime].filter(Boolean).join("–") || "—",
+        m: s.fullMarks,
+      })),
+    });
+    if (!ok) setError(t(dict, "xlsx.popupBlocked"));
+  }
+
+
   function printAdmit() {
     if (!detail || !aStudents || aStudents.length === 0) { setError(t(dict, "exam.admitEmpty")); return; }
     const ok = printAdmitCards({
@@ -278,8 +305,14 @@ export default function ExamsClient({ dict, lang, institution, isAdmin, classes,
         <Card className="mt-6">
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle>{t(dict, "exam.routineTitle")} — {detail.exam.name}</CardTitle>
-            {statusBadge(detail.exam.status)}
+            <div className="flex items-center gap-2">
+              {statusBadge(detail.exam.status)}
+              <Button size="sm" variant="outline" onClick={printRoutine} title={t(dict, "xlsx.printBtn")}>
+                <Printer size={14} />
+              </Button>
+            </div>
           </CardHeader>
+
           <CardContent>
             {detail.subjects.length === 0 ? (
               <p className="py-4 text-center text-sm text-muted-foreground">{t(dict, "exam.noSubjects")}</p>

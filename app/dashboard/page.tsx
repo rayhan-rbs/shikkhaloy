@@ -29,6 +29,12 @@ export default async function DashboardPage() {
   });
   // M14-E2 — দ্বৈত-গার্ড (১০৩)
   if (!me || (me.status !== "ACTIVE" && me.status !== "ALUMNI")) redirect("/login");
+    // M15-A — STUDENT = নিজের-হাবই-হোম (PARENT/TEACHER/STAFF = নোটিশ-ড্যাশবোর্ড)
+  if (me.role === "STUDENT") redirect("/dashboard/student-hub");
+  if (me.role === "TEACHER") redirect("/dashboard/teacher-hub");
+  if (me.role === "PARENT") redirect("/dashboard/parent-hub");
+
+
 
   const lang = await getLang();
   const dict = getDict(lang);

@@ -3,7 +3,8 @@
 // ৩.১.১: institution-অবজেক্ট কন্ট্রাক্ট (PrintHeader)
 
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
 import { CalendarCheck, CheckCheck, Download, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,6 +69,15 @@ export default function AttendanceClient({ dict, lang, institution, classes, all
     const ids = new Set((allowedForClass ?? []).map((a) => a.sectionId).filter(Boolean) as string[]);
     return selClass.sections.filter((s) => ids.has(s.id));
   }, [selClass, anySection, allowedForClass]);
+
+  // 🔧 স্টেট/দর্শন-সিঙ্ক: খালি-অপশন-না-থাকলে স্টেট-অটো = প্রথম-অনুমতি-সেকশন
+  // (না-হলে ব্রাউজার-অপশন-দেখালেও request-এ sectionId-যায়-না → 403/সব-সেকশনের-রোস্টার)
+  useEffect(() => {
+    if (!anySection && sectionId === "" && sectionOptions.length > 0) {
+      setSectionId(sectionOptions[0].id);
+    }
+  }, [anySection, sectionId, sectionOptions]);
+
 
   function resetBoard() {
     setRoster([]); setMarks({}); setAlreadyMarked(false); setLoaded(false); setOkMsg("");

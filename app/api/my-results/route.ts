@@ -1,11 +1,8 @@
 // 📁 app/api/my-results/route.ts
 // M14-M: ছাত্র/অভিভাবক-ফলাফল-পোর্টাল (শূন্য-নতুন-টেবিল — পড়া-মাত্র-এগ্রিগেট)
-// GET = STUDENT: নিজের | PARENT: ?studentId= (ParentLink-যাচাই — নোট ৬৯)
-// লিখিত = Mark-এগ্রিগেট (গেট: exam.status=COMPLETED)
+// GET = STUDENT: নিজের | PARENT: ?studentId= (ParentLink-যাচাই — নোট ৬৯; FK=parentId, TS2561-নির্ধারিত)
 // মেরিট = /api/marks/merit-এর-হুবহু-পাইপলাইন — এক-সোর্স rankStudents(@/lib/gpa):
-//   subs=examSubject(subject.classId-স্কোপ) → marks → প্রার্থী=ACTIVE-enrollment(class,roll-ক্রম)×≥১-মার্ক
-//   gpa=Σ(gradePoint??0)/সংখ্যা(২-ঘর) → rankStudents → সংখ্যা-অমিল-অসম্ভব
-// অনলাইন = ExamAttempt(SUBMITTED) — rank = ৪.৫-API-র-hubohu-dense
+//   lib/gpa.ts-প্রমাণিত: রিটার্ন-প্রপার্টি = position (rank নয়); টাই-ব্রেক GPA desc→totalObtained desc
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
@@ -62,10 +59,11 @@ async function meritForExam(examId: string, branchId: string, studentId: string,
     });
   if (candidates.length === 0) return { rank: null, total: null };
 
-  // ④ এক-সোর্স র‍্যাঙ্কিং = admin-এর-সাথে-হুবহু-মিল (cast: lib-র-রিটার্ন-শেপ-পড়ার-দরকার-নেই)
-  const ranked = rankStudents(candidates) as unknown as Array<{ studentId: string; rank: number | null }>;
+  // ④ এক-সোর্স র‍্যাঙ্কিং = admin-এর-সাথে-হুবহু-মিল
+  // ✅ lib/gpa.ts: rankStudents → (T & { position: number })[] — প্রপার্টি-নাম position
+  const ranked = rankStudents(candidates);
   const mine = ranked.find((r) => r.studentId === studentId);
-  return { rank: mine?.rank ?? null, total: ranked.length };
+  return { rank: mine?.position ?? null, total: ranked.length };
 }
 
 export async function GET(request: NextRequest) {

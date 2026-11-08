@@ -69,6 +69,14 @@ export default function LeaveClient({ dict, lang, institution, classes, allowed 
     return selClass.sections.filter((s) => ids.has(s.id));
   }, [selClass, anySection, allowedForClass]);
 
+  // 🔧 স্টেট/দর্শন-সিঙ্ক (attendance-client-এর-মতোই) — ছুটিতে-সব-সেকশনের-ছাত্র-দেখানো-বন্ধ
+  useEffect(() => {
+    if (!anySection && sectionId === "" && sectionOptions.length > 0) {
+      setSectionId(sectionOptions[0].id);
+    }
+  }, [anySection, sectionId, sectionOptions]);
+
+
   const rangeDays = useMemo(() => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(fromDate) || !/^\d{4}-\d{2}-\d{2}$/.test(toDate)) return null;
     const diff = Math.round((new Date(`${toDate}T00:00:00Z`).getTime() - new Date(`${fromDate}T00:00:00Z`).getTime()) / 86400000) + 1;

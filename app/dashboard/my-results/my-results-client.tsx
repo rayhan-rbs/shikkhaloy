@@ -37,6 +37,8 @@ export default function MyResultsClient({ lang, institution, childrenOptions }: 
 }) {
   const isParent = childrenOptions.length > 0;
   const [childId, setChildId] = useState("");
+  const [examFilter, setExamFilter] = useState(""); // "" = সব-পরীক্ষা
+
   const [data, setData] = useState<Data | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -53,19 +55,30 @@ export default function MyResultsClient({ lang, institution, childrenOptions }: 
   }, [lang]);
 
   useEffect(() => { if (!isParent) void load(); /* eslint-disable-line react-hooks/exhaustive-deps */ }, []);
-  useEffect(() => { if (isParent && childId) void load(childId); /* eslint-disable-line react-hooks/exhaustive-deps */ }, [childId]);
+  useEffect(() => { if (isParent && childId) { setExamFilter(""); void load(childId); } /* eslint-disable-line react-hooks/exhaustive-deps */ }, [childId]);
+
 
   const classLabel = data
     ? [data.student.className, data.student.sectionName].filter(Boolean).join(" - ")
     : "";
 
+  // ফিল্টার: examId-মিললে-শুধু-সেটা; "" = সব
+  const filteredWritten = data ? (examFilter ? data.written.filter((w) => w.examId === examFilter) : data.written) : [];
+
+
   function printExam(w: Written) {
-    const sub = [data?.student.fullName, classLabel,
-      `GPA ${w.gpa ?? "—"}`,
-      w.meritRank ? `${L(lang, "মেরিট", "Merit")} #${w.meritRank}/${w.meritTotal}` : ""].filter(Boolean).join(" · ");
+    // v2: admin-রিপোর্ট-কার্ড-সমতুল্য — GPA/মেরিট/মোট = footer-strip (print.ts v2.2 রেন্ডার-করে)
+    // আগে: GPA-শুধু-subtitle-এ, মোট-কোথাও-পাঠানো-হতো-না → প্রিন্টে-সারি-নেই
+    const sub = [data?.student.fullName, classLabel].filter(Boolean).join(" · ");
+    const pct = w.totalFull > 0 ? Math.round((w.totalObtained / w.totalFull) * 10000) / 100 : null;
+    const footer = [
+      `GPA: ${w.gpa != null ? fmt(w.gpa) : "—"}`,
+      w.meritRank ? `${L(lang, "মেরিট", "Merit")}: #${w.meritRank}/${w.meritTotal ?? "—"}` : "",
+      `${L(lang, "মোট", "Total")}: ${fmt(w.totalObtained)} / ${fmt(w.totalFull)}${pct != null ? ` (${pct}%)` : ""}`,
+    ].filter(Boolean).join(" · ");
     const ok = printTable({
       title: `${pick(lang, w.examName, w.examNameEn)} — ${L(lang, "ফলাফল", "Result")}`,
-      header: institution, lang, orientation: "portrait", subtitle: sub,
+      header: institution, lang, orientation: "portrait", subtitle: sub, footer,
       columns: [
         { header: L(lang, "বিষয়", "Subject"), key: "s", width: "34%" },
         { header: L(lang, "পূর্ণমান", "Full"), key: "f", width: "14%", align: "center" },
@@ -81,14 +94,21 @@ export default function MyResultsClient({ lang, institution, childrenOptions }: 
     if (!ok) setError(L(lang, "প্রিন্ট-পপআপ ব্লকড", "Print popup blocked"));
   }
 
+
   function exportExam(w: Written) {
     const rows = w.subjects.map((s) => ({
       "বিষয়": pick(lang, s.subjectName, s.subjectNameEn),
       "পূর্ণমান": s.fullMarks, "প্রাপ্ত": s.marksObtained,
       "গ্রেড": s.grade ?? "", "পয়েন্ট": s.gradePoint ?? "",
     }));
+    rows.push({
+      "বিষয়": L(lang, "মোট / GPA", "Total / GPA"),
+      "পূর্ণমান": w.totalFull, "প্রাপ্ত": w.totalObtained,
+      "গ্রেড": `GPA ${w.gpa != null ? fmt(w.gpa) : "—"}`, "পয়েন্ট": "",
+    });
     exportExcel(rows, `result-${pick(lang, w.examName, w.examNameEn)}.xlsx`, "ফলাফল");
   }
+
 
   return (
     <div className="space-y-6">
@@ -97,12 +117,24 @@ export default function MyResultsClient({ lang, institution, childrenOptions }: 
           <Award size={20} />{L(lang, "ফলাফল", "Results")}
           {data && <span className="text-base text-muted-foreground">— {data.student.fullName}{classLabel ? ` (${classLabel})` : ""}</span>}
         </h1>
-        {isParent && (
-          <select value={childId} onChange={(e) => setChildId(e.target.value)}
-            className="h-9 w-56 rounded-lg border border-border bg-background px-3 text-sm">
-            {childrenOptions.map((c) => <option key={c.id} value={c.id}>{c.fullName}</option>)}
-          </select>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {data && data.written.length > 0 && (
+            <select value={examFilter} onChange={(e) => setExamFilter(e.target.value)}
+              className="h-9 w-56 rounded-lg border border-border bg-background px-3 text-sm">
+              <option value="">{L(lang, "সব পরীক্ষা", "All exams")}</option>
+              {filteredWritten.map((w) => (
+                <option key={w.examId} value={w.examId}>{pick(lang, w.examName, w.examNameEn)}</option>
+              ))}
+            </select>
+          )}
+          {isParent && (
+            <select value={childId} onChange={(e) => setChildId(e.target.value)}
+              className="h-9 w-56 rounded-lg border border-border bg-background px-3 text-sm">
+              {childrenOptions.map((c) => <option key={c.id} value={c.id}>{c.fullName}</option>)}
+            </select>
+          )}
+        </div>
+
       </div>
 
       {error && <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-300">⚠️ {error}</div>}

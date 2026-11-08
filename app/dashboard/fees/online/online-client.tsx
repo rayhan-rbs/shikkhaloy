@@ -1,4 +1,5 @@
 // M7: বকেয়া-তালিকা → "গেটওয়েতে যান" → full-redirect (window.location.href); callback-ফল = ?pay= ব্যানার
+// canManage: শুধু দুই-অ্যাডমিন "ফি ব্যবস্থাপনায় ফিরুন" দেখবে — ছাত্র/অভিভাবক/হিসাবরক্ষক = লুকানো
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -13,7 +14,7 @@ interface Row {
   studentName: string; structureName: string; monthKey: string | null; className: string;
 }
 
-export default function OnlineClient({ dict }: { dict: Dictionary }) {
+export default function OnlineClient({ dict, canManage = false }: { dict: Dictionary; canManage?: boolean }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [busyId, setBusyId] = useState("");
   const [error, setError] = useState("");
@@ -63,9 +64,11 @@ export default function OnlineClient({ dict }: { dict: Dictionary }) {
           <h1 className="text-xl font-bold">{t(dict, "payOnline.title")}</h1>
           <p className="text-sm text-muted-foreground">{t(dict, "payOnline.hint")}</p>
         </div>
-        <a href="/dashboard/fees" className="text-sm text-primary underline-offset-4 hover:underline">
-          {t(dict, "payOnline.backTo")}
-        </a>
+        {canManage && (
+          <a href="/dashboard/fees" className="text-sm text-primary underline-offset-4 hover:underline">
+            {t(dict, "payOnline.backTo")}
+          </a>
+        )}
       </div>
 
       {notice === "ok" && (

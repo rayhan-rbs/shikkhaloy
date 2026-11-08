@@ -30,6 +30,8 @@ type Sess = { role: string; userId: string; branchId: string };
 
 async function canAccess(session: Sess, classId: string, sectionId: string | null): Promise<boolean> {
   if (ADMIN_ROLES.includes(session.role)) return true;
+  // M14-L: ছাত্র/অভিভাবক = পড়ার-দর্শক (GET branchId-স্কোপড; POST/DELETE admin-বন্ধ-ই-আছে)
+  if (session.role === "STUDENT" || session.role === "PARENT") return true;
   if (session.role !== "TEACHER") return false;
   const a = await prisma.teacherAssignment.findFirst({
     where: {
@@ -39,6 +41,7 @@ async function canAccess(session: Sess, classId: string, sectionId: string | nul
   });
   return Boolean(a);
 }
+
 
 const SLOT_INCLUDE = {
   assignment: {

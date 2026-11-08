@@ -3,6 +3,9 @@
 // নিয়ম: যে রুটের নিয়ম নেই → শুধু লগইন থাকলেই ঢোকা যাবে
 // ⚠️ নতুন সেকশনের রোল যোগ = শুধু এই ফাইলে — proxy.ts কখনো এডিট নয়!
 // পূর্ণ সুরক্ষা = তিন-স্তর: proxy (বর্ণা) → পেজ-গার্ড → API canAccess (সূক্ষ্ম)
+// ⚠️ সাব-রুট লাইন সবসময় প্যারেন্ট-প্রিফিক্সের আগে (fees/online-ঘটনা):
+//    "/dashboard/fees" প্রিফিক্স "/dashboard/fees/online"-ও ধরে — নির্দিষ্ট-আগে-রাখলে
+//    first-match ও longest-match দুই-কনভেনশনেই নিরাপদ
 
 export type Role =
   | "PLATFORM_SUPER_ADMIN"
@@ -28,8 +31,10 @@ export const ROUTE_ROLES: { prefix: string; roles: Role[] }[] = [
   // অ্যাটেনডেন্স — অ্যাডমিন + শিক্ষক (শিক্ষক "নিজের অ্যাসাইন ক্লাস" — সূক্ষ্ম
   // যাচাই API/পেজের canAccess-এ; proxy শুধু বর্ণা-লেভেল)
   { prefix: "/dashboard/attendance", roles: [...ADMINS, "TEACHER"] },
-  { prefix: "/dashboard/leave", roles: [...ADMINS, "TEACHER"] },
-  { prefix: "/dashboard/routine", roles: [...ADMINS, "TEACHER"] },
+  // ছুটি — ছাত্র/অভিভাবক-আবেদন + অ্যাডমিন/শিক্ষক-অনুমোদন (পেজ-নিজের-রোল-অনুযায়ী-UI)
+  { prefix: "/dashboard/leave", roles: [...ADMINS, "TEACHER", "STUDENT", "PARENT"] },
+  // রুটিন — ছাত্র/অভিভাবক = নিজের-ক্লাসের-রুটিন-দর্শক
+  { prefix: "/dashboard/routine", roles: [...ADMINS, "TEACHER", "STUDENT", "PARENT"] },
   { prefix: "/dashboard/classrooms", roles: ADMINS },
   { prefix: "/dashboard/exams", roles: [...ADMINS, "TEACHER"] },
   { prefix: "/dashboard/marks", roles: [...ADMINS, "TEACHER"] },
@@ -48,6 +53,10 @@ export const ROUTE_ROLES: { prefix: string; roles: Role[] }[] = [
 
 
   { prefix: "/dashboard/my-exams", roles: ["STUDENT"] },
+  { prefix: "/dashboard/my-results", roles: ["STUDENT", "PARENT"] },
+
+  // ⚠️ সাব-রুট-আগে: অনলাইন ফি-পরিশোধ (ছাত্র/অভিভাবক) — না-হলে /dashboard/fees-ADMINS-প্রিফিক্স-গিলে-ফেলে
+  { prefix: "/dashboard/fees/online", roles: ["STUDENT", "PARENT"] },
   { prefix: "/dashboard/fees", roles: ADMINS },
   { prefix: "/dashboard/library", roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"] },
 

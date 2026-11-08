@@ -1367,3 +1367,25 @@ model HelpDeskReply {
 
   @@index([ticketId, createdAt])
 }
+
+// ═══ M14-L: ছাত্র-ছুটির-আবেদন (scalar-FK অ্যাপেন্ড — নোট ৫৫; রিলেশন-জুটি-নেই) ═══
+model StudentLeave {
+  id           String    @id @default(cuid())
+  branchId     String
+  studentId    String    // User.id (STUDENT) — scalar-FK (৫৫)
+  classId      String    // স্ন্যাপশট = আবেদন-মুহূর্তের-সক্রিয়-ভর্তি (৩২-প্যাটার্ন)
+  sectionId    String?
+  fromDate     DateTime  @db.Date
+  toDate       DateTime  @db.Date
+  reason       String
+  status       String    @default("PENDING") // PENDING | APPROVED | REJECTED
+  reviewNote   String?
+  reviewedById String?
+  reviewedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  @@index([branchId, status])
+  @@index([studentId, status])
+}

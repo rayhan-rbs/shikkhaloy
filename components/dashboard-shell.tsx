@@ -1,8 +1,10 @@
 // 📁 components/dashboard-shell.tsx
-// ড্যাশবোর্ড শেল: সাইডবার (গ্রুপ-ভিত্তিক + role-ফিল্টার) + টপবার + Command Palette (Ctrl+K)
-// ব্র্যান্ডিং DB থেকে; রঙ সব shadcn টোকেন → ডার্ক মোড অটো
-// ৪.৪: online-exams (অ্যাডমিন/শিক্ষক) + my-exams (ছাত্র) — NavItem.roles = ঐচ্ছিক-ফিল্টার
-// M2: admissions (অ্যাডমিন) — UserPlus
+// ড্যাশবোর্ড শেল: সাইডবার (গ্রুপ-সিরিয়ালাইজড + স্ট্রিক্ট role-ফিল্টার) + টপবার + Command Palette (Ctrl+K)
+// রিফ্যাক্টর: ১) মেনু = ১০-লজিক্যাল-গ্রুপ (লেবেল inline-bilingual — dict-স্পর্শ-শূন্য)
+//            ২) প্যালেট = navGroups-থেকে-অটো-জেনারেটেড — সাইডবার=প্যালেট এক-সোর্স-অব-ট্রুথ
+//            ৩) প্রতিটা-NavItem-এ roles বাধ্যতামূলক (interface-required) — roles-মিললে-ই-দেখাবে
+//            ৪) ছাত্র/অভিভাবক-দর্শক-ফিরত: ছুটি (আবেদন) + রুটিন + অনলাইন-ফি-পরিশোধ (/dashboard/fees/online)
+// M14-E2: ALUMNI-status = শুধু ড্যাশবোর্ড+অ্যালামনাই (ALUMNI_ONLY_HREFS — status-gate অক্ষত)
 
 "use client";
 
@@ -10,7 +12,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, DatabaseBackup, LifeBuoy, Trash2, ScrollText, Percent, Trophy, Package, DoorOpen, HeartPulse, Network, Library, BedDouble, Bus, ArrowRightLeft, Palette, BookMarked, MessageSquare, Megaphone, CalendarDays, ReceiptText, BarChart3, Banknote, FileUp, FileText, FilePlus2, ListChecks, Contact, UsersRound, IdCard, QrCode, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X,
+  LayoutDashboard, Medal, DatabaseBackup, LifeBuoy, Trash2, ScrollText, Percent, Trophy, Package, DoorOpen, HeartPulse, Network, Library, BedDouble, Bus, ArrowRightLeft, Palette, BookMarked, MessageSquare, Megaphone, CalendarDays, ReceiptText, BarChart3, Banknote, FileUp, FileText, FilePlus2, ListChecks, Contact, UsersRound, IdCard, QrCode, PenLine, FileQuestion, Armchair, UserCog, ClipboardList, MonitorCheck, CalendarCheck, CalendarOff, CalendarRange, Calendar, Building2, Users, BookOpen, Wallet, UserPlus, Settings, Search, Menu, X, CreditCard,
   GraduationCap, Sun, Moon, LogOut, Languages, Award, type LucideIcon,
 } from "lucide-react";
 
@@ -28,6 +30,21 @@ import { t, type Lang } from "@/lib/i18n";
 import type { Dictionary } from "@/messages/bn";
 import { THEME_COOKIE, type Theme } from "@/lib/theme";
 
+// ── রোল-সেট কনস্ট (সাইডবার+প্যালেট-উভয়-এক-সোর্স; নতুন-আইটেম = এখান-থেকে-বেছে-নাও) ──
+const R_ALL = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER", "STUDENT", "PARENT", "ACCOUNTANT", "STAFF", "ALUMNI"];
+const R_ADMINS = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"];
+const R_ADMIN_TEACHER = [...R_ADMINS, "TEACHER"];
+const R_ADMIN_ACCOUNTANT = [...R_ADMINS, "ACCOUNTANT"];
+const R_ADMIN_STAFF = [...R_ADMINS, "STAFF"];
+const R_SUPER = ["PLATFORM_SUPER_ADMIN"];
+const R_STUDY = [...R_ADMIN_TEACHER, "STUDENT", "PARENT"]; // রুটিন/স্টাডি — দর্শক-সেট (ছাত্র-নিজের-রুটিন-দেখে)
+const R_LEAVE = [...R_ADMIN_TEACHER, "STUDENT", "PARENT"]; // ছুটি: ছাত্র/অভিভাবক-আবেদন + অ্যাডমিন/শিক্ষক-অনুমোদন
+const R_FEE_PAY = ["STUDENT", "PARENT"]; // অনলাইন ফি-পরিশোধ — পেয়ার
+const R_STUDENT_LIST = [...R_ADMIN_TEACHER, "ACCOUNTANT"]; // students-তালিকা
+const R_HELPDESK = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER", "STUDENT", "PARENT", "ACCOUNTANT", "STAFF"]; // ALUMNI-বাদ (১০৯)
+const R_DOCS = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT", "STUDENT", "PARENT"];
+const R_ALUMNI_PAGE = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ALUMNI", "STUDENT"];
+
 interface ShellUser {
   fullName: string;
   email: string;
@@ -42,7 +59,7 @@ interface NavItem {
   icon: LucideIcon;
   active: boolean;
   soon: boolean;
-  roles?: string[]; // সেট = শুধু এই-রোলরা দেখবে; undefined = সবাই (পুরনো-আচরণ)
+  roles: string[]; // বাধ্যতামূলক — এই-রোলরা-ই-দেখবে (TS-enforced: না-লিখলে-বিল্ড-এরর)
 }
 
 export default function DashboardShell({
@@ -61,6 +78,9 @@ export default function DashboardShell({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
 
+  // গ্রুপ-লেবেল = inline-bilingual (lang-prop আছেই — dict-কী-যোগের-ঝুঁকি-শূন্য)
+  const L = (bn: string, en: string) => (lang === "bn" ? bn : en);
+
   // Ctrl+K → প্যালেট
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -78,101 +98,120 @@ export default function DashboardShell({
     setMobileOpen(false);
   }, [pathname]);
 
+  // ── নেভিগেশন: ১০-সিরিয়ালাইজড-গ্রুপ — প্রতিটা-আইটেমে-স্পষ্ট-roles ──
   const navGroups: { label: string | null; items: NavItem[] }[] = [
     {
       label: null,
       items: [
-        { href: "/dashboard", label: t(dict, "nav.dashboard"), icon: LayoutDashboard, active: pathname === "/dashboard", soon: false },
-        { href: "/dashboard/academics", label: t(dict, "nav.academics"), icon: BookOpen, active: pathname.startsWith("/dashboard/academics"), soon: false },
-        { href: "/dashboard/classrooms", label: t(dict, "nav.classroom"), icon: Building2, active: pathname.startsWith("/dashboard/classrooms"), soon: false },
-        { href: "/dashboard/questions", label: t(dict, "questions.title"), icon: FileQuestion, active: pathname.startsWith("/dashboard/questions"), soon: false },
-        { href: "/dashboard/exams", label: t(dict, "nav.exam"), icon: ClipboardList, active: pathname.startsWith("/dashboard/exams"), soon: false },
-        { href: "/dashboard/online-exams", label: t(dict, "onlineExams.title"), icon: MonitorCheck, active: pathname.startsWith("/dashboard/online-exams"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER"] },
-        
-        { href: "/dashboard/homework", label:t(dict, "assignments.title"), icon: ClipboardList, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER"], active: true, soon: false },
-        { href: "/dashboard/my-homework", label: t(dict, "myAssignments.title"), icon: FileUp, roles: ["STUDENT"], active: true, soon: false },
-        { href: "/dashboard/study", label: t(dict, "study.navTitle"), icon: BookMarked, active: pathname.startsWith("/dashboard/study"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER", "STUDENT", "PARENT"] },
-        { href: "/dashboard/library", label: t(dict, "library.navTitle"), icon: Library, active: pathname.startsWith("/dashboard/library"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"] },
-
-        { href: "/dashboard/hostel", label: t(dict, "hostel.navTitle"), icon: BedDouble, active: pathname.startsWith("/dashboard/hostel"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
-        { href: "/dashboard/transport", label: t(dict, "transport.navTitle"), icon: Bus, active: pathname.startsWith("/dashboard/transport"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
-
-        { href: "/dashboard/clubs", label: t(dict, "clubs.navTitle"), icon: Trophy, active: pathname.startsWith("/dashboard/clubs"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
-        { href: "/dashboard/inventory", label: t(dict, "inventory.navTitle"), icon: Package, active: pathname.startsWith("/dashboard/inventory"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
-        { href: "/dashboard/visitors", label: t(dict, "visitors.navTitle"), icon: DoorOpen, active: pathname.startsWith("/dashboard/visitors"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "STAFF"] },
-        { href: "/dashboard/health", label: t(dict, "health.navTitle"), icon: HeartPulse, active: pathname.startsWith("/dashboard/health"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
-        { href: "/dashboard/audit", label: t(dict, "audit.title"), icon: ScrollText, active: pathname.startsWith("/dashboard/audit"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
-        { href: "/dashboard/recycle-bin", label: t(dict, "recycle.title"), icon: Trash2, active: pathname.startsWith("/dashboard/recycle-bin"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
-
-        { href: "/dashboard/backup", label: t(dict, "backup.title"), icon: DatabaseBackup, active: pathname.startsWith("/dashboard/backup"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
-        { href: "/dashboard/helpdesk", label: t(dict, "helpdesk.title"), icon: LifeBuoy, active: pathname.startsWith("/dashboard/helpdesk"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER", "STUDENT", "PARENT", "ACCOUNTANT", "STAFF"] },
-
-
-
-        { href: "/dashboard/my-exams", label: t(dict, "myExams.title"), icon: GraduationCap, active: pathname.startsWith("/dashboard/my-exams"), soon: false, roles: ["STUDENT"] },
-
-        { href: "/dashboard/my-children", label: t(dict, "parent.title"), icon: UsersRound, active: pathname.startsWith("/dashboard/my-children"), soon: false, roles: ["PARENT"] },
-        { href: "/dashboard/seats", label: t(dict, "nav.seats"), icon: Armchair, active: pathname.startsWith("/dashboard/seats"), soon: false },
-        { href: "/dashboard/marks", label: t(dict, "nav.marks"), icon: PenLine, active: pathname.startsWith("/dashboard/marks"), soon: false },
-        { href: "/dashboard/routine", label: t(dict, "nav.routine"), icon: CalendarRange, active: pathname.startsWith("/dashboard/routine"), soon: false },
-        { href: "/dashboard/students", label: t(dict, "nav.students"), icon: Users, active: pathname.startsWith("/dashboard/students") && !pathname.startsWith("/dashboard/students/transfer"), soon: false },
-        { href: "/dashboard/students/transfer", label: t(dict, "transfer.navTitle"), icon: ArrowRightLeft, active: pathname.startsWith("/dashboard/students/transfer"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
-
-        { href: "/dashboard/teachers", label: t(dict, "nav.teachers"), icon: UserCog, active: pathname.startsWith("/dashboard/teachers"), soon: false },
-        { href: "/dashboard/attendance", label: t(dict, "nav.attendance"), icon: CalendarCheck, active: pathname.startsWith("/dashboard/attendance"), soon: false },
-        { href: "/dashboard/attendance/qr", label: t(dict, "attQr.title"), icon: QrCode, active: pathname.startsWith("/dashboard/attendance/qr"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER"] },
-
-        { href: "/dashboard/leave", label: t(dict, "nav.leave"), icon: CalendarOff, active: pathname.startsWith("/dashboard/leave"), soon: false },
-
-        { href: "/dashboard/fees", label: t(dict, "fees.title"), icon: Wallet, active: pathname.startsWith("/dashboard/fees"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
-
-        { href: "/dashboard/discounts", label: t(dict, "discounts.navTitle"), icon: Percent, active: pathname.startsWith("/dashboard/discounts"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"] },
-        { href: "/dashboard/ledger", label: t(dict, "ledger.navTitle"), icon: ReceiptText, active: pathname.startsWith("/dashboard/ledger"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"] },
-        { href: "/dashboard/finance/report", label: t(dict, "finance.navTitle"), icon: BarChart3, active: pathname.startsWith("/dashboard/finance/report"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"] },
-
-
-        { href: "/dashboard/admissions", label: t(dict, "admissions.title"), icon: UserPlus, active: pathname.startsWith("/dashboard/admissions"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
-        { href: "/dashboard/parents", label: t(dict, "parents.title"), icon: Contact, active: pathname.startsWith("/dashboard/parents"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
-        { href: "/dashboard/idcards", label: t(dict, "idcards.title"), icon: IdCard, active: pathname.startsWith("/dashboard/idcards"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"] },
-        // { href: "/dashboard/branches", label: t(dict, "branches.navTitle"), icon: Network, active: pathname.startsWith("/dashboard/branches") && !pathname.startsWith("/dashboard/branches/report"), soon: false, roles: ["PLATFORM_SUPER_ADMIN"] },
-        // { href: "/dashboard/branches/report", label: t(dict, "branchReport.navTitle"), icon: BarChart3, active: pathname.startsWith("/dashboard/branches/report"), soon: false, roles: ["PLATFORM_SUPER_ADMIN"] },
-
-        { href: "/dashboard/branches", label: t(dict, "branches.navTitle"), icon: Network, active: pathname.startsWith("/dashboard/branches") && !pathname.startsWith("/dashboard/branches/report") && !pathname.startsWith("/dashboard/branches/branding"), soon: false, roles: ["PLATFORM_SUPER_ADMIN"] },
-        { href: "/dashboard/branches/report", label: t(dict, "branchReport.navTitle"), icon: BarChart3, active: pathname.startsWith("/dashboard/branches/report"), soon: false, roles: ["PLATFORM_SUPER_ADMIN"] },
-        { href: "/dashboard/branches/branding", label: t(dict, "branchBranding.navTitle"), icon: Palette, active: pathname.startsWith("/dashboard/branches/branding"), soon: false, roles: ["PLATFORM_SUPER_ADMIN"] },
-
-
-        { href: "/dashboard/quizzes", label: t(dict, "quizzes.navTitle"), icon: ListChecks, active: pathname.startsWith("/dashboard/quizzes"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER"] },
-
-        { href: "/dashboard/salary", label: t(dict, "salary.navTitle"), icon: Banknote, active: pathname.startsWith("/dashboard/salary"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"] },
-
-        { href: "/dashboard/notices", label: t(dict, "notices.navTitle"), icon: Megaphone, active: pathname.startsWith("/dashboard/notices"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER", "STUDENT", "PARENT", "ACCOUNTANT", "STAFF", "ALUMNI"] },
-        { href: "/dashboard/events", label: t(dict, "events.navTitle"), icon: CalendarDays, active: pathname.startsWith("/dashboard/events"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER", "STUDENT", "PARENT", "ACCOUNTANT", "STAFF", "ALUMNI"] },
-        { href: "/dashboard/messages", label: t(dict, "messages.navTitle"), icon: MessageSquare, active: pathname.startsWith("/dashboard/messages"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER", "STUDENT", "PARENT", "ACCOUNTANT", "STAFF", "ALUMNI"] },
-        { href: "/dashboard/documents", label: t(dict, "documents.title"), icon: FileText, active: pathname.startsWith("/dashboard/documents") && !pathname.startsWith("/dashboard/documents/requests"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT", "STUDENT", "PARENT"] },
-        { href: "/dashboard/documents/requests", label: t(dict, "documents.requests.title"), icon: FilePlus2, active: pathname.startsWith("/dashboard/documents/requests"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT", "STUDENT", "PARENT"] },
-        { href: "/dashboard/alumni", label: t(dict, "alumni.title"), icon: GraduationCap, active: pathname.startsWith("/dashboard/alumni"), soon: false, roles: ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ALUMNI", "STUDENT"] },
-
-
+        { href: "/dashboard", label: t(dict, "nav.dashboard"), icon: LayoutDashboard, active: pathname === "/dashboard", soon: false, roles: R_ALL },
       ],
     },
     {
-      label: t(dict, "nav.configGroup"),
+      label: L("শিক্ষার্থী ও জনবল", "People"),
       items: [
-        { href: "/dashboard/settings", label: t(dict, "nav.settings"), icon: Settings, active: pathname.startsWith("/dashboard/settings"), soon: false },
-        { href: "/dashboard/settings/academic", label: t(dict, "nav.academicCal"), icon: Calendar, active: pathname.startsWith("/dashboard/settings/academic"), soon: false },
+        { href: "/dashboard/students", label: t(dict, "nav.students"), icon: Users, active: pathname.startsWith("/dashboard/students") && !pathname.startsWith("/dashboard/students/transfer"), soon: false, roles: R_STUDENT_LIST },
+        { href: "/dashboard/students/transfer", label: t(dict, "transfer.navTitle"), icon: ArrowRightLeft, active: pathname.startsWith("/dashboard/students/transfer"), soon: false, roles: R_ADMINS },
+        { href: "/dashboard/admissions", label: t(dict, "admissions.title"), icon: UserPlus, active: pathname.startsWith("/dashboard/admissions"), soon: false, roles: R_ADMINS },
+        { href: "/dashboard/parents", label: t(dict, "parents.title"), icon: Contact, active: pathname.startsWith("/dashboard/parents"), soon: false, roles: R_ADMINS },
+        { href: "/dashboard/teachers", label: t(dict, "nav.teachers"), icon: UserCog, active: pathname.startsWith("/dashboard/teachers"), soon: false, roles: R_ADMINS },
+        { href: "/dashboard/my-children", label: t(dict, "parent.title"), icon: UsersRound, active: pathname.startsWith("/dashboard/my-children"), soon: false, roles: ["PARENT"] },
+        { href: "/dashboard/idcards", label: t(dict, "idcards.title"), icon: IdCard, active: pathname.startsWith("/dashboard/idcards"), soon: false, roles: R_ADMINS },
+      ],
+    },
+    {
+      label: L("একাডেমিক", "Academic"),
+      items: [
+        { href: "/dashboard/academics", label: t(dict, "nav.academics"), icon: BookOpen, active: pathname.startsWith("/dashboard/academics"), soon: false, roles: R_ADMINS },
+        { href: "/dashboard/classrooms", label: t(dict, "nav.classroom"), icon: Building2, active: pathname.startsWith("/dashboard/classrooms"), soon: false, roles: R_ADMINS },
+        { href: "/dashboard/routine", label: t(dict, "nav.routine"), icon: CalendarRange, active: pathname.startsWith("/dashboard/routine"), soon: false, roles: R_STUDY },
+        { href: "/dashboard/questions", label: t(dict, "questions.title"), icon: FileQuestion, active: pathname.startsWith("/dashboard/questions"), soon: false, roles: R_ADMIN_TEACHER },
+        { href: "/dashboard/exams", label: t(dict, "nav.exam"), icon: ClipboardList, active: pathname.startsWith("/dashboard/exams"), soon: false, roles: R_ADMIN_TEACHER },
+        { href: "/dashboard/online-exams", label: t(dict, "onlineExams.title"), icon: MonitorCheck, active: pathname.startsWith("/dashboard/online-exams"), soon: false, roles: R_ADMIN_TEACHER },
+        { href: "/dashboard/quizzes", label: t(dict, "quizzes.navTitle"), icon: ListChecks, active: pathname.startsWith("/dashboard/quizzes"), soon: false, roles: R_ADMIN_TEACHER },
+        { href: "/dashboard/homework", label: t(dict, "assignments.title"), icon: ClipboardList, active: pathname.startsWith("/dashboard/homework"), soon: false, roles: R_ADMIN_TEACHER },
+        { href: "/dashboard/my-homework", label: t(dict, "myAssignments.title"), icon: FileUp, active: pathname.startsWith("/dashboard/my-homework"), soon: false, roles: ["STUDENT"] },
+        { href: "/dashboard/my-exams", label: t(dict, "myExams.title"), icon: GraduationCap, active: pathname.startsWith("/dashboard/my-exams"), soon: false, roles: ["STUDENT"] },
+        { href: "/dashboard/my-results", label: L("ফলাফল", "Results"), icon: Medal, active: pathname.startsWith("/dashboard/my-results"), soon: false, roles: ["STUDENT", "PARENT"] },
 
-        { href: "/dashboard/grading", label: t(dict, "nav.grading"), icon: Award, active: pathname.startsWith("/dashboard/grading"), soon: false },
-
+        { href: "/dashboard/study", label: t(dict, "study.navTitle"), icon: BookMarked, active: pathname.startsWith("/dashboard/study"), soon: false, roles: R_STUDY },
+        { href: "/dashboard/seats", label: t(dict, "nav.seats"), icon: Armchair, active: pathname.startsWith("/dashboard/seats"), soon: false, roles: R_ADMIN_TEACHER },
+        { href: "/dashboard/marks", label: t(dict, "nav.marks"), icon: PenLine, active: pathname.startsWith("/dashboard/marks"), soon: false, roles: R_ADMIN_TEACHER },
+      ],
+    },
+    {
+      label: L("উপস্থিতি ও ছুটি", "Attendance & Leave"),
+      items: [
+        { href: "/dashboard/attendance", label: t(dict, "nav.attendance"), icon: CalendarCheck, active: pathname.startsWith("/dashboard/attendance") && !pathname.startsWith("/dashboard/attendance/qr"), soon: false, roles: R_ADMIN_TEACHER },
+        { href: "/dashboard/attendance/qr", label: t(dict, "attQr.title"), icon: QrCode, active: pathname.startsWith("/dashboard/attendance/qr"), soon: false, roles: R_ADMIN_TEACHER },
+        { href: "/dashboard/leave", label: t(dict, "nav.leave"), icon: CalendarOff, active: pathname.startsWith("/dashboard/leave"), soon: false, roles: R_LEAVE },
+      ],
+    },
+    {
+      label: L("আর্থিক", "Finance"),
+      items: [
+        { href: "/dashboard/fees/online", label: L("অনলাইন ফি পরিশোধ", "Pay Fees Online"), icon: CreditCard, active: pathname.startsWith("/dashboard/fees/online"), soon: false, roles: R_FEE_PAY },
+        { href: "/dashboard/fees", label: t(dict, "fees.title"), icon: Wallet, active: pathname.startsWith("/dashboard/fees") && !pathname.startsWith("/dashboard/fees/online"), soon: false, roles: R_ADMINS },
+        { href: "/dashboard/discounts", label: t(dict, "discounts.navTitle"), icon: Percent, active: pathname.startsWith("/dashboard/discounts"), soon: false, roles: R_ADMIN_ACCOUNTANT },
+        { href: "/dashboard/ledger", label: t(dict, "ledger.navTitle"), icon: ReceiptText, active: pathname.startsWith("/dashboard/ledger"), soon: false, roles: R_ADMIN_ACCOUNTANT },
+        { href: "/dashboard/finance/report", label: t(dict, "finance.navTitle"), icon: BarChart3, active: pathname.startsWith("/dashboard/finance/report"), soon: false, roles: R_ADMIN_ACCOUNTANT },
+        { href: "/dashboard/salary", label: t(dict, "salary.navTitle"), icon: Banknote, active: pathname.startsWith("/dashboard/salary"), soon: false, roles: R_ADMIN_ACCOUNTANT },
+      ],
+    },
+    {
+      label: L("সুবিধা", "Facilities"),
+      items: [
+        { href: "/dashboard/library", label: t(dict, "library.navTitle"), icon: Library, active: pathname.startsWith("/dashboard/library"), soon: false, roles: R_ADMIN_ACCOUNTANT },
+        { href: "/dashboard/hostel", label: t(dict, "hostel.navTitle"), icon: BedDouble, active: pathname.startsWith("/dashboard/hostel"), soon: false, roles: R_ADMINS },
+        { href: "/dashboard/transport", label: t(dict, "transport.navTitle"), icon: Bus, active: pathname.startsWith("/dashboard/transport"), soon: false, roles: R_ADMINS },
+        { href: "/dashboard/clubs", label: t(dict, "clubs.navTitle"), icon: Trophy, active: pathname.startsWith("/dashboard/clubs"), soon: false, roles: R_ADMINS },
+        { href: "/dashboard/inventory", label: t(dict, "inventory.navTitle"), icon: Package, active: pathname.startsWith("/dashboard/inventory"), soon: false, roles: R_ADMINS },
+        { href: "/dashboard/visitors", label: t(dict, "visitors.navTitle"), icon: DoorOpen, active: pathname.startsWith("/dashboard/visitors"), soon: false, roles: R_ADMIN_STAFF },
+        { href: "/dashboard/health", label: t(dict, "health.navTitle"), icon: HeartPulse, active: pathname.startsWith("/dashboard/health"), soon: false, roles: R_ADMINS },
+      ],
+    },
+    {
+      label: L("যোগাযোগ", "Communication"),
+      items: [
+        { href: "/dashboard/notices", label: t(dict, "notices.navTitle"), icon: Megaphone, active: pathname.startsWith("/dashboard/notices"), soon: false, roles: R_ALL },
+        { href: "/dashboard/events", label: t(dict, "events.navTitle"), icon: CalendarDays, active: pathname.startsWith("/dashboard/events"), soon: false, roles: R_ALL },
+        { href: "/dashboard/messages", label: t(dict, "messages.navTitle"), icon: MessageSquare, active: pathname.startsWith("/dashboard/messages"), soon: false, roles: R_ALL },
+        { href: "/dashboard/helpdesk", label: t(dict, "helpdesk.title"), icon: LifeBuoy, active: pathname.startsWith("/dashboard/helpdesk"), soon: false, roles: R_HELPDESK },
+      ],
+    },
+    {
+      label: L("ডকুমেন্ট", "Documents"),
+      items: [
+        { href: "/dashboard/documents", label: t(dict, "documents.title"), icon: FileText, active: pathname.startsWith("/dashboard/documents") && !pathname.startsWith("/dashboard/documents/requests"), soon: false, roles: R_DOCS },
+        { href: "/dashboard/documents/requests", label: t(dict, "documents.requests.title"), icon: FilePlus2, active: pathname.startsWith("/dashboard/documents/requests"), soon: false, roles: R_DOCS },
+        { href: "/dashboard/alumni", label: t(dict, "alumni.title"), icon: GraduationCap, active: pathname.startsWith("/dashboard/alumni"), soon: false, roles: R_ALUMNI_PAGE },
+      ],
+    },
+    {
+      label: L("ব্রাঞ্চ", "Branches"),
+      items: [
+        { href: "/dashboard/branches", label: t(dict, "branches.navTitle"), icon: Network, active: pathname.startsWith("/dashboard/branches") && !pathname.startsWith("/dashboard/branches/report") && !pathname.startsWith("/dashboard/branches/branding"), soon: false, roles: R_SUPER },
+        { href: "/dashboard/branches/report", label: t(dict, "branchReport.navTitle"), icon: BarChart3, active: pathname.startsWith("/dashboard/branches/report"), soon: false, roles: R_SUPER },
+        { href: "/dashboard/branches/branding", label: t(dict, "branchBranding.navTitle"), icon: Palette, active: pathname.startsWith("/dashboard/branches/branding"), soon: false, roles: R_SUPER },
+      ],
+    },
+    {
+      label: L("সিস্টেম ও কনফিগ", "System"),
+      items: [
+        { href: "/dashboard/settings", label: t(dict, "nav.settings"), icon: Settings, active: pathname.startsWith("/dashboard/settings") && !pathname.startsWith("/dashboard/settings/academic"), soon: false, roles: R_ADMINS },
+        { href: "/dashboard/settings/academic", label: t(dict, "nav.academicCal"), icon: Calendar, active: pathname.startsWith("/dashboard/settings/academic"), soon: false, roles: R_ADMINS },
+        { href: "/dashboard/grading", label: t(dict, "nav.grading"), icon: Award, active: pathname.startsWith("/dashboard/grading"), soon: false, roles: R_ADMINS },
+        { href: "/dashboard/audit", label: t(dict, "audit.title"), icon: ScrollText, active: pathname.startsWith("/dashboard/audit"), soon: false, roles: R_ADMINS },
+        { href: "/dashboard/recycle-bin", label: t(dict, "recycle.title"), icon: Trash2, active: pathname.startsWith("/dashboard/recycle-bin"), soon: false, roles: R_ADMINS },
+        { href: "/dashboard/backup", label: t(dict, "backup.title"), icon: DatabaseBackup, active: pathname.startsWith("/dashboard/backup"), soon: false, roles: R_ADMINS },
       ],
     },
   ];
 
-  // role-ফিল্টার: roles-সেট আইটেম শুধু মিলে-যাওয়া রোলে দেখাবে; খালি-গ্রুপ লুকানো
+  // role-ফিল্টার: roles = এখন-প্রতিটা-আইটেমে-বাধ্যতামূলক → মিললে-ই-দেখাবে, খালি-গ্রুপ-লুকানো
   // M14-E2: ALUMNI-স্ট্যাটাস = শুধু ড্যাশবোর্ড+অ্যালামনাই (অন্য-পেজের-নিজস্ব-গার্ড-লুপ-প্রতিরোধ)
   const ALUMNI_ONLY_HREFS = ["/dashboard", "/dashboard/alumni"];
   const visibleGroups = navGroups
-    .map((g) => ({ ...g, items: g.items.filter((i) => !i.roles || i.roles.includes(user.role)) }))
+    .map((g) => ({ ...g, items: g.items.filter((i) => i.roles.includes(user.role)) }))
     .filter((g) => g.items.length > 0)
     .map((g) =>
       user.status === "ALUMNI"
@@ -180,7 +219,6 @@ export default function DashboardShell({
         : g
     )
     .filter((g) => g.items.length > 0);
-
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -200,7 +238,7 @@ export default function DashboardShell({
       <div className="flex h-16 items-center gap-3 border-b border-border px-5">
         <div
           className="flex h-9 w-9 items-center justify-center rounded-xl shadow-md"
-            style={{ background: `var(--brand, ${brandColor})` }}
+          style={{ background: `var(--brand, ${brandColor})` }}
         >
           <GraduationCap size={18} className="text-white" />
         </div>
@@ -210,7 +248,7 @@ export default function DashboardShell({
         </div>
       </div>
 
-      {/* নেভিগেশন — গ্রুপ-ভিত্তিক + role-ফিল্টার */}
+      {/* নেভিগেশন — সিরিয়ালাইজড-গ্রুপ + স্ট্রিক্ট role-ফিল্টার */}
       <nav className="flex-1 overflow-y-auto p-3">
         {visibleGroups.map((group, gi) => (
           <div key={gi} className={gi > 0 ? "mt-5" : ""}>
@@ -346,7 +384,7 @@ export default function DashboardShell({
         <main className="mx-auto w-full max-w-6xl px-4 py-8">{children}</main>
       </div>
 
-      {/* Command Palette */}
+      {/* Command Palette — visibleGroups-থেকে-অটো-জেনারেটেড (সাইডবার=প্যালেট এক-সোর্স; roles+ALUMNI-গেট-অটো-প্রয়োগ) */}
       <Dialog open={paletteOpen} onOpenChange={setPaletteOpen}>
         <DialogContent className="overflow-hidden p-0 sm:max-w-lg">
           <DialogTitle className="sr-only">Command Palette</DialogTitle>
@@ -354,90 +392,22 @@ export default function DashboardShell({
             <CommandInput placeholder={t(dict, "palette.placeholder")} />
             <CommandList>
               <CommandEmpty>{t(dict, "palette.empty")}</CommandEmpty>
-              <CommandGroup heading={t(dict, "palette.navigation")}>
-                <CommandItem
-                  onSelect={() => {
-                    setPaletteOpen(false);
-                    router.push("/dashboard");
-                  }}
-                >
-                  <LayoutDashboard size={15} className="mr-2" />
-                  {t(dict, "nav.dashboard")}
-                </CommandItem>
-                <CommandItem
-                  onSelect={() => {
-                    setPaletteOpen(false);
-                    router.push("/dashboard/settings");
-                  }}
-                >
-                  <Settings size={15} className="mr-2" />
-                  {t(dict, "nav.settings")}
-                </CommandItem>
-                <CommandItem
-                  onSelect={() => {
-                    setPaletteOpen(false);
-                    router.push("/dashboard/grading");
-                  }}
-                >
-                  <Award size={15} className="mr-2" />
-                  {t(dict, "nav.grading")}
-                </CommandItem>
-                <CommandItem onSelect={() => { setPaletteOpen(false); router.push("/dashboard/teachers"); }}>
-                  <UserCog size={15} className="mr-2" />
-                  {t(dict, "nav.teachers")}
-                </CommandItem>
-                <CommandItem onSelect={() => { setPaletteOpen(false); router.push("/dashboard/questions"); }}>
-                  <FileQuestion size={15} className="mr-2" />
-                  {t(dict, "questions.title")}
-                </CommandItem>
-                {["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"].includes(user.role) && (
-                  <CommandItem onSelect={() => { setPaletteOpen(false); router.push("/dashboard/fees"); }}>
-                    <Wallet size={15} className="mr-2" />
-                    {t(dict, "fees.title")}
-                  </CommandItem>
-                )}
-
-                {["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"].includes(user.role) && (
-                  <CommandItem onSelect={() => { setPaletteOpen(false); router.push("/dashboard/admissions"); }}>
-                    <UserPlus size={15} className="mr-2" />
-                    {t(dict, "admissions.title")}
-                  </CommandItem>
-                )}
-
-                {["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"].includes(user.role) && (
-                  <CommandItem onSelect={() => { setPaletteOpen(false); router.push("/dashboard/parents"); }}>
-                    <Contact size={15} className="mr-2" />
-                    {t(dict, "parents.title")}
-                  </CommandItem>
-                )}
-                {user.role === "PARENT" && (
-                  <CommandItem onSelect={() => { setPaletteOpen(false); router.push("/dashboard/my-children"); }}>
-                    <UsersRound size={15} className="mr-2" />
-                    {t(dict, "parent.title")}
-                  </CommandItem>
-                )}
-
-                {["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"].includes(user.role) && (
-                  <CommandItem onSelect={() => { setPaletteOpen(false); router.push("/dashboard/idcards"); }}>
-                    <IdCard size={15} className="mr-2" />
-                    {t(dict, "idcards.title")}
-                  </CommandItem>
-                )}
-
-
-                {["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "TEACHER"].includes(user.role) && (
-                  <CommandItem onSelect={() => { setPaletteOpen(false); router.push("/dashboard/online-exams"); }}>
-                    <MonitorCheck size={15} className="mr-2" />
-                    {t(dict, "onlineExams.title")}
-                  </CommandItem>
-                )}
-                {user.role === "STUDENT" && (
-                  <CommandItem onSelect={() => { setPaletteOpen(false); router.push("/dashboard/my-exams"); }}>
-                    <GraduationCap size={15} className="mr-2" />
-                    {t(dict, "myExams.title")}
-                  </CommandItem>
-                )}
-              </CommandGroup>
+              {visibleGroups.map((group, gi) => (
+                <CommandGroup key={gi} heading={group.label ?? undefined}>
+                  {group.items.map((item) => (
+                    <CommandItem
+                      key={item.href}
+                      onSelect={() => {
+                        setPaletteOpen(false);
+                        router.push(item.href);
+                      }}
+                    >
+                      <item.icon size={15} className="mr-2" />
+                      {item.label}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              ))}
               <CommandGroup heading={t(dict, "palette.actions")}>
                 <CommandItem
                   onSelect={() => {
@@ -453,34 +423,6 @@ export default function DashboardShell({
                   <Languages size={15} className="mr-2" />
                   {lang === "bn" ? t(dict, "palette.toEnglish") : t(dict, "palette.toBangla")}
                 </CommandItem>
-                <CommandItem
-                  onSelect={() => {
-                    setPaletteOpen(false);
-                    router.push("/dashboard/academics");
-                  }}
-                >
-                  <BookOpen size={15} className="mr-2" />
-                  {t(dict, "nav.academics")}
-                </CommandItem>
-                <CommandItem
-                  onSelect={() => {
-                    setPaletteOpen(false);
-                    router.push("/dashboard/students");
-                  }}
-                >
-                  <Users size={15} className="mr-2" />
-                  {t(dict, "nav.students")}
-                </CommandItem>
-                <CommandItem
-                  onSelect={() => {
-                    setPaletteOpen(false);
-                    router.push("/dashboard/settings/academic");
-                  }}
-                >
-                  <Calendar size={15} className="mr-2" />
-                  {t(dict, "nav.academicCal")}
-                </CommandItem>
-
                 <CommandItem onSelect={() => { setPaletteOpen(false); logout(); }}>
                   <LogOut size={15} className="mr-2" />
                   {t(dict, "common.logout")}

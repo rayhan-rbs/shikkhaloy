@@ -1,7 +1,9 @@
 "use client";
-// M14-B: হোস্টেল — কক্ষ-সেটআপ + বরাদ্দ (এক-শিক্ষার্থী-এক-কক্ষ; প্রাপ্যতা = গণনা — নোট ৯৩)
+// M14-B + M17-B: হোস্টেল — কক্ষ-সেটআপ + বরাদ্দ (এক-শিক্ষার্থী-এক-কক্ষ; প্রাপ্যতা = গণনা — নোট ৯৩)
+// ছাত্র-পিকার = StudentPicker (ক্লাস→সেকশন→রোল/নাম)
 import { useCallback, useEffect, useState } from "react";
 import type { Dictionary } from "@/messages/bn";
+import StudentPicker from "@/components/student-picker";
 
 async function fetchJson(url: string, init?: RequestInit, tries = 2): Promise<{ success: boolean; error?: string; data?: unknown }> {
   try {
@@ -16,7 +18,7 @@ async function fetchJson(url: string, init?: RequestInit, tries = 2): Promise<{ 
 
 type Room = { id: string; name: string; type: string; capacity: number; monthlyFee: number; allocated: number };
 type Alloc = { id: string; studentName: string; roomName: string; status: string };
-type Opt = { id: string; label: string };
+type StuPick = { id: string; label: string } | null;
 const inputCls = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm";
 const taka = (n: number) => (n > 0 ? `৳${n.toLocaleString("en-US")}` : "—");
 
@@ -24,20 +26,19 @@ export default function HostelClient({ dict }: { dict: Dictionary }) {
   const t = dict.hostel;
   const [rooms, setRooms] = useState<Room[]>([]);
   const [allocs, setAllocs] = useState<Alloc[]>([]);
-  const [students, setStudents] = useState<Opt[]>([]);
+  const [aStudentSel, setAStudentSel] = useState<StuPick>(null);
   const [msg, setMsg] = useState(""); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
   const [rName, setRName] = useState(""); const [rType, setRType] = useState("BOYS");
   const [rCap, setRCap] = useState("4"); const [rFee, setRFee] = useState("0");
-  const [aStudent, setAStudent] = useState(""); const [aRoom, setARoom] = useState("");
+  const [aRoom, setARoom] = useState("");
 
   const load = useCallback(async () => {
     try {
-      const [j1, j2, j3] = await Promise.all([
-        fetchJson("/api/hostel"), fetchJson("/api/hostel/allocations"), fetchJson("/api/hostel?meta=students"),
+      const [j1, j2] = await Promise.all([
+        fetchJson("/api/hostel"), fetchJson("/api/hostel/allocations"),
       ]);
       if (j1.success && Array.isArray(j1.data)) setRooms(j1.data as Room[]); else if (j1.error) setErr(j1.error);
       if (j2.success && Array.isArray(j2.data)) setAllocs(j2.data as Alloc[]);
-      if (j3.success && Array.isArray(j3.data)) setStudents(j3.data as Opt[]);
     } catch { setErr(t.networkError); }
   }, [t.networkError]);
   useEffect(() => { load(); }, [load]);
@@ -66,13 +67,13 @@ export default function HostelClient({ dict }: { dict: Dictionary }) {
 
   async function allocate() {
     setErr(""); setMsg("");
-    if (!aStudent) { setErr(t.errStudent); return; }
+    if (!aStudentSel) { setErr(t.errStudent); return; }
     if (!aRoom) { setErr(t.errRoom); return; }
     setBusy(true);
     try {
       const j = await fetchJson("/api/hostel/allocations", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentId: aStudent, roomId: aRoom }) });
-      if (j.success) { setMsg(t.saved); setAStudent(""); load(); } else setErr(j.error ?? t.networkError);
+        body: JSON.stringify({ studentId: aStudentSel.id, roomId: aRoom }) });
+      if (j.success) { setMsg(t.saved); setAStudentSel(null); load(); } else setErr(j.error ?? t.networkError);
     } catch { setErr(t.networkError); }
     setBusy(false);
   }
@@ -136,9 +137,8 @@ export default function HostelClient({ dict }: { dict: Dictionary }) {
         <p className="mb-3 text-sm font-semibold">{t.aTitle}</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <div><label className="mb-1 block text-sm">{t.pickStudent}</label>
-            <select value={aStudent} onChange={(e) => setAStudent(e.target.value)} className={inputCls}>
-              <option value="">—</option>{students.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
-            </select></div>
+            <StudentPicker module="hostel" value={aStudentSel} onChange={setAStudentSel} disabled={busy} />
+          </div>
           <div><label className="mb-1 block text-sm">{t.pickRoom}</label>
             <select value={aRoom} onChange={(e) => setARoom(e.target.value)} className={inputCls}>
               <option value="">—</option>{rooms.map((r) => <option key={r.id} value={r.id}>{r.name} ({r.capacity - r.allocated}/{r.capacity})</option>)}

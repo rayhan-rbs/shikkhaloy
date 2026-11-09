@@ -1,7 +1,8 @@
 "use client";
-// M14-B: ট্রান্সপোর্ট — রুট-সেটআপ + বরাদ্দ (হোস্টেল-প্যাটার্ন-রেপ্লিকেট)
+// M14-B + M17-B: ট্রান্সপোর্ট — রুট-সেটআপ + বরাদ্দ; ছাত্র-পিকার = StudentPicker
 import { useCallback, useEffect, useState } from "react";
 import type { Dictionary } from "@/messages/bn";
+import StudentPicker from "@/components/student-picker";
 
 async function fetchJson(url: string, init?: RequestInit, tries = 2): Promise<{ success: boolean; error?: string; data?: unknown }> {
   try {
@@ -16,7 +17,7 @@ async function fetchJson(url: string, init?: RequestInit, tries = 2): Promise<{ 
 
 type Route = { id: string; name: string; stops: string | null; vehicleNo: string | null; capacity: number; monthlyFee: number; allocated: number };
 type Alloc = { id: string; studentName: string; routeName: string; stopName: string | null; status: string };
-type Opt = { id: string; label: string };
+type StuPick = { id: string; label: string } | null;
 const inputCls = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm";
 const taka = (n: number) => (n > 0 ? `৳${n.toLocaleString("en-US")}` : "—");
 
@@ -24,20 +25,19 @@ export default function TransportClient({ dict }: { dict: Dictionary }) {
   const t = dict.transport;
   const [routes, setRoutes] = useState<Route[]>([]);
   const [allocs, setAllocs] = useState<Alloc[]>([]);
-  const [students, setStudents] = useState<Opt[]>([]);
+  const [aStudentSel, setAStudentSel] = useState<StuPick>(null);
   const [msg, setMsg] = useState(""); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
   const [rName, setRName] = useState(""); const [rStops, setRStops] = useState("");
   const [rVehicle, setRVehicle] = useState(""); const [rCap, setRCap] = useState("30"); const [rFee, setRFee] = useState("0");
-  const [aStudent, setAStudent] = useState(""); const [aRoute, setARoute] = useState(""); const [aStop, setAStop] = useState("");
+  const [aRoute, setARoute] = useState(""); const [aStop, setAStop] = useState("");
 
   const load = useCallback(async () => {
     try {
-      const [j1, j2, j3] = await Promise.all([
-        fetchJson("/api/transport"), fetchJson("/api/transport/allocations"), fetchJson("/api/transport?meta=students"),
+      const [j1, j2] = await Promise.all([
+        fetchJson("/api/transport"), fetchJson("/api/transport/allocations"),
       ]);
       if (j1.success && Array.isArray(j1.data)) setRoutes(j1.data as Route[]); else if (j1.error) setErr(j1.error);
       if (j2.success && Array.isArray(j2.data)) setAllocs(j2.data as Alloc[]);
-      if (j3.success && Array.isArray(j3.data)) setStudents(j3.data as Opt[]);
     } catch { setErr(t.networkError); }
   }, [t.networkError]);
   useEffect(() => { load(); }, [load]);
@@ -66,13 +66,13 @@ export default function TransportClient({ dict }: { dict: Dictionary }) {
 
   async function allocate() {
     setErr(""); setMsg("");
-    if (!aStudent) { setErr(t.errStudent); return; }
+    if (!aStudentSel) { setErr(t.errStudent); return; }
     if (!aRoute) { setErr(t.errRoute); return; }
     setBusy(true);
     try {
       const j = await fetchJson("/api/transport/allocations", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentId: aStudent, routeId: aRoute, stopName: aStop.trim() }) });
-      if (j.success) { setMsg(t.saved); setAStudent(""); setAStop(""); load(); } else setErr(j.error ?? t.networkError);
+        body: JSON.stringify({ studentId: aStudentSel.id, routeId: aRoute, stopName: aStop.trim() }) });
+      if (j.success) { setMsg(t.saved); setAStudentSel(null); setAStop(""); load(); } else setErr(j.error ?? t.networkError);
     } catch { setErr(t.networkError); }
     setBusy(false);
   }
@@ -135,9 +135,8 @@ export default function TransportClient({ dict }: { dict: Dictionary }) {
         <p className="mb-3 text-sm font-semibold">{t.aTitle}</p>
         <div className="grid gap-3 sm:grid-cols-3">
           <div><label className="mb-1 block text-sm">{t.pickStudent}</label>
-            <select value={aStudent} onChange={(e) => setAStudent(e.target.value)} className={inputCls}>
-              <option value="">—</option>{students.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
-            </select></div>
+            <StudentPicker module="transport" value={aStudentSel} onChange={setAStudentSel} disabled={busy} />
+          </div>
           <div><label className="mb-1 block text-sm">{t.pickRoute}</label>
             <select value={aRoute} onChange={(e) => setARoute(e.target.value)} className={inputCls}>
               <option value="">—</option>{routes.map((r) => <option key={r.id} value={r.id}>{r.name} ({r.capacity - r.allocated}/{r.capacity})</option>)}

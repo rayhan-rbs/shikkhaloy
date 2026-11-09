@@ -1,4 +1,5 @@
-// M11: ডিসকাউন্ট-ক্লায়েন্ট — তালিকা(সার্চ+CSV) + create-ডায়লগ (ছাত্র-পিকার = meta=1) + টগল/ডিলিট
+"use client";
+// M11 + M17-B: ডিসকাউন্ট-ক্লায়েন্ট — তালিকা(সার্চ+CSV) + create-ডায়লগ (ছাত্র-পিকার = StudentPicker) + টগল/ডিলিট
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Percent } from "lucide-react";
@@ -8,9 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { t } from "@/lib/i18n";
 import type { Dictionary } from "@/messages/bn";
+import StudentPicker from "@/components/student-picker";
 
 interface Row { id: string; studentId: string; studentName: string; name: string; type: string; value: number; isActive: boolean; note: string | null; }
-interface Stu { id: string; fullName: string }
+interface Pick { id: string; label: string }
 
 function downloadCsv(name: string, rows: (string | number)[][]) {
   const csv = rows.map((r) => r.map((c) => `"${String(c).replaceAll('"', '""')}"`).join(",")).join("\n");
@@ -20,13 +22,12 @@ function downloadCsv(name: string, rows: (string | number)[][]) {
 
 export default function DiscountsClient({ dict }: { dict: Dictionary }) {
   const [rows, setRows] = useState<Row[]>([]);
-  const [students, setStudents] = useState<Stu[]>([]);
   const [search, setSearch] = useState("");
-  const [sQuery, setSQuery] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(""); const [okMsg, setOkMsg] = useState("");
   const [open, setOpen] = useState(false);
-  const [fStudent, setFStudent] = useState(""); const [fName, setFName] = useState("");
+  const [fStudentSel, setFStudentSel] = useState<Pick | null>(null);
+  const [fName, setFName] = useState("");
   const [fType, setFType] = useState("PERCENT"); const [fValue, setFValue] = useState("");
   const [fNote, setFNote] = useState("");
 
@@ -35,34 +36,24 @@ export default function DiscountsClient({ dict }: { dict: Dictionary }) {
     if (r.success) setRows(r.data ?? []);
   }, []);
   useEffect(() => { void load(); }, [load]);
-  useEffect(() => {
-    (async () => {
-      const m = await fetch("/api/discounts?meta=1").then((r) => r.json());
-      if (m.success) setStudents(m.data ?? []);
-    })();
-  }, []);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rows.filter((x) => !q || `${x.studentName} ${x.name}`.toLowerCase().includes(q));
   }, [rows, search]);
-  const stuOptions = useMemo(() => {
-    const q = sQuery.trim().toLowerCase();
-    return students.filter((s) => !q || s.fullName.toLowerCase().includes(q)).slice(0, 100);
-  }, [students, sQuery]);
 
   async function create() {
     setError(""); setOkMsg("");
-    if (!fStudent || !fName.trim() || !Number(fValue)) { setError(t(dict, "discounts.needFields")); return; }
+    if (!fStudentSel || !fName.trim() || !Number(fValue)) { setError(t(dict, "discounts.needFields")); return; }
     setBusy(true);
     try {
       const r = await fetch("/api/discounts", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentId: fStudent, name: fName.trim(), type: fType, value: Number(fValue), note: fNote }),
+        body: JSON.stringify({ studentId: fStudentSel.id, name: fName.trim(), type: fType, value: Number(fValue), note: fNote }),
       }).then((r) => r.json());
       if (!r.success) { setError(r.error || "Error"); return; }
       setOkMsg(t(dict, "discounts.created")); setOpen(false);
-      setFStudent(""); setFName(""); setFType("PERCENT"); setFValue(""); setFNote("");
+      setFStudentSel(null); setFName(""); setFType("PERCENT"); setFValue(""); setFNote("");
       void load();
     } catch { setError("Network error"); } finally { setBusy(false); }
   }
@@ -146,11 +137,7 @@ export default function DiscountsClient({ dict }: { dict: Dictionary }) {
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>{t(dict, "discounts.addNew")}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <Input value={sQuery} onChange={(e) => setSQuery(e.target.value)} placeholder={`🔍 ${t(dict, "discounts.searchStudent")}`} />
-            <select className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" value={fStudent} onChange={(e) => setFStudent(e.target.value)}>
-              <option value="">{t(dict, "discounts.student")}</option>
-              {stuOptions.map((s) => <option key={s.id} value={s.id}>{s.fullName}</option>)}
-            </select>
+            <StudentPicker module="discounts" value={fStudentSel} onChange={setFStudentSel} disabled={busy} />
             <Input placeholder={t(dict, "discounts.namePh")} value={fName} onChange={(e) => setFName(e.target.value)} />
             <div className="grid grid-cols-2 gap-2">
               <select className="rounded-lg border border-border bg-background px-3 py-2 text-sm" value={fType} onChange={(e) => setFType(e.target.value)}>

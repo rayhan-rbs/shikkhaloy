@@ -1,12 +1,13 @@
-// M14-A + M16-B: বই-ফেরত — PATCH action:RETURN (নোট ৯৩-চুক্তি) + auto-fine = overdue×FINE_PER_DAY
-// ⚠️ FINE_PER_DAY = আপনার-আগের-ফাইলের-মান-মিলিয়ে-নিন (এখানে ৳৫/দিন — বাংলাদেশ-সাধারণ)
+// M17-A: বই-ফেরত — PATCH action:RETURN; জরিমানা = overdue×branch-সেটিংস-finePerDay (হার্ডকোড-নির্মূল)
+// জরিমানা>০ → tx: ছাত্রের-সক্রিয়-enrollment→classId → "লাইব্রেরি জরিমানা"-FeeStructure(find-or-create) → FeeInvoice(amount=জরিমানা)
+// ⚠️ fees-পেজে-ওই-স্ট্রাকচার (amount=০) দেখাবে — ওর-উপর generate-চাপা-বিরত
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 
-const FINE_PER_DAY = 5;
 const DAY_MS = 24 * 60 * 60 * 1000;
+const FINE_STRUCTURE_NAME = "লাইব্রেরি জরিমানা";
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -35,14 +36,40 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (action !== "RETURN")
       return NextResponse.json({ success: false, error: "অজানা অ্যাকশন (প্রত্যাশিত: RETURN)" }, { status: 400 });
 
+    const setting = await prisma.librarySetting.findUnique({ where: { branchId: me.branchId } });
+    const finePerDay = setting?.finePerDay ?? 5;
     const now = new Date();
     const overdueDays = Math.max(0, Math.floor((now.getTime() - loan.dueDate.getTime()) / DAY_MS));
-    const fine = overdueDays * FINE_PER_DAY;
-    const updated = await prisma.bookLoan.update({
-      where: { id: loan.id },
-      data: { status: "RETURNED", returnDate: now, fine },
+    const fine = overdueDays * finePerDay;
+
+    let fineInvoiceCreated = false;
+    await prisma.$transaction(async (tx) => {
+      if (fine > 0) {
+        const enr = await tx.enrollment.findFirst({
+          where: { studentId: loan.studentId, status: "ACTIVE", deletedAt: null },
+          orderBy: { createdAt: "desc" }, select: { classId: true },
+        });
+        if (enr) {
+          let fs = await tx.feeStructure.findFirst({
+            where: { branchId: me.branchId, classId: enr.classId, name: FINE_STRUCTURE_NAME, monthKey: null, deletedAt: null },
+            select: { id: true },
+          });
+          if (!fs) {
+            fs = await tx.feeStructure.create({
+              data: { branchId: me.branchId, classId: enr.classId, name: FINE_STRUCTURE_NAME, amount: 0, monthKey: null, dueDate: null },
+              select: { id: true },
+            });
+          }
+          await tx.feeInvoice.create({
+            data: { branchId: me.branchId, structureId: fs.id, studentId: loan.studentId, classId: enr.classId, amount: fine, dueDate: null },
+          });
+          fineInvoiceCreated = true;
+        }
+      }
+      await tx.bookLoan.update({ where: { id: loan.id }, data: { status: "RETURNED", returnDate: now, fine } });
     });
-    return NextResponse.json({ success: true, data: { id: updated.id, fine, overdueDays } });
+
+    return NextResponse.json({ success: true, data: { id: loan.id, fine, overdueDays, fineInvoiceCreated } });
   } catch (error) {
     console.error("❌ loan RETURN error:", error);
     return NextResponse.json({ success: false, error: "ফেরত ব্যর্থ" }, { status: 500 });

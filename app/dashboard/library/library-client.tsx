@@ -1,10 +1,10 @@
 "use client";
-// M14-A: লাইব্রেরি — ২-ট্যাব (বই/ইস্যু-ফেরত); মেয়াদ-উত্তীর্ণ = লাল-ব্যাজ; প্রাপ্যতা = কপি(বাকি/মোট)
+// M17-B: লাইব্রেরি v2 — বই/ইস্যু-সার্চ+পেজিন+status-ফিল্টার; ছাত্র-পিকার = StudentPicker (ক্লাস→সেকশন→রোল/নাম); নীতি-সেটিংস (canAdmin)
 import { useCallback, useEffect, useState } from "react";
 import type { Dictionary } from "@/messages/bn";
+import StudentPicker from "@/components/student-picker";
 
-// fetchJson-retry (নোট ৭৭) — component-বাইরে
-async function fetchJson(url: string, init?: RequestInit, tries = 2): Promise<{ success: boolean; error?: string; data?: unknown }> {
+async function fetchJson(url: string, init?: RequestInit, tries = 2): Promise<{ success: boolean; error?: string; data?: unknown; meta?: unknown }> {
   try {
     const res = await fetch(url, init);
     return await res.json();
@@ -17,41 +17,65 @@ async function fetchJson(url: string, init?: RequestInit, tries = 2): Promise<{ 
 
 type BookRow = { id: string; title: string; author: string | null; isbn: string | null; category: string | null; copiesTotal: number; shelfCode: string | null; issued: number };
 type LoanRow = { id: string; bookTitle: string; studentName: string; issueDate: string; dueDate: string; returnDate: string | null; status: string; fine: number };
-type Opt = { id: string; label: string };
+type PageMeta = { page: number; pageSize: number; total: number; pages: number };
+type LibSettings = { finePerDay: number; loanDays: number; maxBooks: number };
+
 const inputCls = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm";
 const todayLocal = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const dateAfter = (n: number) => new Date(Date.now() - new Date().getTimezoneOffset() * 60000 + n * 86400000).toISOString().slice(0, 10);
 const fmtD = (iso: string | null) => (iso ? iso.slice(0, 10).split("-").reverse().join("/") : "—");
 const taka = (n: number) => (n > 0 ? `৳${n}` : "—");
 
-export default function LibraryClient({ dict, canManage }: { dict: Dictionary; canManage: boolean }) {
+const S = {
+  searchBooks: "খুঁজুন (নাম/লেখক/ISBN/বিভাগ)…", searchLoans: "খুঁজুন (বই/শিক্ষার্থী)…",
+  fAll: "সব", fActive: "চলমান", fOverdue: "মেয়াদ-উত্তীর্ণ", fReturned: "ফেরত",
+  settingsTitle: "লাইব্রেরি-নীতি", sFine: "জরিমানা (৳/দিন)", sLoan: "ডিফল্ট-মেয়াদ (দিন)", sMax: "সর্বোচ্চ-বই (ছাত্র-প্রতি)",
+  saveSettings: "নীতি সংরক্ষণ", policy: (s: LibSettings) => `জরিমানা ৳${s.finePerDay}/দিন • মেয়াদ ${s.loanDays} দিন • সর্বোচ্চ ${s.maxBooks} বই`,
+  pageOf: (p: number, pages: number, total: number) => `পৃষ্ঠা ${p}/${pages} — মোট ${total}`,
+  fineMsg: (fine: number, inv: boolean) => fine > 0
+    ? `ফেরত নেওয়া হয়েছে — জরিমানা ৳${fine}${inv ? " (ফি-ইনভয়েসে যোগ হয়েছে)" : " (ক্লাস-শনাক্ত-না-হওয়ায় ইনভয়েস-তৈরি-হয়নি)"}`
+    : "",
+};
+
+export default function LibraryClient({ dict, canManage, canAdmin }: { dict: Dictionary; canManage: boolean; canAdmin: boolean }) {
   const t = dict.library;
   const [tab, setTab] = useState<"books" | "loans">("books");
   const [books, setBooks] = useState<BookRow[]>([]);
   const [loans, setLoans] = useState<LoanRow[]>([]);
-  const [students, setStudents] = useState<Opt[]>([]);
+  const [metaB, setMetaB] = useState<PageMeta | null>(null);
+  const [metaL, setMetaL] = useState<PageMeta | null>(null);
+  const [settings, setSettings] = useState<LibSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState(""); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
 
   const [bTitle, setBTitle] = useState(""); const [bAuthor, setBAuthor] = useState("");
   const [bIsbn, setBIsbn] = useState(""); const [bCategory, setBCategory] = useState("");
   const [bCopies, setBCopies] = useState("1"); const [bShelf, setBShelf] = useState("");
-  const [lBook, setLBook] = useState(""); const [lStudent, setLStudent] = useState(""); const [lDue, setLDue] = useState("");
+  const [lBook, setLBook] = useState(""); const [lDue, setLDue] = useState("");
+  const [stuSel, setStuSel] = useState<{ id: string; label: string } | null>(null);
+  const [qB, setQB] = useState(""); const [qBDeb, setQBDeb] = useState(""); const [pageB, setPageB] = useState(1);
+  const [qL, setQL] = useState(""); const [qLDeb, setQLDeb] = useState(""); const [pageL, setPageL] = useState(1);
+  const [statusL, setStatusL] = useState<"" | "active" | "overdue" | "returned">("");
+  const [sFine, setSFine] = useState(""); const [sLoan, setSLoan] = useState(""); const [sMax, setSMax] = useState("");
 
   const loadBooks = useCallback(async () => {
     try {
-      const j = await fetchJson("/api/library");
-      if (j.success && Array.isArray(j.data)) setBooks(j.data as BookRow[]);
+      const j = await fetchJson(`/api/library?q=${encodeURIComponent(qBDeb)}&page=${pageB}`);
+      if (j.success && Array.isArray(j.data)) { setBooks(j.data as BookRow[]); setMetaB((j.meta as PageMeta) ?? null); }
       else setErr(j.error ?? t.networkError);
     } catch { setErr(t.networkError); }
-  }, [t.networkError]);
+  }, [qBDeb, pageB, t.networkError]);
 
   const loadLoans = useCallback(async () => {
     try {
-      const j = await fetchJson("/api/library/loans");
-      if (j.success && Array.isArray(j.data)) setLoans(j.data as LoanRow[]);
+      const j = await fetchJson(`/api/library/loans?status=${statusL}&q=${encodeURIComponent(qLDeb)}&page=${pageL}`);
+      if (j.success && Array.isArray(j.data)) { setLoans(j.data as LoanRow[]); setMetaL((j.meta as PageMeta) ?? null); }
       else setErr(j.error ?? t.networkError);
     } catch { setErr(t.networkError); }
-  }, [t.networkError]);
+  }, [statusL, qLDeb, pageL, t.networkError]);
+
+  useEffect(() => { const id = setTimeout(() => { setQBDeb(qB); setPageB(1); }, 350); return () => clearTimeout(id); }, [qB]);
+  useEffect(() => { const id = setTimeout(() => { setQLDeb(qL); setPageL(1); }, 350); return () => clearTimeout(id); }, [qL]);
 
   useEffect(() => {
     (async () => {
@@ -59,9 +83,14 @@ export default function LibraryClient({ dict, canManage }: { dict: Dictionary; c
       await Promise.all([loadBooks(), loadLoans()]);
       if (canManage) {
         try {
-          const j = await fetchJson("/api/library?meta=students");
-          if (j.success && Array.isArray(j.data)) setStudents(j.data as Opt[]);
-        } catch { /* পিকার-গৌণ */ }
+          const j = await fetchJson("/api/library/settings");
+          if (j.success && j.data) {
+            const s = j.data as LibSettings;
+            setSettings(s);
+            setSFine(String(s.finePerDay)); setSLoan(String(s.loanDays)); setSMax(String(s.maxBooks));
+            setLDue((prev) => prev || dateAfter(s.loanDays));
+          }
+        } catch { /* সেটিংস-গৌণ */ }
       }
       setLoading(false);
     })();
@@ -95,15 +124,15 @@ export default function LibraryClient({ dict, canManage }: { dict: Dictionary; c
   async function issue() {
     setErr(""); setMsg("");
     if (!lBook) { setErr(t.errBook); return; }
-    if (!lStudent) { setErr(t.errStudent); return; }
+    if (!stuSel) { setErr(t.errStudent); return; }
     if (!lDue) { setErr(t.errDue); return; }
     setBusy(true);
     try {
       const j = await fetchJson("/api/library/loans", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookId: lBook, studentId: lStudent, dueDate: lDue }),
+        body: JSON.stringify({ bookId: lBook, studentId: stuSel.id, dueDate: lDue }),
       });
-      if (j.success) { setMsg(t.saved); setLStudent(""); loadLoans(); loadBooks(); }
+      if (j.success) { setMsg(t.saved); setStuSel(null); loadLoans(); loadBooks(); }
       else setErr(j.error ?? t.networkError);
     } catch { setErr(t.networkError); }
     setBusy(false);
@@ -112,20 +141,51 @@ export default function LibraryClient({ dict, canManage }: { dict: Dictionary; c
   async function doReturn(id: string) {
     setErr(""); setMsg("");
     if (!window.confirm(t.confirmReturn)) return;
+    setBusy(true);
     try {
       const j = await fetchJson(`/api/library/loans/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "RETURN" }) });
-      if (j.success) { setMsg(t.returnedMsg); loadLoans(); loadBooks(); } else setErr(j.error ?? t.networkError);
+      if (j.success) {
+        const d = (j.data ?? {}) as { fine?: number; fineInvoiceCreated?: boolean };
+        const fm = S.fineMsg(d.fine ?? 0, Boolean(d.fineInvoiceCreated));
+        setMsg(fm || t.returnedMsg);
+        loadLoans(); loadBooks();
+      } else setErr(j.error ?? t.networkError);
+    } catch { setErr(t.networkError); }
+    setBusy(false);
+  }
+
+  async function saveSettings() {
+    setErr(""); setMsg("");
+    setBusy(true);
+    try {
+      const j = await fetchJson("/api/library/settings", {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ finePerDay: Number(sFine), loanDays: Number(sLoan), maxBooks: Number(sMax) }),
+      });
+      if (j.success) { setSettings({ finePerDay: Number(sFine), loanDays: Number(sLoan), maxBooks: Number(sMax) }); setMsg(t.saved); }
+      else setErr(j.error ?? t.networkError);
     } catch { setErr(t.networkError); }
     setBusy(false);
   }
 
   const isOverdue = (r: LoanRow) => r.status === "ISSUED" && r.dueDate.slice(0, 10) < todayLocal();
+  const Pager = ({ meta, onPage }: { meta: PageMeta | null; onPage: (dir: 1 | -1) => void }) =>
+    meta && meta.pages > 1 ? (
+      <div className="flex items-center justify-between border-t px-3 py-2 text-xs text-muted-foreground">
+        <span>{S.pageOf(meta.page, meta.pages, meta.total)}</span>
+        <div className="flex gap-1">
+          <button disabled={meta.page <= 1} onClick={() => onPage(-1)} className="rounded border px-2 py-1 disabled:opacity-40">←</button>
+          <button disabled={meta.page >= meta.pages} onClick={() => onPage(1)} className="rounded border px-2 py-1 disabled:opacity-40">→</button>
+        </div>
+      </div>
+    ) : null;
 
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-semibold">{t.title}</h1>
         <p className="text-sm text-muted-foreground">{t.subtitle}</p>
+        {canManage && settings && <p className="mt-1 text-xs text-muted-foreground">{S.policy(settings)}</p>}
       </div>
 
       {msg && <div className="rounded-md border bg-card px-4 py-2 text-sm">{msg}</div>}
@@ -138,6 +198,17 @@ export default function LibraryClient({ dict, canManage }: { dict: Dictionary; c
 
       {tab === "books" && (
         <>
+          {canAdmin && (
+            <div className="rounded-lg border bg-card p-4">
+              <div className="mb-2 text-sm font-medium">{S.settingsTitle}</div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div><label className="mb-1 block text-sm">{S.sFine}</label><input type="number" min={0} value={sFine} onChange={(e) => setSFine(e.target.value)} className={inputCls} /></div>
+                <div><label className="mb-1 block text-sm">{S.sLoan}</label><input type="number" min={1} max={365} value={sLoan} onChange={(e) => setSLoan(e.target.value)} className={inputCls} /></div>
+                <div><label className="mb-1 block text-sm">{S.sMax}</label><input type="number" min={1} max={50} value={sMax} onChange={(e) => setSMax(e.target.value)} className={inputCls} /></div>
+              </div>
+              <button onClick={saveSettings} disabled={busy} className="mt-3 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50">{S.saveSettings}</button>
+            </div>
+          )}
           {canManage && (
             <div className="rounded-lg border bg-card p-4">
               <div className="grid gap-3 sm:grid-cols-3">
@@ -151,6 +222,7 @@ export default function LibraryClient({ dict, canManage }: { dict: Dictionary; c
               <button onClick={addBook} disabled={busy} className="mt-3 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50">{busy ? t.adding : t.addBook}</button>
             </div>
           )}
+          <div className="px-3 pt-3"><input value={qB} onChange={(e) => setQB(e.target.value)} placeholder={S.searchBooks} className={inputCls} /></div>
           <div className="overflow-x-auto rounded-lg border bg-card">
             <table className="w-full text-sm">
               <thead><tr className="border-b text-left text-muted-foreground">
@@ -172,6 +244,7 @@ export default function LibraryClient({ dict, canManage }: { dict: Dictionary; c
                 ))}
               </tbody>
             </table>
+            <Pager meta={metaB} onPage={(d) => setPageB((p) => Math.max(1, p + d))} />
           </div>
         </>
       )}
@@ -187,15 +260,22 @@ export default function LibraryClient({ dict, canManage }: { dict: Dictionary; c
                     {books.map((b) => <option key={b.id} value={b.id}>{b.title} ({b.copiesTotal - b.issued}/{b.copiesTotal})</option>)}
                   </select></div>
                 <div><label className="mb-1 block text-sm">{t.pickStudent}</label>
-                  <select value={lStudent} onChange={(e) => setLStudent(e.target.value)} className={inputCls}>
-                    <option value="">—</option>
-                    {students.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
-                  </select></div>
+                  <StudentPicker module="library" value={stuSel} onChange={setStuSel} disabled={busy} />
+                </div>
                 <div><label className="mb-1 block text-sm">{t.lDue}</label><input type="date" min={todayLocal()} value={lDue} onChange={(e) => setLDue(e.target.value)} className={inputCls} /></div>
               </div>
               <button onClick={issue} disabled={busy} className="mt-3 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50">{busy ? t.issuing : t.issueBook}</button>
             </div>
           )}
+          <div className="flex flex-wrap gap-2 px-3">
+            <input value={qL} onChange={(e) => setQL(e.target.value)} placeholder={S.searchLoans} className={`${inputCls} sm:max-w-xs`} />
+            <select value={statusL} onChange={(e) => { setStatusL(e.target.value as typeof statusL); setPageL(1); }} className={`${inputCls} sm:max-w-[12rem]`}>
+              <option value="">{S.fAll}</option>
+              <option value="active">{S.fActive}</option>
+              <option value="overdue">{S.fOverdue}</option>
+              <option value="returned">{S.fReturned}</option>
+            </select>
+          </div>
           <div className="overflow-x-auto rounded-lg border bg-card">
             <table className="w-full text-sm">
               <thead><tr className="border-b text-left text-muted-foreground">
@@ -229,6 +309,7 @@ export default function LibraryClient({ dict, canManage }: { dict: Dictionary; c
                 ))}
               </tbody>
             </table>
+            <Pager meta={metaL} onPage={(d) => setPageL((p) => Math.max(1, p + d))} />
           </div>
         </>
       )}

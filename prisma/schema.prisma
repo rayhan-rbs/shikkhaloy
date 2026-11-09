@@ -1420,3 +1420,14 @@ model UserPermission {
   @@unique([userId, permKey])
   @@index([userId])
 }
+
+
+model LibrarySetting {
+  id         String   @id @default(cuid())
+  branchId   String   @unique
+  finePerDay Int      @default(5)
+  loanDays   Int      @default(14)
+  maxBooks   Int      @default(2)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

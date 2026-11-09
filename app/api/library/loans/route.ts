@@ -1,9 +1,12 @@
-// M14-A + M16-B: ইস্যু — GET+POST = দুই-অ্যাডমিন ∨ library-অনুমতি (গার্ড: dup-ISSUED-409 + কপি-অপ্রতুল-409 অক্ষত)
+// M17-A: ইস্যু — GET(?status=active|returned|overdue + q + পেজিন) | POST(+maxBooks-গার্ড সেটিংস-থেকে)
+// গার্ড: dup-ISSUED-409 + কপি-অপ্রতুল-409 অক্ষত; দুই-অ্যাডমিন ∨ library-অনুমতি
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 import type { Prisma } from "@prisma/client";
+
+const PAGE_SIZE = 20;
 
 async function requireUser(request: NextRequest) {
   const token = request.cookies.get("shikkhaloy_token")?.value;
@@ -22,10 +25,32 @@ export async function GET(request: NextRequest) {
   try {
     const me = await requireUser(request);
     if (!me) return NextResponse.json({ success: false, error: "লাইব্রেরি-মডিউলের অনুমতি নেই" }, { status: 403 });
-    const { searchParams } = new URL(request.url);
+    const sp = new URL(request.url).searchParams;
+    const q = (sp.get("q") ?? "").trim();
+    const st = sp.get("status") ?? "";
+    const page = Math.max(1, Math.floor(Number(sp.get("page")) || 1));
+
     const where: Prisma.BookLoanWhereInput = { branchId: me.branchId, deletedAt: null };
-    if (searchParams.get("status") === "active") where.status = "ISSUED";
-    const loans = await prisma.bookLoan.findMany({ where, orderBy: { issueDate: "desc" }, take: 300 });
+    if (st === "active") where.status = "ISSUED";
+    else if (st === "returned") where.status = "RETURNED";
+    else if (st === "overdue") {
+      const todayStart = new Date(`${new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10)}T00:00:00.000Z`);
+      where.status = "ISSUED";
+      where.dueDate = { lt: todayStart };
+    }
+    if (q) {
+      const [bIds, uIds] = await Promise.all([
+        prisma.libraryBook.findMany({ where: { branchId: me.branchId, deletedAt: null,
+          OR: [{ title: { contains: q } }, { author: { contains: q } }, { isbn: { contains: q } }] }, select: { id: true } }),
+        prisma.user.findMany({ where: { branchId: me.branchId, deletedAt: null, fullName: { contains: q } }, select: { id: true } }),
+      ]);
+      where.OR = [{ bookId: { in: bIds.map((b) => b.id) } }, { studentId: { in: uIds.map((u) => u.id) } }];
+    }
+
+    const [loans, total] = await Promise.all([
+      prisma.bookLoan.findMany({ where, orderBy: { issueDate: "desc" }, skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE }),
+      prisma.bookLoan.count({ where }),
+    ]);
     const [bookRows, stuRows] = await Promise.all([
       prisma.libraryBook.findMany({ where: { id: { in: [...new Set(loans.map((l) => l.bookId))] } }, select: { id: true, title: true } }),
       prisma.user.findMany({ where: { id: { in: [...new Set(loans.map((l) => l.studentId))] } }, select: { id: true, fullName: true } }),
@@ -34,6 +59,7 @@ export async function GET(request: NextRequest) {
     const sMap = new Map(stuRows.map((s) => [s.id, s.fullName]));
     return NextResponse.json({
       success: true, count: loans.length,
+      meta: { page, pageSize: PAGE_SIZE, total, pages: Math.max(1, Math.ceil(total / PAGE_SIZE)) },
       data: loans.map((l) => ({
         id: l.id, bookTitle: bMap.get(l.bookId) ?? "—", studentName: sMap.get(l.studentId) ?? "—",
         issueDate: l.issueDate.toISOString(), dueDate: l.dueDate.toISOString(),
@@ -65,9 +91,17 @@ export async function POST(request: NextRequest) {
     if (!student) return NextResponse.json({ success: false, error: "শিক্ষার্থী পাওয়া যায়নি" }, { status: 400 });
     const dup = await prisma.bookLoan.findFirst({ where: { bookId, studentId, status: "ISSUED", deletedAt: null } });
     if (dup) return NextResponse.json({ success: false, error: "এই শিক্ষার্থীর কাছে বইটি ইতিমধ্যে ইস্যু আছে" }, { status: 409 });
+
+    const setting = await prisma.librarySetting.findUnique({ where: { branchId: me.branchId } });
+    const maxBooks = setting?.maxBooks ?? 2;
+    const activeFor = await prisma.bookLoan.count({ where: { studentId, status: "ISSUED", deletedAt: null } });
+    if (activeFor >= maxBooks)
+      return NextResponse.json({ success: false, error: `এই শিক্ষার্থীর সর্বোচ্চ-বই-সীমা (${maxBooks}) পূর্ণ — আগে ফেরত নিন বা নীতি-সেটিংস বাড়ান` }, { status: 409 });
+
     const activeCount = await prisma.bookLoan.count({ where: { bookId, status: "ISSUED", deletedAt: null } });
     if (activeCount >= book.copiesTotal)
       return NextResponse.json({ success: false, error: "কপি অপ্রতুল — সব কপি ইস্যুতে" }, { status: 409 });
+
     const loan = await prisma.bookLoan.create({
       data: { branchId: me.branchId, bookId, studentId,
         issueDate: new Date(`${new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10)}T00:00:00.000Z`),

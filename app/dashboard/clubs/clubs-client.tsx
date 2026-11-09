@@ -1,7 +1,9 @@
 "use client";
-// M14-C: ক্লাব — সেটআপ + সদস্যপদ (এক-ক্লাবে-একবার; পুনঃযোগ = রেকর্ড-ফেরত — নোট ৯৪)
+// M14-C + M17-B: ক্লাব — সেটআপ + সদস্যপদ (এক-ক্লাবে-একবার; পুনঃযোগ = রেকর্ড-ফেরত — নোট ৯৪)
+// ছাত্র-পিকার = StudentPicker (ক্লাস→সেকশন→রোল/নাম) — নাম-মাত্র-ড্রপডাউন-নির্মূল
 import { useCallback, useEffect, useState } from "react";
 import type { Dictionary } from "@/messages/bn";
+import StudentPicker from "@/components/student-picker";
 
 async function fetchJson(url: string, init?: RequestInit, tries = 2): Promise<{ success: boolean; error?: string; data?: unknown }> {
   try {
@@ -16,26 +18,25 @@ async function fetchJson(url: string, init?: RequestInit, tries = 2): Promise<{ 
 
 type Club = { id: string; name: string; description: string | null; advisor: string | null; members: number };
 type Member = { id: string; studentName: string; clubName: string; status: string };
-type Opt = { id: string; label: string };
+type StuPick = { id: string; label: string } | null;
 const inputCls = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm";
 
 export default function ClubsClient({ dict }: { dict: Dictionary }) {
   const t = dict.clubs;
   const [clubs, setClubs] = useState<Club[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
-  const [students, setStudents] = useState<Opt[]>([]);
+  const [mStudentSel, setMStudentSel] = useState<StuPick>(null);
   const [msg, setMsg] = useState(""); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
   const [cName, setCName] = useState(""); const [cDesc, setCDesc] = useState(""); const [cAdvisor, setCAdvisor] = useState("");
-  const [mStudent, setMStudent] = useState(""); const [mClub, setMClub] = useState("");
+  const [mClub, setMClub] = useState("");
 
   const load = useCallback(async () => {
     try {
-      const [j1, j2, j3] = await Promise.all([
-        fetchJson("/api/clubs"), fetchJson("/api/clubs/memberships"), fetchJson("/api/clubs?meta=students"),
+      const [j1, j2] = await Promise.all([
+        fetchJson("/api/clubs"), fetchJson("/api/clubs/memberships"),
       ]);
       if (j1.success && Array.isArray(j1.data)) setClubs(j1.data as Club[]); else if (j1.error) setErr(j1.error);
       if (j2.success && Array.isArray(j2.data)) setMembers(j2.data as Member[]);
-      if (j3.success && Array.isArray(j3.data)) setStudents(j3.data as Opt[]);
     } catch { setErr(t.networkError); }
   }, [t.networkError]);
   useEffect(() => { load(); }, [load]);
@@ -63,13 +64,13 @@ export default function ClubsClient({ dict }: { dict: Dictionary }) {
 
   async function join() {
     setErr(""); setMsg("");
-    if (!mStudent) { setErr(t.errStudent); return; }
+    if (!mStudentSel) { setErr(t.errStudent); return; }
     if (!mClub) { setErr(t.errClub); return; }
     setBusy(true);
     try {
       const j = await fetchJson("/api/clubs/memberships", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clubId: mClub, studentId: mStudent }) });
-      if (j.success) { setMsg(t.saved); setMStudent(""); load(); } else setErr(j.error ?? t.networkError);
+        body: JSON.stringify({ clubId: mClub, studentId: mStudentSel.id }) });
+      if (j.success) { setMsg(t.saved); setMStudentSel(null); load(); } else setErr(j.error ?? t.networkError);
     } catch { setErr(t.networkError); }
     setBusy(false);
   }
@@ -127,9 +128,8 @@ export default function ClubsClient({ dict }: { dict: Dictionary }) {
         <p className="mb-3 text-sm font-semibold">{t.mTitle}</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <div><label className="mb-1 block text-sm">{t.pickStudent}</label>
-            <select value={mStudent} onChange={(e) => setMStudent(e.target.value)} className={inputCls}>
-              <option value="">—</option>{students.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
-            </select></div>
+            <StudentPicker module="clubs" value={mStudentSel} onChange={setMStudentSel} disabled={busy} />
+          </div>
           <div><label className="mb-1 block text-sm">{t.pickClub}</label>
             <select value={mClub} onChange={(e) => setMClub(e.target.value)} className={inputCls}>
               <option value="">—</option>{clubs.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}

@@ -1,10 +1,8 @@
-// M14-D: ভিজিটর — GET(data=logs-array + meta=সারসংক্ষেপ) + POST(চেক-ইন) + PATCH(চেক-আউট)
-// রোল = SUPER/BRANCH_ADMIN/STAFF (ফ্রন্ট-ডেস্ক — নোট ৯৬)
+// M14-D + M16-B: ভিজিটর — GET(data+meta) + POST(চেক-ইন) + PATCH(চেক-আউট) — দুই-অ্যাডমিন ∨ visitors-অনুমতি
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
-
-const ALLOWED = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "STAFF"];
+import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 
 async function requireUser(request: NextRequest) {
   const token = request.cookies.get("shikkhaloy_token")?.value;
@@ -13,14 +11,16 @@ async function requireUser(request: NextRequest) {
   const me = await prisma.user.findUnique({
     where: { id: session.userId }, select: { id: true, role: true, status: true, branchId: true },
   });
-  if (!me || me.status !== "ACTIVE" || !ALLOWED.includes(me.role)) return null;
+  if (!me || me.status !== "ACTIVE") return null;
+  if (ADMIN_ROLES.includes(me.role)) return me;
+  if (!PERM_ROLES.includes(me.role) || !(await canModule(me, "visitors"))) return null;
   return me;
 }
 
 export async function GET(request: NextRequest) {
   try {
     const me = await requireUser(request);
-    if (!me) return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    if (!me) return NextResponse.json({ success: false, error: "ভিজিটর-মডিউলের অনুমতি নেই" }, { status: 403 });
     const rows = await prisma.visitorLog.findMany({
       where: { branchId: me.branchId, deletedAt: null }, orderBy: { checkInAt: "desc" }, take: 200,
     });
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const me = await requireUser(request);
-    if (!me) return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    if (!me) return NextResponse.json({ success: false, error: "ভিজিটর-মডিউলের অনুমতি নেই" }, { status: 403 });
     const body = await request.json();
     const name = typeof body.name === "string" ? body.name.trim() : "";
     if (!name) return NextResponse.json({ success: false, error: "ভিজিটরের নাম দিন" }, { status: 400 });
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const me = await requireUser(request);
-    if (!me) return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    if (!me) return NextResponse.json({ success: false, error: "ভিজিটর-মডিউলের অনুমতি নেই" }, { status: 403 });
     const body = await request.json();
     const visitorId = typeof body.visitorId === "string" ? body.visitorId : "";
     if (!visitorId) return NextResponse.json({ success: false, error: "ভিজিটর-আইডি দিন" }, { status: 400 });

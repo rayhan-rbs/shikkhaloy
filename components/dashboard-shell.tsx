@@ -40,6 +40,8 @@ const R_SUPER = ["PLATFORM_SUPER_ADMIN"];
 const R_STUDY = [...R_ADMIN_TEACHER, "STUDENT", "PARENT"]; // স্টাডি — দর্শক-সেট
 const R_ROUTINE_VIEW = [...R_ADMINS, "STUDENT", "PARENT"]; // রুটিন-পেজ (বিল্ডার=অ্যাডমিন; দর্শক=ছাত্র/অভিভাবক) — শিক্ষক = নিজের /my-routine
 const R_TEACHER = ["TEACHER"];
+const R_PERM = [...R_ADMINS, "ACCOUNTANT", "STAFF"]; // M16-B: অনুমতি-মডিউল (perm-ফিল্টার-সহ)
+
 
 const R_LEAVE = [...R_ADMIN_TEACHER, "STUDENT", "PARENT"]; // ছুটি: ছাত্র/অভিভাবক-আবেদন + অ্যাডমিন/শিক্ষক-অনুমোদন
 const R_FEE_PAY = ["STUDENT", "PARENT"]; // অনলাইন ফি-পরিশোধ — পেয়ার
@@ -55,6 +57,7 @@ interface ShellUser {
   role: string;
   branchName: string;
   status: string;
+  perms: string[]; // M16-B: গ্রান্টেড-মডিউল-কী (STAFF/ACCOUNTANT; অন্য-রোল = শূন্য-অ্যারে)
 }
 
 interface NavItem {
@@ -63,7 +66,8 @@ interface NavItem {
   icon: LucideIcon;
   active: boolean;
   soon: boolean;
-  roles: string[]; // বাধ্যতামূলক — এই-রোলরা-ই-দেখবে (TS-enforced: না-লিখলে-বিল্ড-এরর)
+  roles: string[];
+  perm?: string; // বাধ্যতামূলক — এই-রোলরা-ই-দেখবে (TS-enforced: না-লিখলে-বিল্ড-এরর)
 }
 
 export default function DashboardShell({
@@ -111,8 +115,10 @@ export default function DashboardShell({
         { href: "/dashboard/student-hub", label: L("আমার হাব", "My Hub"), icon: Home, active: pathname.startsWith("/dashboard/student-hub"), soon: false, roles: ["STUDENT"] },
         { href: "/dashboard/teacher-hub", label: L("আমার হাব", "My Hub"), icon: Home, active: pathname.startsWith("/dashboard/teacher-hub"), soon: false, roles: R_TEACHER },
         { href: "/dashboard/parent-hub", label: L("আমার হাব", "My Hub"), icon: Home, active: pathname.startsWith("/dashboard/parent-hub"), soon: false, roles: ["PARENT"] },
+        { href: "/dashboard/accountant-hub", label: L("আমার হাব", "My Hub"), icon: Home, active: pathname.startsWith("/dashboard/accountant-hub"), soon: false, roles: ["ACCOUNTANT"] },
 
-        { href: "/dashboard/my-profile", label: L("আমার প্রোফাইল", "My Profile"), icon: User, active: pathname.startsWith("/dashboard/my-profile"), soon: false, roles: ["STUDENT", "TEACHER", "PARENT"] },
+        { href: "/dashboard/my-profile", label: L("আমার প্রোফাইল", "My Profile"), icon: User, active: pathname.startsWith("/dashboard/my-profile"), soon: false, roles: ["STUDENT", "TEACHER", "PARENT", "ACCOUNTANT", "STAFF"] },
+
 
       ],
     },
@@ -168,25 +174,26 @@ export default function DashboardShell({
       label: L("আর্থিক", "Finance"),
       items: [
         { href: "/dashboard/fees/online", label: L("অনলাইন ফি পরিশোধ", "Pay Fees Online"), icon: CreditCard, active: pathname.startsWith("/dashboard/fees/online"), soon: false, roles: R_FEE_PAY },
-        { href: "/dashboard/fees", label: t(dict, "fees.title"), icon: Wallet, active: pathname.startsWith("/dashboard/fees") && !pathname.startsWith("/dashboard/fees/online"), soon: false, roles: R_ADMINS },
-        { href: "/dashboard/discounts", label: t(dict, "discounts.navTitle"), icon: Percent, active: pathname.startsWith("/dashboard/discounts"), soon: false, roles: R_ADMIN_ACCOUNTANT },
-        { href: "/dashboard/ledger", label: t(dict, "ledger.navTitle"), icon: ReceiptText, active: pathname.startsWith("/dashboard/ledger"), soon: false, roles: R_ADMIN_ACCOUNTANT },
-        { href: "/dashboard/finance/report", label: t(dict, "finance.navTitle"), icon: BarChart3, active: pathname.startsWith("/dashboard/finance/report"), soon: false, roles: R_ADMIN_ACCOUNTANT },
-        { href: "/dashboard/salary", label: t(dict, "salary.navTitle"), icon: Banknote, active: pathname.startsWith("/dashboard/salary"), soon: false, roles: R_ADMIN_ACCOUNTANT },
+        { href: "/dashboard/fees", label: t(dict, "fees.title"), icon: Wallet, active: pathname.startsWith("/dashboard/fees") && !pathname.startsWith("/dashboard/fees/online"), soon: false, roles: R_PERM, perm: "fees" },
+        { href: "/dashboard/discounts", label: t(dict, "discounts.navTitle"), icon: Percent, active: pathname.startsWith("/dashboard/discounts"), soon: false, roles: R_PERM, perm: "discount" },
+        { href: "/dashboard/ledger", label: t(dict, "ledger.navTitle"), icon: ReceiptText, active: pathname.startsWith("/dashboard/ledger"), soon: false, roles: R_PERM, perm: "expenses" },
+        { href: "/dashboard/finance/report", label: t(dict, "finance.navTitle"), icon: BarChart3, active: pathname.startsWith("/dashboard/finance/report"), soon: false, roles: R_PERM, perm: "finance-reports" },
+        { href: "/dashboard/salary", label: t(dict, "salary.navTitle"), icon: Banknote, active: pathname.startsWith("/dashboard/salary"), soon: false, roles: R_PERM, perm: "salary" },
       ],
     },
     {
       label: L("সুবিধা", "Facilities"),
       items: [
-        { href: "/dashboard/library", label: t(dict, "library.navTitle"), icon: Library, active: pathname.startsWith("/dashboard/library"), soon: false, roles: R_ADMIN_ACCOUNTANT },
-        { href: "/dashboard/hostel", label: t(dict, "hostel.navTitle"), icon: BedDouble, active: pathname.startsWith("/dashboard/hostel"), soon: false, roles: R_ADMINS },
-        { href: "/dashboard/transport", label: t(dict, "transport.navTitle"), icon: Bus, active: pathname.startsWith("/dashboard/transport"), soon: false, roles: R_ADMINS },
-        { href: "/dashboard/clubs", label: t(dict, "clubs.navTitle"), icon: Trophy, active: pathname.startsWith("/dashboard/clubs"), soon: false, roles: R_ADMINS },
-        { href: "/dashboard/inventory", label: t(dict, "inventory.navTitle"), icon: Package, active: pathname.startsWith("/dashboard/inventory"), soon: false, roles: R_ADMINS },
-        { href: "/dashboard/visitors", label: t(dict, "visitors.navTitle"), icon: DoorOpen, active: pathname.startsWith("/dashboard/visitors"), soon: false, roles: R_ADMIN_STAFF },
-        { href: "/dashboard/health", label: t(dict, "health.navTitle"), icon: HeartPulse, active: pathname.startsWith("/dashboard/health"), soon: false, roles: R_ADMINS },
+        { href: "/dashboard/library", label: t(dict, "library.navTitle"), icon: Library, active: pathname.startsWith("/dashboard/library"), soon: false, roles: R_PERM, perm: "library" },
+        { href: "/dashboard/hostel", label: t(dict, "hostel.navTitle"), icon: BedDouble, active: pathname.startsWith("/dashboard/hostel"), soon: false, roles: R_PERM, perm: "hostel" },
+        { href: "/dashboard/transport", label: t(dict, "transport.navTitle"), icon: Bus, active: pathname.startsWith("/dashboard/transport"), soon: false, roles: R_PERM, perm: "transport" },
+        { href: "/dashboard/clubs", label: t(dict, "clubs.navTitle"), icon: Trophy, active: pathname.startsWith("/dashboard/clubs"), soon: false, roles: R_PERM, perm: "clubs" },
+        { href: "/dashboard/inventory", label: t(dict, "inventory.navTitle"), icon: Package, active: pathname.startsWith("/dashboard/inventory"), soon: false, roles: R_PERM, perm: "inventory" },
+        { href: "/dashboard/visitors", label: t(dict, "visitors.navTitle"), icon: DoorOpen, active: pathname.startsWith("/dashboard/visitors"), soon: false, roles: R_PERM, perm: "visitors" },
+        { href: "/dashboard/health", label: t(dict, "health.navTitle"), icon: HeartPulse, active: pathname.startsWith("/dashboard/health"), soon: false, roles: R_PERM, perm: "health" },
       ],
     },
+
     {
       label: L("যোগাযোগ", "Communication"),
       items: [
@@ -216,6 +223,8 @@ export default function DashboardShell({
       label: L("সিস্টেম ও কনফিগ", "System"),
       items: [
         { href: "/dashboard/settings", label: t(dict, "nav.settings"), icon: Settings, active: pathname.startsWith("/dashboard/settings") && !pathname.startsWith("/dashboard/settings/academic"), soon: false, roles: R_ADMINS },
+        { href: "/dashboard/staff-users", label: L("ইউজার ও অনুমতি", "Users & Access"), icon: UserCog, active: pathname.startsWith("/dashboard/staff-users"), soon: false, roles: R_ADMINS },
+
         { href: "/dashboard/settings/academic", label: t(dict, "nav.academicCal"), icon: Calendar, active: pathname.startsWith("/dashboard/settings/academic"), soon: false, roles: R_ADMINS },
         { href: "/dashboard/grading", label: t(dict, "nav.grading"), icon: Award, active: pathname.startsWith("/dashboard/grading"), soon: false, roles: R_ADMINS },
         { href: "/dashboard/audit", label: t(dict, "audit.title"), icon: ScrollText, active: pathname.startsWith("/dashboard/audit"), soon: false, roles: R_ADMINS },
@@ -228,8 +237,11 @@ export default function DashboardShell({
   // role-ফিল্টার: roles = এখন-প্রতিটা-আইটেমে-বাধ্যতামূলক → মিললে-ই-দেখাবে, খালি-গ্রুপ-লুকানো
   // M14-E2: ALUMNI-স্ট্যাটাস = শুধু ড্যাশবোর্ড+অ্যালামনাই (অন্য-পেজের-নিজস্ব-গার্ড-লুপ-প্রতিরোধ)
   const ALUMNI_ONLY_HREFS = ["/dashboard", "/dashboard/alumni"];
+  // M16-B: perm-আইটেম = roles-মিল + (অ্যাডমিন ∨ গ্রান্টেড-কী) — প্যালেটও-এক-সোর্স-অটো-ফিল্টার
+  const isAdminUser = user.role === "PLATFORM_SUPER_ADMIN" || user.role === "BRANCH_ADMIN";
   const visibleGroups = navGroups
-    .map((g) => ({ ...g, items: g.items.filter((i) => i.roles.includes(user.role)) }))
+    .map((g) => ({ ...g, items: g.items.filter((i) => i.roles.includes(user.role) && (!i.perm || isAdminUser || user.perms.includes(i.perm))) }))
+
     .filter((g) => g.items.length > 0)
     .map((g) =>
       user.status === "ALUMNI"

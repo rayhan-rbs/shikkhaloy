@@ -1,10 +1,9 @@
-// M14-A: ইস্যু — GET(?status=active) + POST(গার্ড: বই/ছাত্র-ব্রাঞ্চ + dup-ISSUED-409 + কপি-অপ্রতুল-409)
+// M14-A + M16-B: ইস্যু — GET+POST = দুই-অ্যাডমিন ∨ library-অনুমতি (গার্ড: dup-ISSUED-409 + কপি-অপ্রতুল-409 অক্ষত)
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
+import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 import type { Prisma } from "@prisma/client";
-
-const ADMIN_ROLES = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"];
 
 async function requireUser(request: NextRequest) {
   const token = request.cookies.get("shikkhaloy_token")?.value;
@@ -13,15 +12,16 @@ async function requireUser(request: NextRequest) {
   const me = await prisma.user.findUnique({
     where: { id: session.userId }, select: { id: true, role: true, status: true, branchId: true },
   });
-  if (!me || me.status !== "ACTIVE"
-    || !(me.role === "PLATFORM_SUPER_ADMIN" || me.role === "BRANCH_ADMIN" || me.role === "ACCOUNTANT")) return null;
+  if (!me || me.status !== "ACTIVE") return null;
+  if (ADMIN_ROLES.includes(me.role)) return me;
+  if (!PERM_ROLES.includes(me.role) || !(await canModule(me, "library"))) return null;
   return me;
 }
 
 export async function GET(request: NextRequest) {
   try {
     const me = await requireUser(request);
-    if (!me) return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    if (!me) return NextResponse.json({ success: false, error: "লাইব্রেরি-মডিউলের অনুমতি নেই" }, { status: 403 });
     const { searchParams } = new URL(request.url);
     const where: Prisma.BookLoanWhereInput = { branchId: me.branchId, deletedAt: null };
     if (searchParams.get("status") === "active") where.status = "ISSUED";
@@ -50,8 +50,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const me = await requireUser(request);
-    if (!me || !ADMIN_ROLES.includes(me.role))
-      return NextResponse.json({ success: false, error: "অনুমতি: শুধু অ্যাডমিনরা" }, { status: 403 });
+    if (!me) return NextResponse.json({ success: false, error: "লাইব্রেরি-মডিউলের অনুমতি নেই" }, { status: 403 });
     const body = await request.json();
     const bookId = typeof body.bookId === "string" ? body.bookId : "";
     const studentId = typeof body.studentId === "string" ? body.studentId : "";

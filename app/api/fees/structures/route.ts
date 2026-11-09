@@ -1,25 +1,26 @@
-// 📁 ৪.৬: GET তালিকা (+ইনভয়েস-কাউন্ট) + POST ফি-আইটেম তৈরি (ডুপ-রক্ষা — নোট ৩৯)
+// 📁 ৪.৬ + M16-B: GET তালিকা (+ইনভয়েস-কাউন্ট) + POST ফি-আইটেম তৈরি (ডুপ-রক্ষা — নোট ৩৯) — দুই-অ্যাডমিন ∨ fees-অনুমতি
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { verifyToken } from "@/lib/auth";
+import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 
-const ALLOWED = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"];
-
-async function requireSession(request: NextRequest) {
+async function requireUser(request: NextRequest) {
   const token = request.cookies.get("shikkhaloy_token")?.value;
-  if (!token) return { error: NextResponse.json({ success: false, error: "আগে লগইন করুন" }, { status: 401 }) };
-  const session = await verifyToken(token);
-  if (!session) return { error: NextResponse.json({ success: false, error: "সেশন শেষ" }, { status: 401 }) };
-  return { session };
+  const session = token ? await verifyToken(token) : null;
+  if (!session) return null;
+  const me = await prisma.user.findUnique({
+    where: { id: session.userId }, select: { id: true, role: true, status: true, branchId: true },
+  });
+  if (!me || me.status !== "ACTIVE") return null;
+  if (ADMIN_ROLES.includes(me.role)) return me;
+  if (!PERM_ROLES.includes(me.role) || !(await canModule(me, "fees"))) return null;
+  return me;
 }
 
 export async function GET(request: NextRequest) {
-  const guard = await requireSession(request);
-  if ("error" in guard) return guard.error;
-  const s = guard.session as { role: string; branchId?: string | null };
-  if (!ALLOWED.includes(s.role)) return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
-  const branchId = s.branchId;
-  if (!branchId) return NextResponse.json({ success: false, error: "ব্রাঞ্চ শনাক্ত হয়নি" }, { status: 403 });
+  const me = await requireUser(request);
+  if (!me || !me.branchId) return NextResponse.json({ success: false, error: "ফি-মডিউলের অনুমতি নেই" }, { status: 403 });
+  const branchId = me.branchId;
 
   const [structures, invAgg] = await Promise.all([
     prisma.feeStructure.findMany({ where: { branchId, deletedAt: null }, orderBy: { createdAt: "desc" } }),
@@ -31,12 +32,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const guard = await requireSession(request);
-  if ("error" in guard) return guard.error;
-  const s = guard.session as { role: string; branchId?: string | null };
-  if (!ALLOWED.includes(s.role)) return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
-  const branchId = s.branchId;
-  if (!branchId) return NextResponse.json({ success: false, error: "ব্রাঞ্চ শনাক্ত হয়নি" }, { status: 403 });
+  const me = await requireUser(request);
+  if (!me || !me.branchId) return NextResponse.json({ success: false, error: "ফি-মডিউলের অনুমতি নেই" }, { status: 403 });
+  const branchId = me.branchId;
   const b = await request.json();
 
   const name = String(b?.name ?? "").trim();

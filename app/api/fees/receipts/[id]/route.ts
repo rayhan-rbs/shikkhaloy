@@ -1,22 +1,29 @@
-// M8: রসিদ-PDF — রোল-স্কোপড + লেটারহেড-লাইভ + রসিদ-নং RCP-YYYYMMDD-পেমেন্ট-শেষ-৪
+// M8 + M16-B: রসিদ-PDF — মিশ্র-গেট (STUDENT/PARENT নিজস্ব-যাচাই-ভেতরেই) + লেটারহেড-লাইভ + RCP-নং-অক্ষত
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 import { buildReceiptPdf } from "@/lib/receipt-pdf";
+import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 
-const ACCOUNT_ROLES = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"];
+async function requireScoped(request: NextRequest) {
+  const token = request.cookies.get("shikkhaloy_token")?.value;
+  const session = token ? await verifyToken(token) : null;
+  if (!session) return null;
+  const me = await prisma.user.findUnique({
+    where: { id: session.userId }, select: { id: true, role: true, status: true, branchId: true },
+  });
+  if (!me || me.status !== "ACTIVE") return null;
+  if (ADMIN_ROLES.includes(me.role)) return me;
+  if (me.role === "STUDENT" || me.role === "PARENT") return me;
+  if (PERM_ROLES.includes(me.role) && (await canModule(me, "fees"))) return me;
+  return null;
+}
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const token = request.cookies.get("shikkhaloy_token")?.value;
-    const session = token ? await verifyToken(token) : null;
-    if (!session) return NextResponse.json({ success: false, error: "লগইন করুন" }, { status: 401 });
-    const me = await prisma.user.findUnique({
-      where: { id: session.userId },
-      select: { id: true, role: true, status: true, branchId: true },
-    });
-    if (!me || me.status !== "ACTIVE")
-      return NextResponse.json({ success: false, error: "অ্যাকাউন্ট সক্রিয় নয়" }, { status: 403 });
+    const me = await requireScoped(request);
+    if (!me || !me.branchId)
+      return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
 
     const { id } = await params; // Next 16 — params Promise (নোট ২৫)
     const pay = await prisma.feePayment.findFirst({ where: { id, branchId: me.branchId, deletedAt: null } });
@@ -37,8 +44,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       });
       if (!link) return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
     }
-    if (me.role !== "STUDENT" && me.role !== "PARENT" && !ACCOUNT_ROLES.includes(me.role))
-      return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
 
     const [student, klass, latestIntent, org] = await Promise.all([
       prisma.user.findUnique({ where: { id: invoice.studentId }, select: { fullName: true } }),

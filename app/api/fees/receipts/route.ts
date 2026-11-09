@@ -1,25 +1,29 @@
-// M8: রসিদ-তালিকা — ADMIN/ACCOUNTANT=branch-সব, STUDENT=নিজে, PARENT=ParentLink-সন্তান
+// M8 + M16-B: রসিদ-তালিকা — মিশ্র-গেট: STUDENT/PARENT = নিজের-রেকর্ড (perm-ছাড়াই); অ্যাডমিন = পাস; STAFF/ACCOUNTANT = fees-perm
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
+import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 
-const ACCOUNT_ROLES = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"];
+// M16-B মিশ্র-গেট: null = 403; me-ফেরত = স্কোপ-রেজলভ-নিচে-হবে
+async function requireScoped(request: NextRequest) {
+  const token = request.cookies.get("shikkhaloy_token")?.value;
+  const session = token ? await verifyToken(token) : null;
+  if (!session) return null;
+  const me = await prisma.user.findUnique({
+    where: { id: session.userId }, select: { id: true, role: true, status: true, branchId: true },
+  });
+  if (!me || me.status !== "ACTIVE") return null;
+  if (ADMIN_ROLES.includes(me.role)) return me;                       // অ্যাডমিন = branch-সব
+  if (me.role === "STUDENT" || me.role === "PARENT") return me;       // নিজের/সন্তানের — perm-অপ্রাসঙ্গিক
+  if (PERM_ROLES.includes(me.role) && (await canModule(me, "fees"))) return me; // চালক
+  return null;
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get("shikkhaloy_token")?.value;
-    const session = token ? await verifyToken(token) : null;
-    if (!session) return NextResponse.json({ success: false, error: "লগইন করুন" }, { status: 401 });
-    const me = await prisma.user.findUnique({
-      where: { id: session.userId },
-      select: { id: true, role: true, status: true, branchId: true },
-    });
-    if (!me || me.status !== "ACTIVE")
-      return NextResponse.json({ success: false, error: "অ্যাকাউন্ট সক্রিয় নয়" }, { status: 403 });
-
-    const isAccount = ACCOUNT_ROLES.includes(me.role);
-    if (!isAccount && me.role !== "STUDENT" && me.role !== "PARENT")
+    const me = await requireScoped(request);
+    if (!me || !me.branchId)
       return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
 
     const invoiceWhere: Prisma.FeeInvoiceWhereInput = { branchId: me.branchId, deletedAt: null };

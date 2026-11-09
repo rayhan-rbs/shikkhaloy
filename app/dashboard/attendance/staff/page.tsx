@@ -1,4 +1,4 @@
-// 📁 app/dashboard/attendance/staff/page.tsx — M15-C স্টাফ-হাজিরা (admin-only গার্ড)
+// 📁 app/dashboard/attendance/staff/page.tsx — M15-C+E (institution-যোগ — সারাংশ-প্রিন্ট-হেডারের-জন্য)
 export const instant = false;
 
 import { cookies } from "next/headers";
@@ -17,6 +17,17 @@ export default async function StaffAttendancePage() {
   const me = await prisma.user.findUnique({ where: { id: session.userId }, select: { role: true, status: true } });
   if (!me || me.status !== "ACTIVE") redirect("/login");
   if (!["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"].includes(me.role)) redirect("/dashboard?denied=1");
-  const lang = await getLang();
-  return <StaffAttendanceClient lang={lang} />;
+  const [lang, settings] = await Promise.all([getLang(), prisma.institutionSetting.findUnique({ where: { key: "global" } })]);
+  return (
+    <StaffAttendanceClient
+      lang={lang}
+      institution={{
+        name: settings?.name || "শিক্ষালয়", nameEn: settings?.nameEn || null,
+        tagline: settings?.tagline || null, taglineEn: settings?.taglineEn || null,
+        address: settings?.address || null, phone: settings?.phone || null,
+        email: settings?.email || null, eiin: settings?.eiin || null,
+        logoUrl: settings?.logoUrl || null,
+      }}
+    />
+  );
 }

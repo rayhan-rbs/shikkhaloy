@@ -1,20 +1,27 @@
-// 📁 ৪.৬: POST — ক্লাসের সব ACTIVE-ছাত্রের ইনভয়েস (tx; আগে-থাকলে বাদ — নোট ৫৯)
-// M11-প্যাচ: সক্রিয় StudentDiscount প্রয়োগ — PERCENT-আগে (base-এ), তারপর AMOUNT-বিয়োগ; নিম্নসীমা ০; ব্যাচ-এক-কুয়েরি (নোট ৫৫)
+// 📁 ৪.৬ + M16-B: POST — ক্লাসের সব ACTIVE-ছাত্রের ইনভয়েস (tx; আগে-থাকলে বাদ — নোট ৫৯)
+// M11-প্যাচ অক্ষত: PERCENT-আগে (base-এ), তারপর AMOUNT-বিয়োগ; নিম্নসীমা ০; ব্যাচ-এক-কুয়েরি (নোট ৫৫)
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { verifyToken } from "@/lib/auth";
+import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 
-const ALLOWED = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"];
+async function requireUser(request: NextRequest) {
+  const token = request.cookies.get("shikkhaloy_token")?.value;
+  const session = token ? await verifyToken(token) : null;
+  if (!session) return null;
+  const me = await prisma.user.findUnique({
+    where: { id: session.userId }, select: { id: true, role: true, status: true, branchId: true },
+  });
+  if (!me || me.status !== "ACTIVE") return null;
+  if (ADMIN_ROLES.includes(me.role)) return me;
+  if (!PERM_ROLES.includes(me.role) || !(await canModule(me, "fees"))) return null;
+  return me;
+}
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const token = request.cookies.get("shikkhaloy_token")?.value;
-  if (!token) return NextResponse.json({ success: false, error: "আগে লগইন করুন" }, { status: 401 });
-  const session = await verifyToken(token);
-  if (!session) return NextResponse.json({ success: false, error: "সেশন শেষ" }, { status: 401 });
-  const s = session as { role: string; branchId?: string | null };
-  if (!ALLOWED.includes(s.role)) return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
-  const branchId = s.branchId;
-  if (!branchId) return NextResponse.json({ success: false, error: "ব্রাঞ্চ শনাক্ত হয়নি" }, { status: 403 });
+  const me = await requireUser(request);
+  if (!me || !me.branchId) return NextResponse.json({ success: false, error: "ফি-মডিউলের অনুমতি নেই" }, { status: 403 });
+  const branchId = me.branchId;
 
   const { id } = await params;
   const structure = await prisma.feeStructure.findFirst({ where: { id, branchId, deletedAt: null } });
@@ -34,7 +41,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (toCreate.length === 0)
     return NextResponse.json({ success: true, data: { created: 0, skipped: have.size } });
 
-    // ─── M11: ডিসকাউন্ট — নতুন-তৈরি-হওয়া ছাত্রদের সক্রিয় ছাড় এক-কুয়েরিতে (findMany+Map — নোট ৫৫; N+1 নয়)
+  // ─── M11: ডিসকাউন্ট — নতুন-তৈরি-হওয়া ছাত্রদের সক্রিয় ছাড় এক-কুয়েরিতে (findMany+Map — নোট ৫৫; N+1 নয়)
   const baseAmount = structure.amount; // narrowing-ক্লোজার-নিরাপদ: হোস্টেড function-এ narrowing বহমান নয়
   const discounts = await prisma.studentDiscount.findMany({
     where: { branchId, studentId: { in: toCreate.map((e) => e.studentId) }, isActive: true, deletedAt: null },
@@ -54,7 +61,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
     return Math.max(0, Math.round(amount * 100) / 100);
   }
-
 
   const created = await prisma.$transaction(async (tx) => {
     await tx.feeInvoice.createMany({

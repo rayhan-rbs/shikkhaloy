@@ -1,22 +1,28 @@
-// 📁 app/api/fees/remind/route.ts
-// ৪.৭-A রিমাইন্ডার — POST: নির্বাচিত বকেয়া-ইনভয়েসে ইমেইল (Resend — lib/mailer.ts)
-// ছাত্র-প্রতি গ্রুপিং: এক-ছাত্রের একাধিক বকেয়া = এক-ইমেইলে তালিকা
+// 📁 ৪.৭-A + M16-B: রিমাইন্ডার — POST: নির্বাচিত বকেয়া-ইনভয়েসে ইমেইল (Resend — lib/mailer.ts) — দুই-অ্যাডমিন ∨ fees-অনুমতি
+// ছাত্র-প্রতি গ্রুপিং অক্ষত: এক-ছাত্রের একাধিক বকেয়া = এক-ইমেইলে তালিকা
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 import { mailerReady, sendMail, dueReminderHtml } from "@/lib/mailer";
+import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 
-const ADMIN_ROLES = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"];
+async function requireUser(request: NextRequest) {
+  const token = request.cookies.get("shikkhaloy_token")?.value;
+  const session = token ? await verifyToken(token) : null;
+  if (!session) return null;
+  const me = await prisma.user.findUnique({
+    where: { id: session.userId }, select: { id: true, role: true, status: true, branchId: true },
+  });
+  if (!me || me.status !== "ACTIVE") return null;
+  if (ADMIN_ROLES.includes(me.role)) return me;
+  if (!PERM_ROLES.includes(me.role) || !(await canModule(me, "fees"))) return null;
+  return me;
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get("shikkhaloy_token")?.value;
-    if (!token) return NextResponse.json({ success: false, error: "আগে লগইন করুন" }, { status: 401 });
-    const session = await verifyToken(token);
-    if (!session) return NextResponse.json({ success: false, error: "সেশন শেষ" }, { status: 401 });
-    if (!ADMIN_ROLES.includes(session.role)) {
-      return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
-    }
+    const me = await requireUser(request);
+    if (!me || !me.branchId) return NextResponse.json({ success: false, error: "ফি-মডিউলের অনুমতি নেই" }, { status: 403 });
 
     if (!mailerReady()) {
       return NextResponse.json(
@@ -35,7 +41,7 @@ export async function POST(request: NextRequest) {
     }
 
     const invoices = await prisma.feeInvoice.findMany({
-      where: { id: { in: invoiceIds }, branchId: session.branchId, deletedAt: null, status: { not: "PAID" } },
+      where: { id: { in: invoiceIds }, branchId: me.branchId, deletedAt: null, status: { not: "PAID" } },
       include: { structure: { select: { name: true, monthKey: true } } },
     });
     if (invoices.length === 0) {

@@ -1,10 +1,8 @@
-// M14-A: বইয়ের-তালিকা+যোগ — GET(?meta=students → ইস্যু-পিকার) | POST = দুই-অ্যাডমিন (নোট ৮০-দ্বৈত)
+// M14-A + M16-B: দেখা+চালানো = দুই-অ্যাডমিন ∨ library-অনুমতি; GET+POST এক-গেট (চালক-মডেল)
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
-
-const ADMIN_ROLES = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"];
-const VIEW_ROLES = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"];
+import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 
 async function requireUser(request: NextRequest) {
   const token = request.cookies.get("shikkhaloy_token")?.value;
@@ -13,14 +11,17 @@ async function requireUser(request: NextRequest) {
   const me = await prisma.user.findUnique({
     where: { id: session.userId }, select: { id: true, role: true, status: true, branchId: true },
   });
-  if (!me || me.status !== "ACTIVE" || !VIEW_ROLES.includes(me.role)) return null;
+  if (!me || me.status !== "ACTIVE") return null;
+  if (ADMIN_ROLES.includes(me.role)) return me;
+  if (!PERM_ROLES.includes(me.role)) return null;
+  if (!(await canModule(me, "library"))) return null;
   return me;
 }
 
 export async function GET(request: NextRequest) {
   try {
     const me = await requireUser(request);
-    if (!me) return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    if (!me) return NextResponse.json({ success: false, error: "লাইব্রেরি-মডিউলের অনুমতি নেই" }, { status: 403 });
     const { searchParams } = new URL(request.url);
 
     if (searchParams.get("meta") === "students") {
@@ -51,8 +52,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const me = await requireUser(request);
-    if (!me || !ADMIN_ROLES.includes(me.role))
-      return NextResponse.json({ success: false, error: "অনুমতি: শুধু অ্যাডমিনরা" }, { status: 403 });
+    if (!me)
+      return NextResponse.json({ success: false, error: "লাইব্রেরি-মডিউলের অনুমতি নেই" }, { status: 403 });
     const body = await request.json();
     const title = typeof body.title === "string" ? body.title.trim() : "";
     if (!title) return NextResponse.json({ success: false, error: "বইয়ের নাম দিন" }, { status: 400 });

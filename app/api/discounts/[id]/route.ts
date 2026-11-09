@@ -1,21 +1,27 @@
-// M11: ডিসকাউন্ট — PATCH (টগল/সম্পাদনা) | DELETE (soft)
+// M11 + M16-B: ডিসকাউন্ট — PATCH (টগল/সম্পাদনা) | DELETE (soft) — দুই-অ্যাডমিন ∨ discount-অনুমতি
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
+import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 
-const FINANCE_ROLES = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"];
+async function requireUser(request: NextRequest) {
+  const token = request.cookies.get("shikkhaloy_token")?.value;
+  const session = token ? await verifyToken(token) : null;
+  if (!session) return null;
+  const me = await prisma.user.findUnique({
+    where: { id: session.userId }, select: { id: true, role: true, status: true, branchId: true },
+  });
+  if (!me || me.status !== "ACTIVE") return null;
+  if (ADMIN_ROLES.includes(me.role)) return me;
+  if (!PERM_ROLES.includes(me.role) || !(await canModule(me, "discount"))) return null;
+  return me;
+}
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const token = request.cookies.get("shikkhaloy_token")?.value;
-    const session = token ? await verifyToken(token) : null;
-    if (!session) return NextResponse.json({ success: false, error: "লগইন করুন" }, { status: 401 });
-    const me = await prisma.user.findUnique({
-      where: { id: session.userId },
-      select: { role: true, status: true, branchId: true },
-    });
-    if (!me || me.status !== "ACTIVE" || !FINANCE_ROLES.includes(me.role))
-      return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    const me = await requireUser(request);
+    if (!me || !me.branchId)
+      return NextResponse.json({ success: false, error: "ডিসকাউন্ট-মডিউলের অনুমতি নেই" }, { status: 403 });
     const { id } = await params;
     const existing = await prisma.studentDiscount.findFirst({
       where: { id, branchId: me.branchId, deletedAt: null },
@@ -46,15 +52,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const token = request.cookies.get("shikkhaloy_token")?.value;
-    const session = token ? await verifyToken(token) : null;
-    if (!session) return NextResponse.json({ success: false, error: "লগইন করুন" }, { status: 401 });
-    const me = await prisma.user.findUnique({
-      where: { id: session.userId },
-      select: { role: true, status: true, branchId: true },
-    });
-    if (!me || me.status !== "ACTIVE" || !FINANCE_ROLES.includes(me.role))
-      return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    const me = await requireUser(request);
+    if (!me || !me.branchId)
+      return NextResponse.json({ success: false, error: "ডিসকাউন্ট-মডিউলের অনুমতি নেই" }, { status: 403 });
     const { id } = await params;
     const existing = await prisma.studentDiscount.findFirst({
       where: { id, branchId: me.branchId, deletedAt: null }, select: { id: true },

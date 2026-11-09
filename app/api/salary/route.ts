@@ -1,23 +1,30 @@
-// M12: স্যালারি — meta=1 → staff+কাঠামো | GET ?month=YYYY-MM রেকর্ড | POST বেতন-কাঠামো (upsert — নোট ৩৬)
+// M12 + M16-B: স্যালারি — meta=1 → staff+কাঠামো | GET ?month | POST বেতন-কাঠামো (upsert — নোট ৩৬) — দুই-অ্যাডমিন ∨ salary-অনুমতি
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma, type Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
+import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 
-const FINANCE_ROLES = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"];
 const ELIGIBLE_ROLES: Role[] = ["TEACHER", "BRANCH_ADMIN", "ACCOUNTANT", "STAFF"];
+
+async function requireUser(request: NextRequest) {
+  const token = request.cookies.get("shikkhaloy_token")?.value;
+  const session = token ? await verifyToken(token) : null;
+  if (!session) return null;
+  const me = await prisma.user.findUnique({
+    where: { id: session.userId }, select: { id: true, role: true, status: true, branchId: true },
+  });
+  if (!me || me.status !== "ACTIVE") return null;
+  if (ADMIN_ROLES.includes(me.role)) return me;
+  if (!PERM_ROLES.includes(me.role) || !(await canModule(me, "salary"))) return null;
+  return me;
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get("shikkhaloy_token")?.value;
-    const session = token ? await verifyToken(token) : null;
-    if (!session) return NextResponse.json({ success: false, error: "লগইন করুন" }, { status: 401 });
-    const me = await prisma.user.findUnique({
-      where: { id: session.userId },
-      select: { role: true, status: true, branchId: true },
-    });
-    if (!me || me.status !== "ACTIVE" || !FINANCE_ROLES.includes(me.role))
-      return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    const me = await requireUser(request);
+    if (!me || !me.branchId)
+      return NextResponse.json({ success: false, error: "স্যালারি-মডিউলের অনুমতি নেই" }, { status: 403 });
 
     const url = new URL(request.url);
 
@@ -68,15 +75,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get("shikkhaloy_token")?.value;
-    const session = token ? await verifyToken(token) : null;
-    if (!session) return NextResponse.json({ success: false, error: "লগইন করুন" }, { status: 401 });
-    const me = await prisma.user.findUnique({
-      where: { id: session.userId },
-      select: { id: true, role: true, status: true, branchId: true },
-    });
-    if (!me || me.status !== "ACTIVE" || !FINANCE_ROLES.includes(me.role))
-      return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    const me = await requireUser(request);
+    if (!me || !me.branchId)
+      return NextResponse.json({ success: false, error: "স্যালারি-মডিউলের অনুমতি নেই" }, { status: 403 });
 
     const body = await request.json();
     const userId = String(body.userId ?? "");

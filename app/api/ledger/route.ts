@@ -1,22 +1,28 @@
-// M11: আয়-ব্যয় লেজার — GET (type/month-ফিল্টার, সব-রোলে-এক-where — নোট ৫১) | POST
+// M11 + M16-B: আয়-ব্যয় লেজার — GET (type/month-ফিল্টার) | POST — দুই-অ্যাডমিন ∨ expenses-অনুমতি
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
+import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 
-const FINANCE_ROLES = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"];
+async function requireUser(request: NextRequest) {
+  const token = request.cookies.get("shikkhaloy_token")?.value;
+  const session = token ? await verifyToken(token) : null;
+  if (!session) return null;
+  const me = await prisma.user.findUnique({
+    where: { id: session.userId }, select: { id: true, role: true, status: true, branchId: true },
+  });
+  if (!me || me.status !== "ACTIVE") return null;
+  if (ADMIN_ROLES.includes(me.role)) return me;
+  if (!PERM_ROLES.includes(me.role) || !(await canModule(me, "expenses"))) return null;
+  return me;
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get("shikkhaloy_token")?.value;
-    const session = token ? await verifyToken(token) : null;
-    if (!session) return NextResponse.json({ success: false, error: "লগইন করুন" }, { status: 401 });
-    const me = await prisma.user.findUnique({
-      where: { id: session.userId },
-      select: { role: true, status: true, branchId: true },
-    });
-    if (!me || me.status !== "ACTIVE" || !FINANCE_ROLES.includes(me.role))
-      return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    const me = await requireUser(request);
+    if (!me || !me.branchId)
+      return NextResponse.json({ success: false, error: "লেজার-মডিউলের অনুমতি নেই" }, { status: 403 });
 
     const url = new URL(request.url);
     const where: Prisma.LedgerEntryWhereInput = { branchId: me.branchId, deletedAt: null };
@@ -48,15 +54,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get("shikkhaloy_token")?.value;
-    const session = token ? await verifyToken(token) : null;
-    if (!session) return NextResponse.json({ success: false, error: "লগইন করুন" }, { status: 401 });
-    const me = await prisma.user.findUnique({
-      where: { id: session.userId },
-      select: { id: true, role: true, status: true, branchId: true },
-    });
-    if (!me || me.status !== "ACTIVE" || !FINANCE_ROLES.includes(me.role))
-      return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    const me = await requireUser(request);
+    if (!me || !me.branchId)
+      return NextResponse.json({ success: false, error: "লেজার-মডিউলের অনুমতি নেই" }, { status: 403 });
 
     const body = await request.json();
     const type = String(body.type ?? "");

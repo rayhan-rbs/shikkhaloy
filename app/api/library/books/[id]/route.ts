@@ -1,7 +1,8 @@
-// M14-A: বই-মুছুন (soft-del; চলমান-ইস্যু = ব্লক — নোট ২১-চাইল্ড-চেক)
+// M14-A + M16-B: বই-মুছুন (soft-del; চলমান-ইস্যু = ব্লক — নোট ২১-চাইল্ড-চেক) — দুই-অ্যাডমিন ∨ library-অনুমতি
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
+import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -9,10 +10,13 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const session = token ? await verifyToken(token) : null;
     if (!session) return NextResponse.json({ success: false, error: "লগইন করুন" }, { status: 401 });
     const me = await prisma.user.findUnique({
-      where: { id: session.userId }, select: { role: true, status: true, branchId: true },
+      where: { id: session.userId }, select: { id: true, role: true, status: true, branchId: true },
     });
-    if (!me || me.status !== "ACTIVE" || (me.role !== "PLATFORM_SUPER_ADMIN" && me.role !== "BRANCH_ADMIN"))
-      return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    if (!me || me.status !== "ACTIVE") return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    // M16-B চালক-মডেল: UI-র canManage-ডিলিট-বাটনের-সাথে-সামঞ্জস্য
+    if (!ADMIN_ROLES.includes(me.role)
+      && (!PERM_ROLES.includes(me.role) || !(await canModule(me, "library"))))
+      return NextResponse.json({ success: false, error: "লাইব্রেরি-মডিউলের অনুমতি নেই" }, { status: 403 });
     const { id } = await params;
     const book = await prisma.libraryBook.findFirst({ where: { id, branchId: me.branchId, deletedAt: null } });
     if (!book) return NextResponse.json({ success: false, error: "বই পাওয়া যায়নি" }, { status: 404 });

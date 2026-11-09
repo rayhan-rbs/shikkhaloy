@@ -1,24 +1,26 @@
-// M14-D: হেলথ-ড্যাশবোর্ড — **নতুন-টেবিল-নেই**: HealthRecord-groupBy + এ-মাস(UTC — নোট ৭৮) + StudentProfile-রক্তগোষ্ঠী
-// StudentProfile-এ branchId-নেই (নোট ৪১-উল্টো) → আগে-ব্রাঞ্চের-ছাত্র-id → userId-in
+// M14-D + M16-B: হেলথ-ড্যাশবোর্ড — দুই-অ্যাডমিন ∨ health-অনুমতি (নতুন-টেবিল-নেই; StudentProfile = userId:in — নোট ৪১-উল্টো)
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
+import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 
-async function requireAdmin(request: NextRequest) {
+async function requireUser(request: NextRequest) {
   const token = request.cookies.get("shikkhaloy_token")?.value;
   const session = token ? await verifyToken(token) : null;
   if (!session) return null;
   const me = await prisma.user.findUnique({
-    where: { id: session.userId }, select: { role: true, status: true, branchId: true },
+    where: { id: session.userId }, select: { id: true, role: true, status: true, branchId: true },
   });
-  if (!me || me.status !== "ACTIVE" || (me.role !== "PLATFORM_SUPER_ADMIN" && me.role !== "BRANCH_ADMIN")) return null;
+  if (!me || me.status !== "ACTIVE") return null;
+  if (ADMIN_ROLES.includes(me.role)) return me;
+  if (!PERM_ROLES.includes(me.role) || !(await canModule(me, "health"))) return null;
   return me;
 }
 
 export async function GET(request: NextRequest) {
   try {
-    const me = await requireAdmin(request);
-    if (!me) return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    const me = await requireUser(request);
+    if (!me) return NextResponse.json({ success: false, error: "হেলথ-মডিউলের অনুমতি নেই" }, { status: 403 });
     const now = new Date();
     const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
     const monthEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));

@@ -1,23 +1,26 @@
-// M14-B: বরাদ্দ — GET + POST(dup-409/কক্ষ-পূর্ণ-409/upsert-পুনঃবরাদ্দ) + PATCH(ছাড়ুন)
+// M14-B + M16-B: বরাদ্দ — GET + POST(dup-409/কক্ষ-পূর্ণ-409/upsert-পুনঃবরাদ্দ) + PATCH(ছাড়ুন) — দুই-অ্যাডমিন ∨ hostel-অনুমতি
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
+import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 
-async function requireAdmin(request: NextRequest) {
+async function requireUser(request: NextRequest) {
   const token = request.cookies.get("shikkhaloy_token")?.value;
   const session = token ? await verifyToken(token) : null;
   if (!session) return null;
   const me = await prisma.user.findUnique({
     where: { id: session.userId }, select: { id: true, role: true, status: true, branchId: true },
   });
-  if (!me || me.status !== "ACTIVE" || (me.role !== "PLATFORM_SUPER_ADMIN" && me.role !== "BRANCH_ADMIN")) return null;
+  if (!me || me.status !== "ACTIVE") return null;
+  if (ADMIN_ROLES.includes(me.role)) return me;
+  if (!PERM_ROLES.includes(me.role) || !(await canModule(me, "hostel"))) return null;
   return me;
 }
 
 export async function GET(request: NextRequest) {
   try {
-    const me = await requireAdmin(request);
-    if (!me) return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    const me = await requireUser(request);
+    if (!me) return NextResponse.json({ success: false, error: "হোস্টেল-মডিউলের অনুমতি নেই" }, { status: 403 });
     const rows = await prisma.hostelAllocation.findMany({
       where: { branchId: me.branchId, deletedAt: null }, orderBy: { updatedAt: "desc" }, take: 300,
     });
@@ -39,8 +42,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const me = await requireAdmin(request);
-    if (!me) return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    const me = await requireUser(request);
+    if (!me) return NextResponse.json({ success: false, error: "হোস্টেল-মডিউলের অনুমতি নেই" }, { status: 403 });
     const body = await request.json();
     const studentId = typeof body.studentId === "string" ? body.studentId : "";
     const roomId = typeof body.roomId === "string" ? body.roomId : "";
@@ -70,8 +73,8 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const me = await requireAdmin(request);
-    if (!me) return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    const me = await requireUser(request);
+    if (!me) return NextResponse.json({ success: false, error: "হোস্টেল-মডিউলের অনুমতি নেই" }, { status: 403 });
     const body = await request.json();
     const allocationId = typeof body.allocationId === "string" ? body.allocationId : "";
     if (!allocationId) return NextResponse.json({ success: false, error: "বরাদ্দ-আইডি দিন" }, { status: 400 });

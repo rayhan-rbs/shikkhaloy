@@ -33,6 +33,7 @@ export default async function DashboardPage() {
   if (me.role === "STUDENT") redirect("/dashboard/student-hub");
   if (me.role === "TEACHER") redirect("/dashboard/teacher-hub");
   if (me.role === "PARENT") redirect("/dashboard/parent-hub");
+  if (me.role === "ACCOUNTANT") redirect("/dashboard/accountant-hub");
 
 
 

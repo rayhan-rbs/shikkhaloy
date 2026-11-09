@@ -1,23 +1,26 @@
-// M14-C: ক্লাব — GET(?meta=students | ক্লাব+সদস্য-গণনা) + POST(ডুপ-409/ghost-revive — নোট ৯৪-ধাঁচ)
+// M14-C + M16-B: ক্লাব — GET(?meta=students | ক্লাব+সদস্য-গণনা) + POST — দুই-অ্যাডমিন ∨ clubs-অনুমতি
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
+import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 
-async function requireAdmin(request: NextRequest) {
+async function requireUser(request: NextRequest) {
   const token = request.cookies.get("shikkhaloy_token")?.value;
   const session = token ? await verifyToken(token) : null;
   if (!session) return null;
   const me = await prisma.user.findUnique({
     where: { id: session.userId }, select: { id: true, role: true, status: true, branchId: true },
   });
-  if (!me || me.status !== "ACTIVE" || (me.role !== "PLATFORM_SUPER_ADMIN" && me.role !== "BRANCH_ADMIN")) return null;
+  if (!me || me.status !== "ACTIVE") return null;
+  if (ADMIN_ROLES.includes(me.role)) return me;
+  if (!PERM_ROLES.includes(me.role) || !(await canModule(me, "clubs"))) return null;
   return me;
 }
 
 export async function GET(request: NextRequest) {
   try {
-    const me = await requireAdmin(request);
-    if (!me) return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    const me = await requireUser(request);
+    if (!me) return NextResponse.json({ success: false, error: "ক্লাব-মডিউলের অনুমতি নেই" }, { status: 403 });
     const { searchParams } = new URL(request.url);
     if (searchParams.get("meta") === "students") {
       const students = await prisma.user.findMany({
@@ -44,8 +47,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const me = await requireAdmin(request);
-    if (!me) return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    const me = await requireUser(request);
+    if (!me) return NextResponse.json({ success: false, error: "ক্লাব-মডিউলের অনুমতি নেই" }, { status: 403 });
     const body = await request.json();
     const name = typeof body.name === "string" ? body.name.trim() : "";
     if (!name) return NextResponse.json({ success: false, error: "ক্লাবের নাম দিন" }, { status: 400 });

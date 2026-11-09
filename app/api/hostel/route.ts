@@ -1,23 +1,26 @@
-// M14-B: হোস্টেল — GET(?meta=students | কক্ষ+প্রাপ্যতা) + POST(কক্ষ — ডুপ-409/ghost-revive, নোট ৩৬)
+// M14-B + M16-B: হোস্টেল — GET(?meta=students | কক্ষ+প্রাপ্যতা) + POST(কক্ষ; ghost-revive নোট ৩৬) — দুই-অ্যাডমিন ∨ hostel-অনুমতি
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
+import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 
-async function requireAdmin(request: NextRequest) {
+async function requireUser(request: NextRequest) {
   const token = request.cookies.get("shikkhaloy_token")?.value;
   const session = token ? await verifyToken(token) : null;
   if (!session) return null;
   const me = await prisma.user.findUnique({
     where: { id: session.userId }, select: { id: true, role: true, status: true, branchId: true },
   });
-  if (!me || me.status !== "ACTIVE" || (me.role !== "PLATFORM_SUPER_ADMIN" && me.role !== "BRANCH_ADMIN")) return null;
+  if (!me || me.status !== "ACTIVE") return null;
+  if (ADMIN_ROLES.includes(me.role)) return me;
+  if (!PERM_ROLES.includes(me.role) || !(await canModule(me, "hostel"))) return null;
   return me;
 }
 
 export async function GET(request: NextRequest) {
   try {
-    const me = await requireAdmin(request);
-    if (!me) return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    const me = await requireUser(request);
+    if (!me) return NextResponse.json({ success: false, error: "হোস্টেল-মডিউলের অনুমতি নেই" }, { status: 403 });
     const { searchParams } = new URL(request.url);
     if (searchParams.get("meta") === "students") {
       const students = await prisma.user.findMany({
@@ -44,8 +47,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const me = await requireAdmin(request);
-    if (!me) return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
+    const me = await requireUser(request);
+    if (!me) return NextResponse.json({ success: false, error: "হোস্টেল-মডিউলের অনুমতি নেই" }, { status: 403 });
     const body = await request.json();
     const name = typeof body.name === "string" ? body.name.trim() : "";
     if (!name) return NextResponse.json({ success: false, error: "কক্ষের নাম দিন" }, { status: 400 });
@@ -58,7 +61,6 @@ export async function POST(request: NextRequest) {
     const existing = await prisma.hostelRoom.findFirst({ where: { branchId: me.branchId, name } });
     if (existing && !existing.deletedAt)
       return NextResponse.json({ success: false, error: "এই নামে কক্ষ ইতিমধ্যে আছে" }, { status: 409 });
-    // ghost-revive (নোট ৩৬): মুছে-যাওয়া-একই-নাম = রেকর্ড-ফেরত-এনে-আপডেট
     const room = existing
       ? await prisma.hostelRoom.update({ where: { id: existing.id }, data: { type, capacity: Math.floor(capacity), monthlyFee, deletedAt: null } })
       : await prisma.hostelRoom.create({ data: { branchId: me.branchId, name, type, capacity: Math.floor(capacity), monthlyFee, createdById: me.id } });

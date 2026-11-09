@@ -1,10 +1,11 @@
-// 📁 ৪.৬ — হাউস-প্যাটার্ন + institution (নোট ৫৩: কুয়েরি-অংশসহ)
+// 📁 ৪.৬ + M16-B — হাউস-প্যাটার্ন + institution (নোট ৫৩) — দুই-অ্যাডমিন ∨ fees-অনুমতি
 export const instant = false;
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
+import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 import { getDict } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 import FeesClient from "./fees-client";
@@ -15,10 +16,12 @@ export default async function FeesPage() {
   if (!token) redirect("/login");
   const session = await verifyToken(token);
   if (!session) redirect("/login");
-  const user = await prisma.user.findUnique({ where: { id: session.userId } });
-  if (!user || user.status !== "ACTIVE") redirect("/login");
-  if (user.isFirstLogin) redirect("/change-password");
-  if (!["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"].includes(user.role)) redirect("/dashboard");
+  const me = await prisma.user.findUnique({ where: { id: session.userId }, select: { id: true, role: true, status: true, isFirstLogin: true } });
+  if (!me || me.status !== "ACTIVE") redirect("/login");
+  if (me.isFirstLogin) redirect("/change-password");
+  const isAdmin = ADMIN_ROLES.includes(me.role);
+  const granted = !isAdmin && PERM_ROLES.includes(me.role) ? await canModule(me, "fees") : false;
+  if (!isAdmin && !granted) redirect("/dashboard?denied=1");
 
   const [lang, settings] = await Promise.all([
     getLang(),

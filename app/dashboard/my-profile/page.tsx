@@ -138,7 +138,7 @@ export default async function MyProfilePage() {
   }
 
   // ─── শিক্ষক-প্রোফাইল (M15-B3 — নতুন) ───
-  if (me.role === "TEACHER") {
+    if (["TEACHER", "ACCOUNTANT", "STAFF"].includes(me.role)) {
     const [user, profile, tas, salary, settings] = await Promise.all([
       prisma.user.findUnique({ where: { id: session.userId }, select: { fullName: true, email: true, phone: true, avatarUrl: true } }),
       prisma.staffProfile.findUnique({ where: { userId: session.userId } }),

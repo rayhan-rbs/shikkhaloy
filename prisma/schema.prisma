@@ -1407,3 +1407,16 @@ model StaffAttendance {
   @@unique([userId, date]) // পুনঃসংরক্ষণ = upsert (নোট ৩৬)
   @@index([branchId, date])
 }
+
+
+// ─── M16-A: স্টাফ-মডিউল-অনুমতি (config-join — hard-row; নোট ৩৮-দর্শন; scalar-FK — নোট ৫৫) ───
+model UserPermission {
+  id          String   @id @default(cuid())
+  userId      String
+  permKey     String
+  grantedById String
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, permKey])
+  @@index([userId])
+}

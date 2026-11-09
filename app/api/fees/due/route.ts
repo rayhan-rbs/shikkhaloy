@@ -1,20 +1,26 @@
-// 📁 app/api/fees/due/route.ts
-// ৪.৭-A বকেয়া-রিপোর্ট — GET: dueDate < আজ ∧ status ≠ PAID (নোট ৫৯)
+// ৪.৭-A + M16-B: বকেয়া-রিপোর্ট — dueDate < আজ ∧ status ≠ PAID (নোট ৫৯) — দুই-অ্যাডমিন ∨ fees-অনুমতি
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
+import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 
-const ADMIN_ROLES = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"];
+async function requireUser(request: NextRequest) {
+  const token = request.cookies.get("shikkhaloy_token")?.value;
+  const session = token ? await verifyToken(token) : null;
+  if (!session) return null;
+  const me = await prisma.user.findUnique({
+    where: { id: session.userId }, select: { id: true, role: true, status: true, branchId: true },
+  });
+  if (!me || me.status !== "ACTIVE") return null;
+  if (ADMIN_ROLES.includes(me.role)) return me;
+  if (!PERM_ROLES.includes(me.role) || !(await canModule(me, "fees"))) return null;
+  return me;
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get("shikkhaloy_token")?.value;
-    if (!token) return NextResponse.json({ success: false, error: "আগে লগইন করুন" }, { status: 401 });
-    const session = await verifyToken(token);
-    if (!session) return NextResponse.json({ success: false, error: "সেশন শেষ" }, { status: 401 });
-    if (!ADMIN_ROLES.includes(session.role)) {
-      return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
-    }
+    const me = await requireUser(request);
+    if (!me || !me.branchId) return NextResponse.json({ success: false, error: "ফি-মডিউলের অনুমতি নেই" }, { status: 403 });
 
     const { searchParams } = new URL(request.url);
     const classId = searchParams.get("classId") || "";
@@ -22,10 +28,10 @@ export async function GET(request: NextRequest) {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    // নোট ৫১: সরল লিটারাল-where (role-union নেই); dueDate-এ lt → null-স্বয়ং-বাদ
+    // নোট ৫১: সরল লিটারাল-where; dueDate-এ lt → null-স্বয়ং-বাদ
     const invoices = await prisma.feeInvoice.findMany({
       where: {
-        branchId: session.branchId,
+        branchId: me.branchId,
         deletedAt: null,
         status: { not: "PAID" },
         dueDate: { lt: startOfToday },
@@ -35,18 +41,12 @@ export async function GET(request: NextRequest) {
       orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
     });
 
-    // নোট ৫৫: scalar-FK (studentId/classId) নাম-লুকআপ = আলাদা findMany+Map
+    // নোট ৫৫: scalar-FK নাম-লুকআপ = আলাদা findMany+Map
     const studentIds = Array.from(new Set(invoices.map((i) => i.studentId)));
     const classIds = Array.from(new Set(invoices.map((i) => i.classId)));
     const [students, classes] = await Promise.all([
-      prisma.user.findMany({
-        where: { id: { in: studentIds } },
-        select: { id: true, fullName: true, email: true },
-      }),
-      prisma.academicClass.findMany({
-        where: { id: { in: classIds } },
-        select: { id: true, name: true, nameEn: true },
-      }),
+      prisma.user.findMany({ where: { id: { in: studentIds } }, select: { id: true, fullName: true, email: true } }),
+      prisma.academicClass.findMany({ where: { id: { in: classIds } }, select: { id: true, name: true, nameEn: true } }),
     ]);
     const studentMap = new Map(students.map((s) => [s.id, s]));
     const classMap = new Map(classes.map((c) => [c.id, c]));
@@ -72,11 +72,7 @@ export async function GET(request: NextRequest) {
 
     const totalDue = Math.round(rows.reduce((s, r) => s + r.dueAmount, 0) * 100) / 100;
 
-    return NextResponse.json({
-      success: true,
-      count: rows.length,
-      data: { rows, totalDue },
-    });
+    return NextResponse.json({ success: true, count: rows.length, data: { rows, totalDue } });
   } catch (error) {
     console.error("❌ GET /api/fees/due:", error);
     return NextResponse.json({ success: false, error: "সার্ভারে অপ্রত্যাশিত সমস্যা হয়েছে" }, { status: 500 });

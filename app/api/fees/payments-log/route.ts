@@ -1,21 +1,28 @@
-// M7-প্যাচ: পেমেন্ট-লগ — FeePayment + PaymentIntent-join (মাধ্যম/tranId/gatewayTxn/কার্ড)
+// M7 + M16-B: পেমেন্ট-লগ — মিশ্র-গেট: STUDENT/PARENT নিজস্ব, অ্যাডমিন পাস, STAFF/ACCOUNTANT = fees-perm; join-অক্ষত
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
+import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 
-const ACCOUNT_ROLES = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"];
+async function requireScoped(request: NextRequest) {
+  const token = request.cookies.get("shikkhaloy_token")?.value;
+  const session = token ? await verifyToken(token) : null;
+  if (!session) return null;
+  const me = await prisma.user.findUnique({
+    where: { id: session.userId }, select: { id: true, role: true, status: true, branchId: true },
+  });
+  if (!me || me.status !== "ACTIVE") return null;
+  if (ADMIN_ROLES.includes(me.role)) return me;
+  if (me.role === "STUDENT" || me.role === "PARENT") return me;
+  if (PERM_ROLES.includes(me.role) && (await canModule(me, "fees"))) return me;
+  return null;
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get("shikkhaloy_token")?.value;
-    const session = token ? await verifyToken(token) : null;
-    if (!session) return NextResponse.json({ success: false, error: "লগইন করুন" }, { status: 401 });
-    const me = await prisma.user.findUnique({
-      where: { id: session.userId },
-      select: { id: true, role: true, status: true, branchId: true },
-    });
-    if (!me || me.status !== "ACTIVE")
-      return NextResponse.json({ success: false, error: "অ্যাকাউন্ট সক্রিয় নয়" }, { status: 403 });
+    const me = await requireScoped(request);
+    if (!me || !me.branchId)
+      return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
 
     const invoiceWhere: Record<string, unknown> = { branchId: me.branchId, deletedAt: null };
     if (me.role === "STUDENT") invoiceWhere.studentId = me.id;
@@ -24,8 +31,6 @@ export async function GET(request: NextRequest) {
         where: { parentId: me.id, branchId: me.branchId, deletedAt: null }, select: { studentId: true },
       });
       invoiceWhere.studentId = { in: links.map((l) => l.studentId) };
-    } else if (!ACCOUNT_ROLES.includes(me.role)) {
-      return NextResponse.json({ success: false, error: "অনুমতি নেই" }, { status: 403 });
     }
 
     const scoped = await prisma.feeInvoice.findMany({ where: invoiceWhere, select: { id: true } });

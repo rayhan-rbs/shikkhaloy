@@ -11,6 +11,7 @@ import { verifyToken } from "@/lib/auth";
 import { getDict } from "@/lib/i18n";
 import { getLang, getTheme } from "@/lib/i18n-server";
 import { getInstituteSettings } from "@/lib/settings";
+import { getPerms } from "@/lib/perms-server";
 import DashboardShell from "@/components/dashboard-shell";
 
 export default async function DashboardLayout({
@@ -38,9 +39,13 @@ export default async function DashboardLayout({
     getTheme(),
     getInstituteSettings(),
   ]);
+
   const dict = getDict(lang);
+  // M16-B: গ্রান্টেড-মডিউল-কী (শুধু STAFF/ACCOUNTANT; অন্য-রোল = শূন্য-অ্যারে)
+  const perms = user.role === "STAFF" || user.role === "ACCOUNTANT" ? await getPerms(user.id) : [];
 
   return (
+
     <DashboardShell
       user={{
         fullName: user.fullName,
@@ -48,7 +53,8 @@ export default async function DashboardLayout({
         role: user.role,
         branchName: user.branch.name,
         status: user.status, // 🆕 M14-E2 — shell-এর ALUMNI-মেনু-ফিল্টার এটা ছাড়া চলে না
-      }}
+        perms, // M16-B — perm-মেনু-ফিল্টার
+      }} // 🆕 M14-E2 — shell-এর ALUMNI-মেনু-ফিল্টার এটা ছাড়া চলে না
       institutionName={settings.name}
       brandColor={settings.brandColor}
       lang={lang}

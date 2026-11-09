@@ -1,8 +1,9 @@
-// M14-A: লাইব্রেরি-পেজ — দেখা = SUPER/BRANCH_ADMIN/ACCOUNTANT; লেখা = দুই-অ্যাডমিন (canManage-prop — নোট ৮০-দ্বৈত)
+// M14-A + M16-B: দেখা+চালানো = দুই-অ্যাডমিন ∨ library-অনুমতি (STAFF/ACCOUNTANT) — canManage-দ্বৈত (নোট ৮০)
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
+import { canModule, ADMIN_ROLES, PERM_ROLES } from "@/lib/perms-server";
 import type { Dictionary } from "@/messages/bn";
 import { bn } from "@/messages/bn";
 import { en } from "@/messages/en";
@@ -15,10 +16,15 @@ export default async function LibraryPage() {
   const token = store.get("shikkhaloy_token")?.value;
   const session = token ? await verifyToken(token) : null;
   if (!session) redirect("/login");
-  const me = await prisma.user.findUnique({ where: { id: session.userId }, select: { role: true, status: true } });
-  if (!me || me.status !== "ACTIVE"
-    || !["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN", "ACCOUNTANT"].includes(me.role)) redirect("/dashboard");
-  const canManage = me.role === "PLATFORM_SUPER_ADMIN" || me.role === "BRANCH_ADMIN";
+  const me = await prisma.user.findUnique({ where: { id: session.userId }, select: { id: true, role: true, status: true } });
+  if (!me || me.status !== "ACTIVE") redirect("/login");
+
+  // M16-B fine-গেট: অ্যাডমিন = পাস; STAFF/ACCOUNTANT = library-অনুমতি-গ্রান্টেড-হলে-পাস
+  const isAdmin = ADMIN_ROLES.includes(me.role);
+  const granted = !isAdmin && PERM_ROLES.includes(me.role) ? await canModule(me, "library") : false;
+  if (!isAdmin && !granted) redirect("/dashboard?denied=1");
+
+  const canManage = isAdmin || granted; // চালক-মডেল: অনুমতি = দেখা+লেখা
   const lang = store.get("shikkhaloy_lang")?.value === "en" ? "en" : "bn";
   const dict: Dictionary = lang === "en" ? en : bn;
   return (

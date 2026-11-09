@@ -67,6 +67,9 @@ export const ROUTE_ROLES: { prefix: string; roles: Role[] }[] = [
 
   // ⚠️ সাব-রুট-আগে: অনলাইন ফি-পরিশোধ (ছাত্র/অভিভাবক) — না-হলে /dashboard/fees-ADMINS-প্রিফিক্স-গিলে-ফেলে
   { prefix: "/dashboard/fees/online", roles: ["STUDENT", "PARENT"] },
+  // M19: ছাত্র/অভিভাবক-ফি-পোর্টাল — "my-fees" = ভিন্ন-পাথ-সেগমেন্ট, "/dashboard/fees"-প্রিফিক্স-সংঘর্ষ-শূন্য
+  { prefix: "/dashboard/my-fees", roles: ["STUDENT", "PARENT"] },
+
   // M16-B: ফি-ব্যবস্থাপনা — ব্যান্ড-পাস; প্রকৃত = fees-perm
   { prefix: "/dashboard/fees", roles: PERM_BAND },
 

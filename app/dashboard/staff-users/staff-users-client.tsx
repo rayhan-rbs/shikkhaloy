@@ -1,7 +1,9 @@
-// 📁 app/dashboard/staff-users/staff-users-client.tsx — M16-A (inline-bilingual; dict-অস্পৃশ্য)
 "use client";
+// M16-A + M18-C: ইউজার ও অনুমতি — লজিক-হুবহু-অক্ষত; শুধু-যোগ = হেডারে "অডিট লগ"-বাটন
+// (Staff Users = বর্তমান-অনুমতি-ম্যানেজমেন্ট; /dashboard/perm-audit = পরিবর্তনের-ইতিহাস — দুটি-আলাদা)
 import { useMemo, useState } from "react";
-import { Download, KeyRound, Printer, Search, ShieldCheck, UserPlus, Users } from "lucide-react";
+import { useRouter } from "next/navigation"; // ← M18-C
+import { Download, History, KeyRound, Printer, Search, ShieldCheck, UserPlus, Users } from "lucide-react"; // ← History-যোগ
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -54,6 +56,7 @@ function PermGrid({ lang, value, onToggle }: { lang: Lang; value: string[]; onTo
 }
 
 export default function StaffUsersClient({ lang, isSuper, institution }: { lang: Lang; isSuper: boolean; institution: PrintHeader }) {
+  const router = useRouter(); // ← M18-C
   const [rows, setRows] = useState<UserRow[] | null>(null);
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
@@ -157,8 +160,11 @@ export default function StaffUsersClient({ lang, isSuper, institution }: { lang:
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader className="pb-2">
+        <CardHeader className="flex flex-col gap-3 space-y-0 pb-2 sm:flex-row sm:items-center sm:justify-between"> {/* ← M18-C */}
           <CardTitle className="flex items-center gap-2 text-base"><Users size={18} />{L(lang, "ইউজার ও অনুমতি", "Users & Access")}</CardTitle>
+          <Button size="sm" variant="outline" onClick={() => router.push("/dashboard/perm-audit")}> {/* ← M18-C */}
+            <History size={14} className="mr-1" />{L(lang, "অডিট লগ", "Audit log")}
+          </Button>
         </CardHeader>
         <CardContent>
           <p className="text-xs text-muted-foreground">

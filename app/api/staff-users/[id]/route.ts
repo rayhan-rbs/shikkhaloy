@@ -42,7 +42,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           await tx.userPermission.createMany({ data: keys.map((k) => ({ userId: target.id, permKey: k, grantedById: me.id })) });
         }
       });
-      await audit(prisma, { actorId: me.id, action: "PERMISSIONS_UPDATE", entity: "User", entityId: target.id, summary: keys.join(", ") || "(শূন্য)" });
+      await audit(prisma, { actorId: me.id, branchId: me.branchId, action: "PERMISSIONS_UPDATE", entity: "User", entityId: target.id, summary: keys.join(", ") || "(শূন্য)" });
       return NextResponse.json({ success: true, data: { perms: keys } });
     }
 
@@ -51,7 +51,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       const status = STATUSES.find((v) => v === wanted);
       if (!status) return err("অবৈধ স্ট্যাটাস");
       await prisma.user.update({ where: { id: target.id }, data: { status } });
-      await audit(prisma, { actorId: me.id, action: "USER_STATUS_CHANGE", entity: "User", entityId: target.id, summary: `${target.email} → ${status}` });
+      await audit(prisma, { actorId: me.id, branchId: me.branchId, action: "USER_STATUS_CHANGE", entity: "User", entityId: target.id, summary: `${target.email} → ${status}` });
       return NextResponse.json({ success: true, data: { status } });
     }
 
@@ -59,7 +59,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       const password = genPassword();
       const hash = await bcrypt.hash(password, 10);
       await prisma.user.update({ where: { id: target.id }, data: { password: hash, isFirstLogin: true } });
-      await audit(prisma, { actorId: me.id, action: "USER_PASSWORD_RESET", entity: "User", entityId: target.id, summary: target.email });
+      await audit(prisma, { actorId: me.id, branchId: me.branchId, action: "USER_PASSWORD_RESET", entity: "User", entityId: target.id, summary: target.email });
       return NextResponse.json({ success: true, data: { email: target.email, password } });
     }
 
@@ -68,7 +68,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       const phone = body.phone !== undefined ? (String(body.phone).trim() || null) : target.phone;
       if (fullName.length < 3) return err("পূর্ণ নাম দিন");
       await prisma.user.update({ where: { id: target.id }, data: { fullName, phone } });
-      await audit(prisma, { actorId: me.id, action: "USER_PROFILE_UPDATE", entity: "User", entityId: target.id, summary: target.email });
+      await audit(prisma, { actorId: me.id, branchId: me.branchId, action: "USER_PROFILE_UPDATE", entity: "User", entityId: target.id, summary: target.email });
       return NextResponse.json({ success: true, data: { fullName, phone } });
     }
 
@@ -78,3 +78,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ success: false, error: "সার্ভারে অপ্রত্যাশিত সমস্যা হয়েছে" }, { status: 500 });
   }
 }
+
+
+
+
+
+

@@ -1,4 +1,5 @@
 // 📁 ৪.৬ — ট্যাব (ফি-স্ট্রাকচার | ইনভয়েস) + পে-ডায়লগ + 🧾 রসিদ-প্রিন্ট (paper.ts-প্যাটার্ন)
+// M19: recurring-টেমপ্লেট (মাসিক-ফি) — চেকবক্স+dueDay; ইঞ্জিন-অটো-ইনস্ট্যান্স; টেমপ্লেটে-manual-generate-নেই
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { Wallet } from "lucide-react";
@@ -11,11 +12,14 @@ import type { Dictionary } from "@/messages/bn";
 import type { PrintHeader } from "@/lib/print";
 import Link from "next/link";
 
-interface Structure { id: string; classId: string; name: string; amount: number; monthKey: string | null; dueDate: string | null; invoiceCount: number; }
+interface Structure { id: string; classId: string; name: string; amount: number; monthKey: string | null; dueDate: string | null; recurring: boolean; dueDay: number | null; invoiceCount: number; }
 interface Invoice { id: string; studentName: string; className: string; structureName: string; monthKey: string | null; amount: number; paidTotal: number; status: string; dueDate: string | null; }
 interface PayRes { invoice: Invoice; payment: { id: string; amount: number; method: string; createdAt: string; note: string | null; }; }
 
 const boxCls = "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring";
+
+const BN_DIGITS = "০১২৩৪৫৬৭৮৯";
+const toBn = (v: string | number) => String(v).replace(/\d/g, (d) => BN_DIGITS[+d]);
 
 function esc(v: unknown): string {
   return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -33,6 +37,8 @@ export default function FeesClient({ dict, lang, institution }: { dict: Dictiona
   // স্ট্রাকচার-ফর্ম
   const [fName, setFName] = useState(""); const [fClass, setFClass] = useState("");
   const [fAmount, setFAmount] = useState(""); const [fMonth, setFMonth] = useState(""); const [fDue, setFDue] = useState("");
+  // M19: মাসিক-টেমপ্লেট
+  const [fRecurring, setFRecurring] = useState(false); const [fDueDay, setFDueDay] = useState("");
 
   // ইনভয়েস-ফিল্টার
   const [q, setQ] = useState(""); const [fInvClass, setFInvClass] = useState(""); const [fStatus, setFStatus] = useState("");
@@ -71,17 +77,25 @@ export default function FeesClient({ dict, lang, institution }: { dict: Dictiona
   async function createStructure() {
     setError(""); setOkMsg("");
     if (!fName.trim() || !fClass || !Number(fAmount)) { setError(t(dict, "fees.needFields")); return; }
+    if (fRecurring && fDueDay) {
+      const d = Number(fDueDay);
+      if (!Number.isInteger(d) || d < 1 || d > 28) { setError(L("ডিউ-তারিখ ১–২৮-এর মধ্যে দিন", "Due day must be between 1–28")); return; }
+    }
     setBusy(true);
     try {
       const r = await fetch("/api/fees/structures", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: fName.trim(), classId: fClass, amount: Number(fAmount),
-          monthKey: fMonth || null, dueDate: fDue || null }),
+          recurring: fRecurring,
+          monthKey: fRecurring ? null : (fMonth || null), dueDate: fRecurring ? null : (fDue || null),
+          dueDay: fRecurring && fDueDay ? Number(fDueDay) : null }),
       }).then((r) => r.json());
       if (!r.success) { setError(r.error || "Error"); return; }
-      setOkMsg(t(dict, "fees.saved"));
-      setFName(""); setFAmount(""); setFMonth(""); setFDue("");
-      void loadStructures();
+      setOkMsg(fRecurring
+        ? L("মাসিক ফি সংরক্ষিত — ইনভয়েস স্বয়ংক্রিয়ভাবে তৈরি হবে", "Monthly fee saved — invoices will be created automatically")
+        : t(dict, "fees.saved"));
+      setFName(""); setFAmount(""); setFMonth(""); setFDue(""); setFRecurring(false); setFDueDay("");
+      void loadStructures(); // GET-ই ensureMonth-লazy-চালায় → টেমপ্লেট-সেভ-সাথে-সাথে-ইনভয়েস
     } catch { setError("Network error"); } finally { setBusy(false); }
   }
 
@@ -212,8 +226,17 @@ export default function FeesClient({ dict, lang, institution }: { dict: Dictiona
               {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             <Input type="number" min="1" placeholder={t(dict, "fees.amount")} value={fAmount} onChange={(e) => setFAmount(e.target.value)} />
-            <Input type="month" placeholder={t(dict, "fees.monthPh")} value={fMonth} onChange={(e) => setFMonth(e.target.value)} aria-label={t(dict, "fees.month")} />
-            <Input type="date" value={fDue} onChange={(e) => setFDue(e.target.value)} aria-label={t(dict, "fees.dueDate")} />
+            <Input type="month" placeholder={t(dict, "fees.monthPh")} value={fMonth} onChange={(e) => setFMonth(e.target.value)} aria-label={t(dict, "fees.month")} disabled={fRecurring} />
+            <Input type="date" value={fDue} onChange={(e) => setFDue(e.target.value)} aria-label={t(dict, "fees.dueDate")} disabled={fRecurring} />
+          </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={fRecurring} onChange={(e) => { setFRecurring(e.target.checked); if (e.target.checked) { setFMonth(""); setFDue(""); } }} className="h-4 w-4" />
+              {L("মাসিক ফি (প্রতি মাস অটো ইনভয়েস)", "Monthly fee (auto invoice every month)")}
+            </label>
+            {fRecurring && (
+              <Input type="number" min="1" max="28" placeholder={L("ডিউ তারিখ (১–২৮, খালি = ১০)", "Due day (1–28, empty = 10)")} value={fDueDay} onChange={(e) => setFDueDay(e.target.value)} className="w-56" />
+            )}
           </div>
           <Button onClick={createStructure} disabled={busy} className="bg-primary text-primary-foreground">{t(dict, "fees.addNew")}</Button>
         </CardContent>
@@ -239,15 +262,22 @@ export default function FeesClient({ dict, lang, institution }: { dict: Dictiona
                 <tbody>
                   {structures.map((s) => (
                     <tr key={s.id} className="border-b border-border/60 last:border-0">
-                      <td className="py-2.5 pr-3 font-medium">{s.name}</td>
+                      <td className="py-2.5 pr-3 font-medium">
+                        {s.name}
+                        {s.recurring && <span className="ml-2 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-300">{L("মাসিক", "Monthly")}</span>}
+                      </td>
                       <td className="py-2.5 pr-3">{clsName(s.classId)}</td>
                       <td className="py-2.5 pr-3 font-semibold">৳{s.amount}</td>
-                      <td className="py-2.5 pr-3">{s.monthKey || "—"}</td>
-                      <td className="py-2.5 pr-3">{fmtDate(s.dueDate)}</td>
+                      <td className="py-2.5 pr-3">{s.recurring ? L("প্রতি মাস", "Every month") : (s.monthKey || "—")}</td>
+                      <td className="py-2.5 pr-3">{s.recurring ? L(`প্রতি মাসের ${toBn(s.dueDay ?? 10)} তারিখ`, `Monthly, day ${s.dueDay ?? 10}`) : fmtDate(s.dueDate)}</td>
                       <td className="py-2.5 pr-3">{s.invoiceCount}</td>
                       <td className="py-2.5 text-right">
                         <div className="flex justify-end gap-1">
-                          <Button size="sm" variant="outline" disabled={busy} onClick={() => void generate(s)}>🧾 {t(dict, "fees.generate")}</Button>
+                          {s.recurring ? (
+                            <span className="rounded-full bg-emerald-500/15 px-2 py-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-300">{L("মাস-ইঞ্জিন অটো", "Auto engine")}</span>
+                          ) : (
+                            <Button size="sm" variant="outline" disabled={busy} onClick={() => void generate(s)}>🧾 {t(dict, "fees.generate")}</Button>
+                          )}
                           <Button size="sm" variant="ghost" disabled={busy || s.invoiceCount > 0}
                             title={s.invoiceCount > 0 ? t(dict, "fees.hasInvoices") : undefined}
                             onClick={() => void removeStructure(s)} className="text-red-600 dark:text-red-300">{t(dict, "fees.delete")}</Button>

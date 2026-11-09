@@ -1,5 +1,5 @@
-// M7: গেটওয়ে-কলব্যাক (auth-বিহীন — গেটওয়ে-কল); নিরাপত্তা = tran_id + server-side val_id-যাচাই
-// success/fail/cancel = 303-redirect → /dashboard/fees/online?pay=…; IPN = 200-ওয়াপস (MVP)
+// 📁 M7 + M19: গেটওয়ে-কলব্যাক (auth-বিহীন); নিরাপত্তা = tran_id + server-side val_id-যাচাই
+// M19: redirect-গন্তব্য = initiatedById-র-ভূমিকা দেখে (STUDENT/PARENT → /dashboard/my-fees; বাকি → /dashboard/fees/online)
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sslczValidate } from "@/lib/payments";
@@ -19,9 +19,13 @@ export async function POST(request: NextRequest) {
     const intent = await prisma.paymentIntent.findUnique({ where: { tranId } });
     if (!intent) return NextResponse.redirect(`${origin}/dashboard/fees/online?pay=fail`, 303);
 
+    // M19: ইনিশিয়েটর-রোল → ফেরত-পাতা
+    const initiator = await prisma.user.findUnique({ where: { id: intent.initiatedById }, select: { role: true } });
+    const base = initiator && ["STUDENT", "PARENT"].includes(initiator.role) ? "/dashboard/my-fees" : "/dashboard/fees/online";
+
     // idempotent — পুনঃ-কলব্যাকে পুনঃ-চার্জ-শূন্য
     if (intent.status === "SUCCESS")
-      return NextResponse.redirect(`${origin}/dashboard/fees/online?pay=ok`, 303);
+      return NextResponse.redirect(`${origin}${base}?pay=ok`, 303);
 
     if (status === "VALID" || status === "VALIDATED") {
       const v = await sslczValidate(valId);
@@ -33,12 +37,11 @@ export async function POST(request: NextRequest) {
       );
       if (!ok) {
         await prisma.paymentIntent.update({ where: { id: intent.id }, data: { status: "FAILED" } });
-        return NextResponse.redirect(`${origin}/dashboard/fees/online?pay=fail`, 303);
+        return NextResponse.redirect(`${origin}${base}?pay=fail`, 303);
       }
 
       const outcome = await prisma.$transaction(async (tx) => {
         const inv = await tx.feeInvoice.findUnique({ where: { id: intent.invoiceId } });
-        // overpay-গার্ড (নোট ৫৯-প্রতিলিপি): মাঝপথে-ক্যাশ-পেমেন্ট-এলে ব্লক
         if (!inv || inv.deletedAt || inv.status === "PAID" || inv.paidTotal + intent.amount > inv.amount + 0.01) {
           await tx.paymentIntent.update({ where: { id: intent.id }, data: { status: "FAILED" } });
           return "OVERPAID";
@@ -62,15 +65,12 @@ export async function POST(request: NextRequest) {
         return "OK";
       });
 
-      return NextResponse.redirect(
-        `${origin}/dashboard/fees/online?pay=${outcome === "OK" ? "ok" : "fail"}`, 303
-      );
+      return NextResponse.redirect(`${origin}${base}?pay=${outcome === "OK" ? "ok" : "fail"}`, 303);
     }
 
-    // FAILED / CANCELLED
     await prisma.paymentIntent.update({ where: { id: intent.id }, data: { status: "FAILED" } });
     const kind = sp.get("kind") || (status === "CANCELLED" ? "cancel" : "fail");
-    return NextResponse.redirect(`${origin}/dashboard/fees/online?pay=${kind}`, 303);
+    return NextResponse.redirect(`${origin}${base}?pay=${kind}`, 303);
   } catch (error) {
     console.error("❌ fees callback error:", error);
     return NextResponse.redirect(`${origin}/dashboard/fees/online?pay=fail`, 303);

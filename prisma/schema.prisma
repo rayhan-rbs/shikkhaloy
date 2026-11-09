@@ -648,6 +648,8 @@ model FeeStructure {
   nameEn    String?
   amount    Float
   monthKey  String? // "2026-01" = মাসিক ফি; null = এককালীন
+  recurring Boolean @default(false) // M19: মাসিক-টেমপ্লেট — প্রতি-মাসে-ইনস্ট্যান্স-অটো
+  dueDay    Int?    // মাসের-কত-তারিখে-ডিউ (null = ১০)
   dueDate   DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -658,6 +660,7 @@ model FeeStructure {
   @@index([branchId])
   @@index([classId])
 }
+
 
 model FeeInvoice {
   id          String    @id @default(cuid())
@@ -1145,6 +1148,7 @@ model BookLoan {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
+  invoicedAt  DateTime? // M19: এ-লোনের-জরিমানা-বিল-ইতিমধ্যে-হয়ে-গেছে (ডুপ-বিলিং-রক্ষা)
 
   @@index([branchId, status])
   @@index([bookId])

@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
         }
         return u;
       });
-      await audit(prisma, { actorId: me.id, action: "STAFF_USER_CREATE", entity: "User", entityId: user.id, summary: `${email} (${role})` });
+      await audit(prisma, { actorId: me.id, branchId: me.branchId, action: "STAFF_USER_CREATE", entity: "User", entityId: user.id, summary: `${email} (${role})` });
       return NextResponse.json({ success: true, data: { id: user.id, email, password } });
     } catch (e: unknown) {
       if ((e as { code?: string }).code === "P2002") return err("এই ইমেইলে ইতিমধ্যে অ্যাকাউন্ট আছে", 409);

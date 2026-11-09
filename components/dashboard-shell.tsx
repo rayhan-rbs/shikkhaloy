@@ -174,6 +174,8 @@ export default function DashboardShell({
       label: L("আর্থিক", "Finance"),
       items: [
         { href: "/dashboard/fees/online", label: L("অনলাইন ফি পরিশোধ", "Pay Fees Online"), icon: CreditCard, active: pathname.startsWith("/dashboard/fees/online"), soon: false, roles: R_FEE_PAY },
+        { href: "/dashboard/my-fees", label: L("আমার ফি", "My Fees"), icon: Banknote, active: pathname.startsWith("/dashboard/my-fees"), soon: false, roles: R_FEE_PAY },
+
         { href: "/dashboard/fees", label: t(dict, "fees.title"), icon: Wallet, active: pathname.startsWith("/dashboard/fees") && !pathname.startsWith("/dashboard/fees/online"), soon: false, roles: R_PERM, perm: "fees" },
         { href: "/dashboard/discounts", label: t(dict, "discounts.navTitle"), icon: Percent, active: pathname.startsWith("/dashboard/discounts"), soon: false, roles: R_PERM, perm: "discount" },
         { href: "/dashboard/ledger", label: t(dict, "ledger.navTitle"), icon: ReceiptText, active: pathname.startsWith("/dashboard/ledger"), soon: false, roles: R_PERM, perm: "expenses" },

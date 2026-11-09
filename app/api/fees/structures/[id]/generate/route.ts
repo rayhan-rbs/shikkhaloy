@@ -1,5 +1,6 @@
 // 📁 ৪.৬ + M16-B: POST — ক্লাসের সব ACTIVE-ছাত্রের ইনভয়েস (tx; আগে-থাকলে বাদ — নোট ৫৯)
 // M11-প্যাচ অক্ষত: PERCENT-আগে (base-এ), তারপর AMOUNT-বিয়োগ; নিম্নসীমা ০; ব্যাচ-এক-কুয়েরি (নোট ৫৫)
+//fees/structures/[id]/generate/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";

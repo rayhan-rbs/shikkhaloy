@@ -1,6 +1,7 @@
 // 📁 app/admission/page.tsx — ভর্তি (শাপলা-ডিজাইন; ফরম → AdmissionApplication)
+// M20-B: admissionOpen-গেট — বন্ধ-হলে ফরম-স্থলে "সাময়িক-বন্ধ" কার্ড; হিরো-ও-অনুযায়ী-বদল
 import Link from "next/link";
-import { GraduationCap, PhoneCall, Users, Check, FileText, Wallet } from "lucide-react";
+import { GraduationCap, PauseCircle, PhoneCall, Users, Check, FileText, Wallet } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { loadPublicContext } from "@/lib/public-data";
 import PublicShell from "@/components/public-shell";
@@ -46,11 +47,13 @@ const FAQ = [
 
 export default async function AdmissionPage() {
   const { lang, inst } = await loadPublicContext();
-  const [classes, branches, sections] = await Promise.all([
+  const [classes, branches, sections, siteCfg] = await Promise.all([
     prisma.academicClass.findMany({ where: { deletedAt: null }, orderBy: [{ numericLevel: "asc" }, { createdAt: "asc" }] }),
     prisma.branch.findMany({ where: { isActive: true }, orderBy: { createdAt: "asc" } }),
     prisma.section.findMany({ where: { deletedAt: null }, orderBy: { name: "asc" } }),
+    prisma.institutionSetting.findFirst({ select: { admissionOpen: true } }), // M20-B গেট
   ]);
+  const admissionOpen = siteCfg?.admissionOpen ?? true;
   const phone = inst.phone ?? "";
   const OV = [
     { icon: FileText, b: ["ভর্তি প্রক্রিয়া", "Process"], href: "#steps", s: ["৫টি ধাপ", "5 steps"] },
@@ -64,8 +67,14 @@ export default async function AdmissionPage() {
       <style dangerouslySetInnerHTML={{ __html: FAQ_CSS }} />
       <section className="page-hero">
         <div className="ph-inner container">
-          <h1>{L(lang, "ভর্তি চলছে", "Admission open")} <span className="soft">{L(lang, "চলমান সেশন", "this session")}</span></h1>
-          <p>{L(lang, "আসন সীমিত — নিচের ফরম থেকে এখনই আবেদন করুন।", "Seats are limited — apply now using the form below.")}</p>
+          <h1>{admissionOpen ? (
+            <>{L(lang, "ভর্তি চলছে", "Admission open")} <span className="soft">{L(lang, "চলমান সেশন", "this session")}</span></>
+          ) : (
+            <>{L(lang, "অনলাইন ভর্তি", "Online admission")} <span className="soft">{L(lang, "সাময়িক বন্ধ", "paused")}</span></>
+          )}</h1>
+          <p>{admissionOpen
+            ? L(lang, "আসন সীমিত — নিচের ফরম থেকে এখনই আবেদন করুন।", "Seats are limited — apply now using the form below.")
+            : L(lang, "অনলাইন আবেদন সাময়িকভাবে বন্ধ — অফিস বা যোগাযোগ-পেজের মাধ্যমে যোগাযোগ করুন।", "Online applications are paused — reach us via the office or the contact page.")}</p>
         </div>
       </section>
 
@@ -84,16 +93,33 @@ export default async function AdmissionPage() {
         <div className="container" style={{ maxWidth: 900 }}>
           <div className="sec-head sec-head--center" data-reveal>
             <span className="eyebrow">{L(lang, "অনলাইন আবেদন", "Online application")}</span>
-            <h2 className="sec-title">{L(lang, "ফরম পূরণ করুন,", "Fill the form,")} <span className="soft">{L(lang, "বাকিটা আমরা করব", "we'll do the rest")}</span></h2>
-            <p className="sec-sub">{L(lang, "জমা দেওয়ার ২৪ ঘণ্টার মধ্যে ভর্তি টিম ফোন করে পরবর্তী ধাপ জানাবে।", "Within 24 hours our admission team will call with next steps.")}</p>
+            <h2 className="sec-title">{admissionOpen ? (
+              <>{L(lang, "ফরম পূরণ করুন,", "Fill the form,")} <span className="soft">{L(lang, "বাকিটা আমরা করব", "we'll do the rest")}</span></>
+            ) : (
+              <>{L(lang, "আবেদন", "Applications")} <span className="soft">{L(lang, "সাময়িক বন্ধ", "paused")}</span></>
+            )}</h2>
+            <p className="sec-sub">{admissionOpen
+              ? L(lang, "জমা দেওয়ার ২৪ ঘণ্টার মধ্যে ভর্তি টিম ফোন করে পরবর্তী ধাপ জানাবে।", "Within 24 hours our admission team will call with next steps.")
+              : L(lang, "নতুন আবেদন গ্রহণ সাময়িকভাবে বন্ধ — বিস্তারিতের জন্য যোগাযোগ করুন।", "New applications are paused — contact us for details.")}</p>
           </div>
           <div data-reveal>
-            <AdmissionForm
-              lang={lang}
-              branches={branches.map((b) => ({ id: b.id, name: b.name }))}
-              classes={classes.map((c) => ({ id: c.id, name: lang === "en" && c.nameEn ? c.nameEn : c.name }))}
-              sections={sections.map((s) => ({ id: s.id, name: s.name, classId: s.classId }))}
-            />
+            {admissionOpen ? (
+              <AdmissionForm
+                lang={lang}
+                branches={branches.map((b) => ({ id: b.id, name: b.name }))}
+                classes={classes.map((c) => ({ id: c.id, name: lang === "en" && c.nameEn ? c.nameEn : c.name }))}
+                sections={sections.map((s) => ({ id: s.id, name: s.name, classId: s.classId }))}
+              />
+            ) : (
+              <div className="form-card" style={{ textAlign: "center" }}>
+                <div style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--green-100)", color: "var(--green-700)", display: "grid", placeItems: "center", margin: "0 auto 16px" }}>
+                  <PauseCircle size={34} />
+                </div>
+                <h3 className="sec-title">{L(lang, "অনলাইন আবেদন সাময়িক বন্ধ", "Online applications are paused")}</h3>
+                <p className="sec-sub" style={{ marginInline: "auto" }}>{L(lang, "শীঘ্রই আবার খুলবে — ততক্ষণে অফিসে বা যোগাযোগ-পেজে যোগাযোগ করুন।", "It will reopen soon — meanwhile reach the office or the contact page.")}</p>
+                <Link href="/contact" className="btn btn--primary" style={{ marginTop: 12, display: "inline-flex" }}>{L(lang, "যোগাযোগ করুন", "Contact us")}</Link>
+              </div>
+            )}
           </div>
         </div>
       </section>

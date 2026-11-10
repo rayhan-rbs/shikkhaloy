@@ -55,7 +55,10 @@ const EV_IMGS = ["seminar.jpg", "classroom.jpg", "about-campus.jpg"];
 
 export default async function PublicHomePage() {
   const { lang, inst } = await loadPublicContext();
+  const siteCfg = await prisma.institutionSetting.findFirst({ select: { admissionOpen: true } });
+  const admissionOpen = siteCfg?.admissionOpen ?? true;
   const brand = inst.brandColor || "#0E8A63";
+
   const today = utcToday();
   const name = lang === "en" && inst.nameEn ? inst.nameEn : inst.name;
   const tagline = lang === "en" ? (inst.taglineEn || inst.tagline) : inst.tagline;
@@ -136,13 +139,24 @@ export default async function PublicHomePage() {
                 <span className="ico"><Building2 size={24} /></span>
                 <span><b>{num(lang, branches.length)}{L(lang, "টি", "")}</b><small>{L(lang, "সক্রিয় শাখা-ক্যাম্পাস", "active branch campuses")}</small></span>
               </div>
-              <div className="float-card fc-apply">
-                <small>{L(lang, "ভর্তি — চলমান সেশন", "Admission — current session")}</small>
-                <b>{L(lang, "অনলাইনে আবেদন চলছে", "Online applications open")}</b>
-                <Link href="/admission" style={{ color: "var(--green-700)", fontWeight: 700, fontSize: ".86rem", display: "inline-flex", alignItems: "center", gap: 5 }}>
-                  {pl(lang, "apply")}<ArrowRight size={13} />
-                </Link>
-              </div>
+              {admissionOpen ? (
+                <div className="float-card fc-apply">
+                  <small>{L(lang, "ভর্তি — চলমান সেশন", "Admission — current session")}</small>
+                  <b>{L(lang, "অনলাইনে আবেদন চলছে", "Online applications open")}</b>
+                  <Link href="/admission" style={{ color: "var(--green-700)", fontWeight: 700, fontSize: ".86rem", display: "inline-flex", alignItems: "center", gap: 5 }}>
+                    {pl(lang, "apply")}<ArrowRight size={13} />
+                  </Link>
+                </div>
+              ) : (
+                <div className="float-card fc-apply">
+                  <small>{L(lang, "ভর্তি — চলমান সেশন", "Admission — current session")}</small>
+                  <b>{L(lang, "অনলাইন আবেদন সাময়িক বন্ধ", "Online applications paused")}</b>
+                  <Link href="/contact" style={{ color: "var(--green-700)", fontWeight: 700, fontSize: ".86rem", display: "inline-flex", alignItems: "center", gap: 5 }}>
+                    {L(lang, "যোগাযোগ করুন", "Contact us")}<ArrowRight size={13} />
+                  </Link>
+                </div>
+              )}
+
             </div>
           </div>
 
@@ -221,10 +235,10 @@ export default async function PublicHomePage() {
                 <Link href="/admission" key={c.id} className="dept-card" data-reveal data-delay={(i % 4) * 70}>
                   <span className="dept-icon"><GraduationCap size={29} /></span>
                   <h3>{lang === "en" && c.nameEn ? c.nameEn : c.name}</h3>
-                  <p>{L(lang, "এই স্তরে ভর্তি চলছে — আসন সীমিত।", "Admission open at this level — seats limited.")}</p>
+                  <p>{admissionOpen ? L(lang, "এই স্তরে ভর্তি চলছে — আসন সীমিত।", "Admission open at this level — seats limited.") : L(lang, "বিস্তারিত অফিসে জানুন।", "Ask the office for details.")}</p>
                   <div className="dept-meta">
                     {c.numericLevel != null && <span>{L(lang, "লেভেল", "Level")} {num(lang, c.numericLevel)}</span>}
-                    <span>{L(lang, "ভর্তি চলছে", "Open")}</span>
+                    <span>{admissionOpen ? L(lang, "ভর্তি চলছে", "Open") : L(lang, "বন্ধ", "Closed")}</span>
                   </div>
                 </Link>
               ))}
@@ -374,16 +388,23 @@ export default async function PublicHomePage() {
         <div className="container">
           <div className="cta-band" data-reveal>
             <div>
-              <h2>{L(lang, "ভর্তি চলছে — চলমান সেশন", "Admission open — current session")}</h2>
-              <p>{inst.phone
-                ? L(lang, `আসন সীমিত! ভর্তি সহায়তায় কল করুন ${inst.phone}।`, "Seats are limited! For admission help call " + inst.phone + ".")
-                : L(lang, "আসন সীমিত! আজই অনলাইনে আবেদন করুন।", "Seats are limited! Apply online today.")}</p>
+              <h2>{admissionOpen
+                ? L(lang, "ভর্তি চলছে — চলমান সেশন", "Admission open — current session")
+                : L(lang, "অনলাইন আবেদন সাময়িক বন্ধ", "Online applications paused")}</h2>
+              <p>{admissionOpen
+                ? (inst.phone
+                  ? L(lang, `আসন সীমিত! ভর্তি সহায়তায় কল করুন ${inst.phone}।`, "Seats are limited! For admission help call " + inst.phone + ".")
+                  : L(lang, "আসন সীমিত! আজই অনলাইনে আবেদন করুন।", "Seats are limited! Apply online today."))
+                : L(lang, "যোগাযোগ পেজ বা অফিসের মাধ্যমে বিস্তারিত জানুন।", "Reach us via the contact page or the office for details.")}</p>
             </div>
             <div className="cta-actions">
-              <Link href="/admission" className="btn btn--gold btn--lg">{pl(lang, "apply")}<ArrowRight size={19} /></Link>
-              <Link href="/notices" className="btn btn--outline-light btn--lg">{L(lang, "নোটিশ দেখুন", "View notices")}</Link>
+              {admissionOpen && <Link href="/admission" className="btn btn--gold btn--lg">{pl(lang, "apply")}<ArrowRight size={19} /></Link>}
+              <Link href={admissionOpen ? "/notices" : "/contact"} className="btn btn--outline-light btn--lg">
+                {admissionOpen ? L(lang, "নোটিশ দেখুন", "View notices") : L(lang, "যোগাযোগ করুন", "Contact us")}
+              </Link>
             </div>
           </div>
+
         </div>
       </section>
     </PublicShell>

@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
             title: `✉️ ${me.fullName}`, body: `📣 ${bSubject}`.slice(0, 120), link: "/dashboard/messages" })),
         });
       });
-      // ইমেইল/SMS best-effort — ক্যাপ ৫০ (ফ্রি-কোটা-রক্ষা)
+      
       // ইমেইল/SMS best-effort — ক্যাপ ৫০ + ব্যাচ (৪২৯-ফিক্স — নোট ৮৩)
       const contacts = await prisma.user.findMany({ where: { id: { in: allowed } }, select: { email: true, phone: true } });
       if (contacts.length <= 50) {
@@ -231,9 +231,9 @@ export async function POST(request: NextRequest) {
       where: { id: recipientId }, select: { email: true, phone: true },
     });
     if (recip) {
-      if (isEmailReady()) await sendEmail(recip.email, `✉️ নতুন বার্তা: ${subject}`,
+      if (await isEmailReady()) await sendEmail(recip.email, `✉️ নতুন বার্তা: ${subject}`,
         `<p>আপনি নতুন বার্তা পেয়েছেন</p><p><b>${subject.replace(/</g, "&lt;")}</b></p><p>${text.slice(0, 300).replace(/</g, "&lt;")}</p>`);
-      if (isSmsReady() && recip.phone) await sendSms(recip.phone, `${subject}: ${text}`);
+      if ((await isSmsReady()) && recip.phone) await sendSms(recip.phone, `${subject}: ${text}`);
     }
     return NextResponse.json({ success: true });
   } catch (error) {

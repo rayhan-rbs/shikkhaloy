@@ -1,5 +1,7 @@
 // M7: বকেয়া-তালিকা → "গেটওয়েতে যান" → full-redirect (window.location.href); callback-ফল = ?pay= ব্যানার
 // canManage: শুধু দুই-অ্যাডমিন "ফি ব্যবস্থাপনায় ফিরুন" দেখবে — ছাত্র/অভিভাবক/হিসাবরক্ষক = লুকানো
+
+//fees/online/online-client.tsx
 "use client";
 
 import { useCallback, useEffect, useState } from "react";

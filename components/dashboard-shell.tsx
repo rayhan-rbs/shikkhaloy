@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/command";
 import BranchSwitcher from "@/components/branch-switcher";
 import BranchBrandApplier from "@/components/branch-brand-applier";
+import TopProgress from "@/components/top-progress";
 import LanguageSwitcher from "@/components/language-switcher";
 import ThemeToggle from "@/components/theme-toggle";
 import NotificationBell from "@/components/notification-bell";
@@ -71,10 +72,11 @@ interface NavItem {
 }
 
 export default function DashboardShell({
-  user, institutionName, brandColor, lang, theme, dict, children,
+    user, institutionName, logoUrl, brandColor, lang, theme, dict, children,
 }: {
   user: ShellUser;
   institutionName: string;
+  logoUrl?: string | null;
   brandColor: string;
   lang: Lang;
   theme: Theme;
@@ -268,12 +270,18 @@ export default function DashboardShell({
     <div className="flex h-full flex-col">
       {/* লোগো + প্রতিষ্ঠানের নাম (সেটিংস থেকে — ডায়নামিক) */}
       <div className="flex h-16 items-center gap-3 border-b border-border px-5">
-        <div
-          className="flex h-9 w-9 items-center justify-center rounded-xl shadow-md"
-          style={{ background: `var(--brand, ${brandColor})` }}
-        >
-          <GraduationCap size={18} className="text-white" />
-        </div>
+        {logoUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={logoUrl} alt="" className="h-9 w-9 rounded-xl object-cover" />
+        ) : (
+          <div
+            className="flex h-9 w-9 items-center justify-center rounded-xl shadow-md"
+            style={{ background: `var(--brand, ${brandColor})` }}
+          >
+            <GraduationCap size={18} className="text-white" />
+          </div>
+        )}
+
         <div className="min-w-0">
           <p className="truncate text-sm font-bold text-foreground">{institutionName}</p>
           <p className="text-xs text-muted-foreground">{user.branchName}</p>
@@ -340,6 +348,7 @@ export default function DashboardShell({
   return (
     <div className="min-h-screen bg-background text-foreground">
       <BranchBrandApplier />
+      <TopProgress />
       {/* ডেস্কটপ সাইডবার */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-border bg-background lg:block">
         {sidebarContent}

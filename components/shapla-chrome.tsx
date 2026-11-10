@@ -1,3 +1,4 @@
+//components/shapla-chrome.tsx
 "use client";
 // M14-S3: শাপলা-ক্রোম — সব-লেবেল দ্বিভাষিক (lang-কুকি + router.refresh)
 import { useState } from "react";
@@ -8,7 +9,10 @@ type Inst = {
   name: string; nameEn?: string | null; tagline?: string | null; taglineEn?: string | null;
   brandColor?: string | null; logoUrl?: string | null; heroImages?: string[];
   address?: string | null; phone?: string | null; email?: string | null; eiin?: string | null;
+  footerBn?: string | null; footerEn?: string | null; // M20-B
+  socialFacebook?: string | null; socialYoutube?: string | null; socialWebsite?: string | null; // M20-B
 };
+
 export default function ShaplaChrome({ lang, inst, ticker, children }: {
   lang: "bn" | "en"; inst: Inst; ticker: string[]; children: React.ReactNode;
 }) {
@@ -128,8 +132,31 @@ export default function ShaplaChrome({ lang, inst, ticker, children }: {
           <div className="f-grid">
             <div className="f-col f-brand">
               {brand}
-              <p>{(lang === "en" ? inst.taglineEn : inst.tagline) || t("মানসম্মত শিক্ষা ও চরিত্র-গঠনে নিবেদিত প্রতিষ্ঠান।", "Committed to quality education and character building.")}</p>
+              <p>{(lang === "en" ? (inst.footerEn || inst.taglineEn) : (inst.footerBn || inst.tagline)) || t("মানসম্মত শিক্ষা ও চরিত্র-গঠনে নিবেদিত প্রতিষ্ঠান।", "Committed to quality education and character building.")}</p>
               {inst.eiin && <div className="f-badges"><span>EIIN: {inst.eiin}</span></div>}
+              {(inst.socialFacebook || inst.socialYoutube || inst.socialWebsite) && (
+                <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+                  {inst.socialFacebook && (
+                    <a href={inst.socialFacebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook"
+                      style={{ display: "grid", placeItems: "center", width: 36, height: 36, borderRadius: 10, background: "rgba(127,127,127,.18)", color: "inherit" }}>
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                    </a>
+                  )}
+                  {inst.socialYoutube && (
+                    <a href={inst.socialYoutube} target="_blank" rel="noopener noreferrer" aria-label="YouTube"
+                      style={{ display: "grid", placeItems: "center", width: 36, height: 36, borderRadius: 10, background: "rgba(127,127,127,.18)", color: "inherit" }}>
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></svg>
+                    </a>
+                  )}
+                  {inst.socialWebsite && (
+                    <a href={inst.socialWebsite} target="_blank" rel="noopener noreferrer" aria-label="Website"
+                      style={{ display: "grid", placeItems: "center", width: 36, height: 36, borderRadius: 10, background: "rgba(127,127,127,.18)", color: "inherit" }}>
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"/></svg>
+                    </a>
+                  )}
+                </div>
+              )}
+
             </div>
             <div className="f-col">
               <h4>{t("দ্রুত লিংক", "Quick Links")}</h4>

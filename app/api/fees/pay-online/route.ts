@@ -1,4 +1,5 @@
-// M7: initiate — STUDENT(নিজে)/PARENT(লিংক)/ADMIN+ACCOUNTANT; PENDING-intent → GatewayPageURL
+// M7 + M20: initiate — STUDENT(নিজে)/PARENT(লিংক)/ADMIN+ACCOUNTANT; PENDING-intent → GatewayPageURL
+// M20: sslczReady() = async (DB-কনফিগ-রিড) — await-বাধ্য; বন্ধ/অকনফিগ = Settings-নির্দেশক-মেসেজ
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
@@ -19,8 +20,8 @@ export async function POST(request: NextRequest) {
     });
     if (!me || me.status !== "ACTIVE")
       return NextResponse.json({ success: false, error: "অ্যাকাউন্ট সক্রিয় নয়" }, { status: 403 });
-    if (!sslczReady())
-      return NextResponse.json({ success: false, error: "গেটওয়ে কনফিগার করা হয়নি — SSLCOMMERZ_* env যোগ করুন" }, { status: 400 });
+    if (!(await sslczReady()))
+      return NextResponse.json({ success: false, error: "গেটওয়ে নিষ্ক্রিয় বা কনফিগার করা হয়নি — Settings → পেমেন্ট গেটওয়ে" }, { status: 400 });
 
     const body = await request.json();
     const invoiceId = String(body.invoiceId || "");

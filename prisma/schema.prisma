@@ -151,6 +151,24 @@ model InstitutionSetting {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   deletedAt  DateTime?
+
+  // ── M20: SSLCommerz-গেটওয়ে-কনফিগ (গ্লোবাল singleton; Settings-UI; env-ফলব্যাক) ──
+  // sslczEnabled=false = সম্পূর্ণ-বন্ধ (env-ও-নয়); DB-ক্রেডেনশিয়াল-সেট = env-প্রাধান্য-কাটে
+  sslczEnabled       Boolean @default(true)
+  sslczStoreId       String?
+  sslczStorePassword String? // write-only — API-GET-কখনো-ফেরত-দেবে-না
+  sslczSandbox       Boolean @default(true)
+  // ── M20-B: সাইট-কন্ট্রোল (লোগো/ফুটার/সোশ্যাল/ভর্তি-গেট/পাবলিক-যোগাযোগ/মেন্টেন্যান্স) ──
+  footerBn        String?
+  footerEn        String?
+  socialFacebook  String?
+  socialYoutube   String?
+  socialWebsite   String?
+  admissionOpen   Boolean @default(true)
+  contactEmail    String?
+  contactPhone    String?
+  maintenanceMode Boolean @default(false)
+
 }
 
 // ─── 🎯 গ্রেডিং ───
@@ -1434,4 +1452,28 @@ model LibrarySetting {
   maxBooks   Int      @default(2)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+// ── M21: গেটওয়ে-রেজিস্ট্রি (প্রতি-প্রোভাইডার এক-সারি; credentials=JSON ম্যাপ; secrets write-only) ──
+model GatewayConfig {
+  id          String   @id @default(cuid())
+  provider    String   @unique
+  enabled     Boolean  @default(false)
+  sandbox     Boolean  @default(true)
+  credentials Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ── M22: নোটিফাই-কনফিগ (প্রতি-চ্যানেল এক-সারি; apiKey=write-only) ──
+model NotifyConfig {
+  id        String   @id @default(cuid())
+  channel   String   @unique // "email" | "sms"
+  provider  String   @default("")
+  baseUrl   String?
+  apiKey    String?
+  senderId  String?
+  enabled   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

@@ -1,6 +1,5 @@
-// 📁 app/dashboard/settings/settings-form.tsx
-// সেটিংস ফর্ম — লাইভ প্রিভিউসহ; সেভ করলে সাইডবারে সাথে সাথে বদলায়
-
+// 📁 app/dashboard/settings/settings-form.tsx — প্রতিষ্ঠান-ফর্ম + লাইভ-প্রিভিউ
+// M21: গেটওয়ে-কার্ড-সরিয়ে GatewayRegistry-তে (গেটওয়ে-রেজিস্ট্রি এখন আলাদা-সেকশন)
 "use client";
 
 import { useState } from "react";
@@ -10,19 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { t, type Lang } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 import type { Dictionary } from "@/messages/bn";
 
 interface SettingsData {
-  name: string;
-  nameEn: string;
-  tagline: string;
-  taglineEn: string;
-  brandColor: string;
-  eiin: string;
-  address: string;
-  phone: string;
-  email: string;
+  name: string; nameEn: string; tagline: string; taglineEn: string;
+  brandColor: string; eiin: string; address: string; phone: string; email: string;
 }
 
 export default function SettingsForm({
@@ -45,12 +37,7 @@ export default function SettingsForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-
-    if (!form.name.trim()) {
-      setError(t(dict, "settings.nameRequired"));
-      return;
-    }
-
+    if (!form.name.trim()) { setError(t(dict, "settings.nameRequired")); return; }
     setStatus("saving");
     try {
       const res = await fetch("/api/settings", {
@@ -59,11 +46,7 @@ export default function SettingsForm({
         body: JSON.stringify(form),
       });
       const json = await res.json();
-      if (!json.success) {
-        setError(json.error || t(dict, "settings.saveError"));
-        setStatus("error");
-        return;
-      }
+      if (!json.success) { setError(json.error || t(dict, "settings.saveError")); setStatus("error"); return; }
       setStatus("saved");
       router.refresh(); // সাইডবারে লাইভ আপডেট!
     } catch {
@@ -98,68 +81,51 @@ export default function SettingsForm({
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="name">{t(dict, "settings.name")} *</Label>
-                <Input id="name" required value={form.name}
-                  onChange={(e) => set("name", e.target.value)} className={inputCls} />
+                <Input id="name" required value={form.name} onChange={(e) => set("name", e.target.value)} className={inputCls} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="nameEn">{t(dict, "settings.nameEn")}</Label>
-                <Input id="nameEn" value={form.nameEn}
-                  onChange={(e) => set("nameEn", e.target.value)} className={inputCls} />
+                <Input id="nameEn" value={form.nameEn} onChange={(e) => set("nameEn", e.target.value)} className={inputCls} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="tagline">{t(dict, "settings.tagline")}</Label>
-                <Input id="tagline" value={form.tagline}
-                  onChange={(e) => set("tagline", e.target.value)} className={inputCls} />
+                <Input id="tagline" value={form.tagline} onChange={(e) => set("tagline", e.target.value)} className={inputCls} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="taglineEn">{t(dict, "settings.taglineEn")}</Label>
-                <Input id="taglineEn" value={form.taglineEn}
-                  onChange={(e) => set("taglineEn", e.target.value)} className={inputCls} />
+                <Input id="taglineEn" value={form.taglineEn} onChange={(e) => set("taglineEn", e.target.value)} className={inputCls} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="eiin">{t(dict, "settings.eiin")}</Label>
-                <Input id="eiin" value={form.eiin}
-                  onChange={(e) => set("eiin", e.target.value)} className={inputCls} />
+                <Input id="eiin" value={form.eiin} onChange={(e) => set("eiin", e.target.value)} className={inputCls} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">{t(dict, "settings.phone")}</Label>
-                <Input id="phone" value={form.phone}
-                  onChange={(e) => set("phone", e.target.value)} className={inputCls} />
+                <Input id="phone" value={form.phone} onChange={(e) => set("phone", e.target.value)} className={inputCls} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">{t(dict, "settings.email")}</Label>
-                <Input id="email" type="email" value={form.email}
-                  onChange={(e) => set("email", e.target.value)} className={inputCls} />
+                <Input id="email" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} className={inputCls} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="address">{t(dict, "settings.address")}</Label>
-                <Input id="address" value={form.address}
-                  onChange={(e) => set("address", e.target.value)} className={inputCls} />
+                <Input id="address" value={form.address} onChange={(e) => set("address", e.target.value)} className={inputCls} />
               </div>
             </div>
 
-            {/* ব্র্যান্ড কালার */}
             <div className="space-y-2">
               <Label htmlFor="brandColor">{t(dict, "settings.brandColor")}</Label>
               <div className="flex items-center gap-3">
                 <input
-                  id="brandColor"
-                  type="color"
-                  value={form.brandColor}
+                  id="brandColor" type="color" value={form.brandColor}
                   onChange={(e) => set("brandColor", e.target.value)}
                   className="h-10 w-14 cursor-pointer rounded-lg border border-border bg-background p-1"
                 />
-                <Input value={form.brandColor}
-                  onChange={(e) => set("brandColor", e.target.value)} className={`${inputCls} max-w-[140px] font-mono`} />
+                <Input value={form.brandColor} onChange={(e) => set("brandColor", e.target.value)} className={`${inputCls} max-w-[140px] font-mono`} />
               </div>
             </div>
 
-            <Button
-              type="submit"
-              disabled={status === "saving"}
-              className="text-white"
-              style={{ background: form.brandColor }}
-            >
+            <Button type="submit" disabled={status === "saving"} className="text-white" style={{ background: form.brandColor }}>
               {status === "saving" ? t(dict, "settings.saving") : t(dict, "settings.save")}
             </Button>
           </form>
@@ -168,23 +134,16 @@ export default function SettingsForm({
 
       {/* লাইভ প্রিভিউ */}
       <Card className="h-fit">
-        <CardHeader>
-          <CardTitle className="text-sm">{t(dict, "settings.preview")}</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle className="text-sm">{t(dict, "settings.preview")}</CardTitle></CardHeader>
         <CardContent>
           <div className="rounded-xl border border-border p-4">
             <div className="flex items-center gap-3">
-              <div
-                className="flex h-10 w-10 items-center justify-center rounded-xl shadow-md"
-                style={{ background: form.brandColor }}
-              >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl shadow-md" style={{ background: form.brandColor }}>
                 <GraduationCap size={20} className="text-white" />
               </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold">{form.name || "—"}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {form.tagline || "—"}
-                </p>
+                <p className="truncate text-xs text-muted-foreground">{form.tagline || "—"}</p>
               </div>
             </div>
           </div>

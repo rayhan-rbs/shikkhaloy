@@ -1,4 +1,5 @@
-// 📁 app/contact/page.tsx — M14-E যোগাযোগ (শাপলা-ডিজাইন + আসল Branch/Setting-ডেটা)
+// 📁 app/contact/page.tsx — M14-E যোগাযোগ + M20-B: পাবলিক-যোগাযোগ-ওভাররাইড
+// Settings-এ contactEmail/contactPhone দিলে সেটাই-প্রাধান্য; না-থাকলে প্রতিষ্ঠানের-মূল
 import { prisma } from "@/lib/prisma";
 import { loadPublicContext } from "@/lib/public-data";
 import PublicShell from "@/components/public-shell";
@@ -10,9 +11,12 @@ const L = (lang: PublicLang, bn: string, en: string) => (lang === "en" ? en : bn
 
 export default async function ContactPage() {
   const { lang, inst } = await loadPublicContext();
-  const branches = await prisma.branch.findMany({ where: { isActive: true }, orderBy: { createdAt: "asc" } });
-  const email = inst.email || "info@example.com";
-  const phone = inst.phone ?? "";
+  const [siteCfg, branches] = await Promise.all([
+    prisma.institutionSetting.findFirst({ select: { contactEmail: true, contactPhone: true } }), // M20-B
+    prisma.branch.findMany({ where: { isActive: true }, orderBy: { createdAt: "asc" } }),
+  ]);
+  const email = siteCfg?.contactEmail || inst.email || "info@example.com";
+  const phone = siteCfg?.contactPhone || inst.phone || "";
   const mapsQ = encodeURIComponent(inst.address || inst.name || "Dhaka, Bangladesh");
 
   const OV = [

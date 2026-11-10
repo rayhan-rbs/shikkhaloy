@@ -1,11 +1,14 @@
 // M2: ভর্তি আবেদন — POST = পাবলিক জমা (FormData, ছবি-ঐচ্ছিক) | GET = অ্যাডমিন-তালিকা (নীতি ১১ branchId-ফিল্টার)
+// M23: জমার-মুহূর্তে আবেদনকারীকে ইমেইল+SMS-কনফার্মেশন (applicationNo) — best-effort, জমা-ভাঙবে-না (নোট ৮২, ১১৪)
 import { NextRequest, NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
+import { sendEmail, sendSms } from "@/lib/notify";
 
 const ADMIN_ROLES = ["PLATFORM_SUPER_ADMIN", "BRANCH_ADMIN"];
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const esc = (s: string) => s.replace(/</g, "&lt;"); // ব্যবহারকারী-ইনপুট → ইমেইল-HTML
 
 export async function POST(request: NextRequest) {
   try {
@@ -79,6 +82,21 @@ export async function POST(request: NextRequest) {
         photoUrl,
       },
     });
+
+    // M23: কনফার্মেশন best-effort — Settings→মেসেজিং কনফিগ (DB→env); ব্যর্থ/অ-কনফিগার্ড = নীরব-স্কিপ, জমা-সফল-ই
+    try {
+      await Promise.all([
+        sendEmail(
+          email,
+          `✅ ভর্তি আবেদন জমা হয়েছে / Application submitted — ${applicationNo}`,
+          `<p>প্রিয় আবেদনকারী, আপনার ভর্তি আবেদন সফলভাবে জমা হয়েছে।</p><p>Dear applicant, your admission application has been submitted successfully.</p><p><b>আবেদন নম্বর / Application No:</b> ${applicationNo}</p><p><b>নাম / Name:</b> ${esc(fullName)}</p><p><b>প্রতিষ্ঠান / Branch:</b> ${esc(branch.name)}</p><p><b>শ্রেণি / Class:</b> ${esc(klass.name)}</p><p>অনুমোদনের জন্য অপেক্ষা করুন — এই নম্বরটি সংরক্ষণ করুন।<br/>Please wait for approval and keep this number for reference.</p>`,
+        ),
+        sendSms(phone, `ভর্তি আবেদন জমা হয়েছে ✅ আবেদন নং: ${applicationNo} — অনুমোদনের অপেক্ষায় (Shikkhaloy)`),
+      ]);
+    } catch (e) {
+      console.error("📧 admission-notify (non-blocking):", e);
+    }
+
     return NextResponse.json({ success: true, data: { applicationNo: application.applicationNo } }, { status: 201 });
   } catch (error) {
     console.error("❌ Admission POST error:", error);
